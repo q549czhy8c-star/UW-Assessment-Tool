@@ -10,7 +10,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Updated version title -->
-    <title>UW assessment tool (v2.8.632)</title>
+    <title>UW assessment tool (v2.8.633)</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
 
@@ -4636,7 +4636,8 @@ ${hnwFinancially || ''}`;
                 if (prodType !== 'Life' && prodType !== 'CI') return null;
 
                 let saHKD = Number(sumAssured);
-                if (curr === 'USD') saHKD = saHKD * USD_RATE;
+                // Use FIN_USD_RATE (8.0) for target range checking because it is based on sum assured.
+                if (curr === 'USD') saHKD = saHKD * FIN_USD_RATE;
 
                 let baseSA = saHKD;
                 if (planName === "LionPatron") {
@@ -7231,9 +7232,18 @@ const shouldShowMed = () => {
 
         /* ========= Versioning & Update Log ========= */
         // Updated version constant to reflect latest enhancements
-        const CURRENT_VERSION = "v2.8.632";
+        const CURRENT_VERSION = "v2.8.633";
         const UPDATE_LOG_PASSWORD = "admin123";
         const versionHistory = [
+{
+    version: "v2.8.633",
+    date: "27 Mar 2026",
+    type: "Patch Update",
+    changes: [
+        "Reasonable Target Protection Range checking now uses exchange rate 1 USD = 8 HKD when converting Sum Assured.",
+        "Bumped application version to v2.8.633."
+    ]
+},
 {
     version: "v2.8.632",
     date: "23 Mar 2026",
