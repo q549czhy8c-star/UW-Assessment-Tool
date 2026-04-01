@@ -5271,7 +5271,6 @@ ${hnwFinancially || ''}`;
                                                         <option value="">請選擇...</option>
                                                         <option value="Yes">Yes</option>
                                                         <option value="No">No</option>
-                                                        <option value="Insurance Intermediary HAS recommended...">Insurance Intermediary HAS recommended...</option>
                                                     </select>
                                                 </div>
                                                 <div>
@@ -5286,11 +5285,9 @@ ${hnwFinancially || ''}`;
                                         )}
                                         {isPremiumFinancing && (
                                             <div className="mt-2 text-[11px] text-slate-700 space-y-1">
-                                                {pfIfsProvided === 'Insurance Intermediary HAS recommended...' && (
-                                                    <div className="text-red-700 font-bold">
-                                                        Reminder (O2O): If IFS-PF is selected as "Insurance Intermediary HAS recommended...", the application will not be accepted.
-                                                    </div>
-                                                )}
+                                                <div className="text-red-700 font-bold">
+                                                    Reminder (O2O): If IFS-PF is selected as "Insurance Intermediary HAS recommended...", the application will not be accepted.
+                                                </div>
                                                 <div>
                                                     <a
                                                         href="file://///Hpstorage/GLHK/Retail Life Ops/NB & Underwriting/Premium financing/Production/Premium Financing Email and Flow V.2.xlsx"
@@ -7303,7 +7300,7 @@ const shouldShowMed = () => {
     changes: [
         "Policy Info > Premium Financing: Added dropdowns for IFS-PF and Customer letter of Authorization.",
         "Case Summary > Issue UN: Auto-adds pending UN messages when either Premium Financing document dropdown is set to 'No'.",
-        "Policy Info > Premium Financing: Added O2O reminder when IFS-PF is selected as 'Insurance Intermediary HAS recommended...'.",
+        "Policy Info > Premium Financing: Removed 'Insurance Intermediary HAS recommended...' from IFS-PF dropdown and showed O2O reminder as a general Premium Financing reminder.",
         "Policy Info > Premium Financing: Added Workflow hyperlink to Premium Financing Email and Flow V.2.xlsx.",
         "Bumped application version to v2.8.635."
     ]
