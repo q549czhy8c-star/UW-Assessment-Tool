@@ -10,7 +10,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Updated version title -->
-    <title>UW assessment tool (v2.8.634)</title>
+    <title>UW assessment tool (v2.8.635)</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
 
@@ -3868,6 +3868,9 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
     const [pfLoanTenor, setPfLoanTenor] = useState("");
     // Optional repayment amount per period. Captured for reference only and not used in calculations.
     const [pfRepaymentAmount, setPfRepaymentAmount] = useState("");
+    // Premium Financing supporting documents
+    const [pfIfsProvided, setPfIfsProvided] = useState("");
+    const [pfCustomerAuthorizationProvided, setPfCustomerAuthorizationProvided] = useState("");
             // FNA related
             const [fnaRetireAge, setFnaRetireAge] = useState("");
             const [fnaDisposableIncome, setFnaDisposableIncome] = useState("");
@@ -4035,6 +4038,8 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                         if (s.pfLoanRate !== undefined) setPfLoanRate(s.pfLoanRate);
                         if (s.pfLoanTenor !== undefined) setPfLoanTenor(s.pfLoanTenor);
                         if (s.pfRepaymentAmount !== undefined) setPfRepaymentAmount(s.pfRepaymentAmount);
+                        if (s.pfIfsProvided !== undefined) setPfIfsProvided(s.pfIfsProvided);
+                        if (s.pfCustomerAuthorizationProvided !== undefined) setPfCustomerAuthorizationProvided(s.pfCustomerAuthorizationProvided);
 
                         // FNA inputs
                         if (s.fnaRetireAge !== undefined) setFnaRetireAge(s.fnaRetireAge);
@@ -4173,6 +4178,8 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                         pfLoanRate,
                         pfLoanTenor,
                         pfRepaymentAmount,
+                        pfIfsProvided,
+                        pfCustomerAuthorizationProvided,
 
                     // Persist HNW (LionMaster) fields so that they are restored upon reload
                     hnwAppSignDate,
@@ -4209,7 +4216,7 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                 commissionSpreading, piInvestorType, piScenarioKey,
                 trustBeneficiaries, unpaidPremium, reasonPurchaseHK, otherInsurances, niceActimize,
                 // dependencies for PF fields
-                isPremiumFinancing, pfLoanAmount, pfLoanRate, pfLoanTenor, pfRepaymentAmount,
+                isPremiumFinancing, pfLoanAmount, pfLoanRate, pfLoanTenor, pfRepaymentAmount, pfIfsProvided, pfCustomerAuthorizationProvided,
                 // HNW fields dependencies
                 hnwAppSignDate, hnwDOB, hnwGender, hnwSmoking, hnwClass, hnwNationality, hnwResidency,
                 hnwSumAssured, hnwTerms, hnwAnnualPremium, hnwExistingSA, hnwOccupation, hnwMedically, hnwFinancially, hnwAnnualIncome,
@@ -4957,7 +4964,9 @@ ${hnwFinancially || ''}`;
                         pfLoanAmount,
                         pfLoanRate,
                         pfLoanTenor,
-                        pfRepaymentAmount
+                        pfRepaymentAmount,
+                        pfIfsProvided,
+                        pfCustomerAuthorizationProvided
                     };
                     localStorage.setItem('caseSummaryPolicyInfo', JSON.stringify(summary));
                     window.dispatchEvent(new CustomEvent('caseSummaryUpdate'));
@@ -4970,7 +4979,7 @@ ${hnwFinancially || ''}`;
                 isDateBack, birthdayAlert, appType, trustDeclaration, niceActimize, pdfAmount, phResidency, phOtherCountry, reasonPurchaseHK, unpaidPremium, trustBeneficiaries, noFna,
                 showFinancialQuestionnaire, fqPurposeOfInsurance, fqSourceOfPremium, fqEarnedIncome, fqUnearnedIncome, fqAssets, fqLiabilities,
                 // Premium Financing dependencies
-                isPremiumFinancing, pfLoanAmount, pfLoanRate, pfLoanTenor, pfRepaymentAmount]);
+                isPremiumFinancing, pfLoanAmount, pfLoanRate, pfLoanTenor, pfRepaymentAmount, pfIfsProvided, pfCustomerAuthorizationProvided]);
 
             const handleResetPolicyInfo = () => {
                 setAppType('Individual'); setIsEverestBroker(false); setTrustDeclaration('No'); setNiceActimize(''); setAddressProofType(''); setHeight(''); setWeight(''); setIsSamePerson(true); setIsDateBack(false);
@@ -5002,6 +5011,8 @@ ${hnwFinancially || ''}`;
                 setPfLoanRate('');
                 setPfLoanTenor('');
                 setPfRepaymentAmount('');
+                setPfIfsProvided('');
+                setPfCustomerAuthorizationProvided('');
             };
 
             return (
@@ -5253,6 +5264,42 @@ ${hnwFinancially || ''}`;
                                                 <div>
                                                     <label className="text-xs font-bold text-slate-500">每期還款額</label>
                                                     <input type="text" value={pfRepaymentAmount} onChange={(e) => setPfRepaymentAmount(e.target.value)} className="w-full border rounded p-1.5 text-sm bg-yellow-50" />
+                                                </div>
+                                                <div>
+                                                    <label className="text-xs font-bold text-slate-500">IFS-PF</label>
+                                                    <select value={pfIfsProvided} onChange={(e) => setPfIfsProvided(e.target.value)} className="w-full border rounded p-1.5 text-sm bg-yellow-50">
+                                                        <option value="">請選擇...</option>
+                                                        <option value="Yes">Yes</option>
+                                                        <option value="No">No</option>
+                                                        <option value="Insurance Intermediary HAS recommended...">Insurance Intermediary HAS recommended...</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label className="text-xs font-bold text-slate-500">Customer letter of Authorization</label>
+                                                    <select value={pfCustomerAuthorizationProvided} onChange={(e) => setPfCustomerAuthorizationProvided(e.target.value)} className="w-full border rounded p-1.5 text-sm bg-yellow-50">
+                                                        <option value="">請選擇...</option>
+                                                        <option value="Yes">Yes</option>
+                                                        <option value="No">No</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        )}
+                                        {isPremiumFinancing && (
+                                            <div className="mt-2 text-[11px] text-slate-700 space-y-1">
+                                                {pfIfsProvided === 'Insurance Intermediary HAS recommended...' && (
+                                                    <div className="text-red-700 font-bold">
+                                                        Reminder (O2O): If IFS-PF is selected as "Insurance Intermediary HAS recommended...", the application will not be accepted.
+                                                    </div>
+                                                )}
+                                                <div>
+                                                    <a
+                                                        href="file://///Hpstorage/GLHK/Retail Life Ops/NB & Underwriting/Premium financing/Production/Premium Financing Email and Flow V.2.xlsx"
+                                                        className="text-blue-700 underline font-bold"
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                    >
+                                                        Workflow
+                                                    </a>
                                                 </div>
                                             </div>
                                         )}
@@ -6303,6 +6350,14 @@ const showMed = (isPHNotSame && !isLifeOrCI)
                 if (isJumboCaseForSummary && block) {
                     combined = combined ? (combined + "\n\n" + block) : block;
                 }
+                if (policyData.isPremiumFinancing && policyData.pfIfsProvided === 'No') {
+                    const pfIfsMissingMsg = '(Pending) Importance Facts Statement - Premium Financing as not provided';
+                    combined = combined ? (combined + "\n\n" + pfIfsMissingMsg) : pfIfsMissingMsg;
+                }
+                if (policyData.isPremiumFinancing && policyData.pfCustomerAuthorizationProvided === 'No') {
+                    const pfAuthMissingMsg = '(Pending) Customer letter of Authorization as not provided';
+                    combined = combined ? (combined + "\n\n" + pfAuthMissingMsg) : pfAuthMissingMsg;
+                }
 
                 // [v1.13] AML supplementary questions for specific CBI/RBI jurisdictions (Residence-based)
                 const AML_JURISDICTIONS = new Set([
@@ -7238,9 +7293,21 @@ const shouldShowMed = () => {
 
         /* ========= Versioning & Update Log ========= */
         // Updated version constant to reflect latest enhancements
-        const CURRENT_VERSION = "v2.8.634";
+        const CURRENT_VERSION = "v2.8.635";
         const UPDATE_LOG_PASSWORD = "admin123";
         const versionHistory = [
+{
+    version: "v2.8.635",
+    date: "01 Apr 2026",
+    type: "Patch Update",
+    changes: [
+        "Policy Info > Premium Financing: Added dropdowns for IFS-PF and Customer letter of Authorization.",
+        "Case Summary > Issue UN: Auto-adds pending UN messages when either Premium Financing document dropdown is set to 'No'.",
+        "Policy Info > Premium Financing: Added O2O reminder when IFS-PF is selected as 'Insurance Intermediary HAS recommended...'.",
+        "Policy Info > Premium Financing: Added Workflow hyperlink to Premium Financing Email and Flow V.2.xlsx.",
+        "Bumped application version to v2.8.635."
+    ]
+},
 {
     version: "v2.8.634",
     date: "01 Apr 2026",
