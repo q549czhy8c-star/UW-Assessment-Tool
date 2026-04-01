@@ -10,7 +10,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Updated version title -->
-    <title>UW assessment tool (v2.8.633)</title>
+    <title>UW assessment tool (v2.8.634)</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
 
@@ -6092,6 +6092,7 @@ const showMed = (isPHNotSame && !isLifeOrCI)
                     const netAssets = res.effectiveAssets || 0;
                     const isSplitScenario = hasOverhang && preRetireShortfallSum === 0 && incomeUsed >= annualTotalHKD && netAssets >= postRetTotalHKD;
                     const preIncomeSufficient = preRetireShortfallSum === 0 && incomeUsed >= annualTotalHKD;
+                    const assetSupportRequiredHKD = postRetTotalHKD + preRetireShortfallSum;
                     const mode = affordData.calcMode;
                     let totalPremHKD = res.grossTotalDisplay;
                     if (isSplitScenario) {
@@ -6120,7 +6121,9 @@ const showMed = (isPHNotSame && !isLifeOrCI)
                             lines.push(`   Total Premiums: ${formatMoney(totalPremHKD, 'HKD')}`);
                         }
                         lines.push(`   Income used for each year prior to retirement: ${formatMoney(incomeUsed)}`);
-                        if (!res.isPass && hasOverhang) {
+                        if (!affordData.isPremiumFinancing && assetSupportRequiredHKD > 0) {
+                            lines.push(`   Total premiums (need to be supported by net asset): ${formatMoney(assetSupportRequiredHKD)}`);
+                        } else if (!res.isPass && hasOverhang) {
                             lines.push(`   Total premiums (need to be supported by net asset) after retirement: ${formatMoney(postRetTotalHKD)}`);
                         }
                         // Insert Asset Required line above Net assets when Premium Financing is enabled
@@ -6789,6 +6792,7 @@ const shouldShowMed = () => {
                                     const preRetireShortfallSum = results.reduce((sum, p) => sum + (p.shortfallAnnual || 0) * (p.preRetireYears || 0), 0);
                                     const isSplitScenario = hasOverhang && preRetireShortfallSum === 0 && incomeUsed >= annualTotalHKD && netAssets >= postRetTotalHKD;
                                     const preIncomeSufficient = preRetireShortfallSum === 0 && incomeUsed >= annualTotalHKD;
+                                    const assetSupportRequiredHKD = postRetTotalHKD + preRetireShortfallSum;
                                     const lines = [];
                                     const pdfSuffix = (policyData.payMode === 'Prepay' && policyData.pdfAmount) ? ` (PDF amount: ${formatMoney(Number(policyData.pdfAmount), policyData.curr || 'HKD')})` : '';
                                     const policyCount = results.length || 0;
@@ -6817,7 +6821,9 @@ const shouldShowMed = () => {
                                             }
                                         }
                                         lines.push(<div key="fna2" className="pl-4">Income used for each year prior to retirement: {formatMoney(incomeUsed)}</div>);
-                                        if (!res.isPass && hasOverhang) {
+                                        if (!affordData.isPremiumFinancing && assetSupportRequiredHKD > 0) {
+                                            lines.push(<div key="fna2b" className="pl-4">Total premiums (need to be supported by net asset): {formatMoney(assetSupportRequiredHKD)}</div>);
+                                        } else if (!res.isPass && hasOverhang) {
                                             lines.push(<div key="fna2b" className="pl-4">Total premiums (need to be supported by net asset) after retirement: {formatMoney(postRetTotalHKD)}</div>);
                                         }
                                         // Insert Asset Required row above Net assets when Premium Financing is enabled
@@ -7232,9 +7238,18 @@ const shouldShowMed = () => {
 
         /* ========= Versioning & Update Log ========= */
         // Updated version constant to reflect latest enhancements
-        const CURRENT_VERSION = "v2.8.633";
+        const CURRENT_VERSION = "v2.8.634";
         const UPDATE_LOG_PASSWORD = "admin123";
         const versionHistory = [
+{
+    version: "v2.8.634",
+    date: "01 Apr 2026",
+    type: "Patch Update",
+    changes: [
+        "Case Summary (FNA) now shows 'Total premiums (need to be supported by net asset)' for non-premium financing when assets are required before/after retirement.",
+        "Bumped application version to v2.8.634."
+    ]
+},
 {
     version: "v2.8.633",
     date: "27 Mar 2026",
