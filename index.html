@@ -3509,7 +3509,7 @@ const HK_HOLIDAYS_2025_2026 = [
                 }
             }, [policies, calculationResult, calcMode, sofSelections, monthlyIncome, incomePercent, liquidAsset, assetPercent, affHydrated,
                 // premium financing
-                isPremiumFinancing]);
+                isPremiumFinancing, pfLoanAmount, pfLoanRate, pfLoanTenor, pfRepaymentAmount]);
 
             return (
                 <div className="flex flex-col h-full bg-slate-50 overflow-hidden">
@@ -6199,6 +6199,11 @@ const showMed = (isPHNotSame && !isLifeOrCI)
                         lines.push(pfDetail);
                         lines.push('   Net assets after premium payments: ' + formatMoney(remRaw));
                         lines.push('   Projected total interest: ' + formatMoney(projInt));
+                        if ((Number(affordData.diffB) || 0) < 0) {
+                            lines.push('   Shortfall (Test B): ' + formatMoney(Math.abs(Number(affordData.diffB) || 0)));
+                        } else {
+                            lines.push('   Surplus (Test B): ' + formatMoney(Number(affordData.diffB) || 0));
+                        }
                         lines.push('   Over‑leveraging checking for Premium Financing Policy - ' + (affordData.testBPass ? 'Pass' : 'Failed'));
                         lines.push('');
                     }
@@ -6510,14 +6515,15 @@ const shouldShowMed = () => {
                     policyData.otherInsurances.forEach(item => {
                         const val = Number(item.amount);
                         if (!val || isNaN(val)) return;
+                        const itemMultiplier = item.planTag === 'LionPatron' ? 1.5 : (item.planTag === 'LGB' ? 1.3 : 1);
                         if (item.currency === policyData.curr) {
-                            otherTotal += val;
+                            otherTotal += val * itemMultiplier;
                         } else if (item.currency === 'USD' && policyData.curr === 'HKD') {
-                            otherTotal += val * FIN_USD_RATE;
+                            otherTotal += val * FIN_USD_RATE * itemMultiplier;
                         } else if (item.currency === 'HKD' && policyData.curr === 'USD') {
-                            otherTotal += val / FIN_USD_RATE;
+                            otherTotal += (val / FIN_USD_RATE) * itemMultiplier;
                         } else {
-                            otherTotal += val;
+                            otherTotal += val * itemMultiplier;
                         }
                     });
                 }
@@ -6848,7 +6854,7 @@ const shouldShowMed = () => {
                                     const lines = [];
                                     const pdfSuffix = (policyData.payMode === 'Prepay' && policyData.pdfAmount) ? ` (PDF amount: ${formatMoney(Number(policyData.pdfAmount), policyData.curr || 'HKD')})` : '';
                                     const policyCount = results.length || 0;
-                        const isApplyingOnly = policyCount === 1;
+                                    const isApplyingOnly = policyCount === 1;
                                     const prefix = policyCount > 1 ? '(All policies) - ' : '';
                                     if (isSplitScenario) {
                                         lines.push(<div key="fnaSplit1" className="pl-4">Total Annual Premiums before retirement: {formatMoney(annualTotalHKD, 'HKD')}</div>);
@@ -6884,6 +6890,29 @@ const shouldShowMed = () => {
                                         }
                                         lines.push(<div key="fna3" className="pl-4">Net assets available for use: {formatMoney(netAssets)}</div>);
                                         if (diff < 0) lines.push(<div key="fna4" className="pl-4">Shortfall: {formatMoney(Math.abs(diff))}</div>);
+                                    }
+                                    if (affordData.isPremiumFinancing) {
+                                        const loanAmt = Number(affordData.pfLoanAmount || 0);
+                                        const rateVal = Number(affordData.pfLoanRate || 0);
+                                        const tenorVal = Number(affordData.pfLoanTenor || 0);
+                                        const repayVal = affordData.pfRepaymentAmount || '';
+                                        const projInt = Number(affordData.projectedInterest || 0);
+                                        const totalRequired = Number(res.totalRequiredHKD || 0);
+                                        const remRaw = (Number(affordData.liquidAsset || 0)) - totalRequired;
+                                        const diffB = Number(affordData.diffB || 0);
+                                        let pfDetail = 'Premium Financing details: Loan Amount: ' + formatMoney(loanAmt) + ', Rate: ' + rateVal + '% , Tenor: ' + tenorVal + ' yrs';
+                                        if (repayVal) {
+                                            pfDetail += ', Repayment Amt: ' + formatMoney(Number(repayVal) || 0);
+                                        }
+                                        lines.push(<div key="fnaPf1" className="pl-4">{pfDetail}</div>);
+                                        lines.push(<div key="fnaPf2" className="pl-4">Net assets after premium payments: {formatMoney(remRaw)}</div>);
+                                        lines.push(<div key="fnaPf3" className="pl-4">Projected total interest: {formatMoney(projInt)}</div>);
+                                        if (diffB < 0) {
+                                            lines.push(<div key="fnaPf4" className="pl-4">Shortfall (Test B): {formatMoney(Math.abs(diffB))}</div>);
+                                        } else {
+                                            lines.push(<div key="fnaPf4" className="pl-4">Surplus (Test B): {formatMoney(diffB)}</div>);
+                                        }
+                                        lines.push(<div key="fnaPf5" className="pl-4">Over‑leveraging checking for Premium Financing Policy - {affordData.testBPass ? 'Pass' : 'Failed'}</div>);
                                     }
                                     return lines;
                                 })()}
