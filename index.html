@@ -4522,8 +4522,6 @@ ${hnwFinancially || ''}`;
 
 
             const isHighRisk = useMemo(() => riskLevel === 'High' || riskLevel === 'Sanctioned', [riskLevel]);
-            const isAfcAutoRequired = useMemo(() => appType === 'Trust' || isHighRisk || isEverestBroker, [appType, isHighRisk, isEverestBroker]);
-            const isSendToAFCChecked = isAfcAutoRequired || requiredSendToAFC;
             const needsAddressProof = useMemo(() => isHighRisk || appType === 'Trust' || isEverestBroker, [isHighRisk, appType, isEverestBroker]);
 
             // [UPDATE Req 1] Logic to hide employer info
@@ -4860,6 +4858,11 @@ ${hnwFinancially || ''}`;
             const isJumboPremium = jumboPremiumUSD > JUMBO_THRESHOLD_USD;
             const isJumboPDF = jumboPDFUSD > JUMBO_THRESHOLD_USD;
             const isJumboCase = isJumboPremium || isJumboPDF;
+            const isAfcAutoRequired = useMemo(
+                () => appType === 'Trust' || isHighRisk || isEverestBroker || isJumboCase,
+                [appType, isHighRisk, isEverestBroker, isJumboCase]
+            );
+            const isSendToAFCChecked = isAfcAutoRequired || requiredSendToAFC;
 
 
             const updateOtherInsurance = (idx, field, value) => {
@@ -5099,7 +5102,7 @@ ${hnwFinancially || ''}`;
                                 className="h-4 w-4"
                             />
                             <span className="text-[11px] text-slate-600">
-                                {isAfcAutoRequired ? 'Trust / 高風險地區 / Everest broker 會自動勾選且不能取消。' : '可自行勾選。'}
+                                {isAfcAutoRequired ? 'Trust / 高風險地區 / Everest broker / Jumbo case 會自動勾選且不能取消。' : '可自行勾選。'}
                             </span>
                         </div>
                         <div className="space-y-2 mb-6">
