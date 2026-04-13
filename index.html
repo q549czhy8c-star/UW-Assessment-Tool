@@ -4627,22 +4627,47 @@ ${hnwFinancially || ''}`;
                 const refDateStr = proposalDate || new Date().toISOString().split('T')[0];
                 const dobStr = isSamePerson ? phDob : insDob;
                 if (!dobStr) return null;
+
                 const refDate = new Date(refDateStr);
+                const currentDate = new Date();
                 const dob = new Date(dobStr);
+                let thisYearBirthday = new Date(refDate.getFullYear(), dob.getMonth(), dob.getDate());
                 let nextBirthday = new Date(refDate.getFullYear(), dob.getMonth(), dob.getDate());
                 if (nextBirthday < refDate) {
                     nextBirthday.setFullYear(refDate.getFullYear() + 1);
                 }
+
                 const diffTime = nextBirthday - refDate;
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                if (diffDays <= 93) {
+                const withinThreeMonths = diffDays <= 93;
+                const birthdayPassedAfterPrintBeforeCurrent =
+                    thisYearBirthday > refDate && thisYearBirthday < currentDate;
+
+                if (withinThreeMonths || birthdayPassedAfterPrintBeforeCurrent) {
+                    const warningText = birthdayPassedAfterPrintBeforeCurrent
+                        ? '提示：受保人已過生日，請提交反映新年齡的建議書。'
+                        : `提示：受保人將於 3 個月內 (${formatDate(nextBirthday)}) 生日，屆時年齡將增加一歲。`;
                     return {
                         type: 'warning',
-                        text: `提示：受保人將於 3 個月內 (${formatDate(nextBirthday)}) 生日，屆時年齡將增加一歲。`
+                        text: warningText,
+                        withinThreeMonths,
+                        birthdayPassedAfterPrintBeforeCurrent
                     };
                 }
                 return null;
             }, [prodType, proposalDate, isSamePerson, phDob, insDob]);
+
+            const birthdayPassedAlertShownRef = useRef(false);
+            useEffect(() => {
+                if (birthdayAlert?.birthdayPassedAfterPrintBeforeCurrent && !birthdayPassedAlertShownRef.current) {
+                    window.alert('受保人已過生日');
+                    birthdayPassedAlertShownRef.current = true;
+                    return;
+                }
+                if (!birthdayAlert?.birthdayPassedAfterPrintBeforeCurrent) {
+                    birthdayPassedAlertShownRef.current = false;
+                }
+            }, [birthdayAlert]);
 
             const fnaRangeInfo = useMemo(() => {
                 if (!sumAssured || !prodType) return null;
@@ -6365,8 +6390,11 @@ const showMed = (isPHNotSame && !isLifeOrCI)
                 if (plan === 'LionAchiever Elite' || plan === 'LionPrima') {
                     msgs.push('a. Anonymous/cash payment is not allowed for high return products; b. Payor will be required to submit of Source(s) of Funds/Wealth Supplementary Information Questionnaire if premium payment is not fully made by proposed policyholder.');
                 }
-                if ((policyData.prodType === 'GIO' || policyData.prodType === 'Annuity') && policyData.birthdayAlert) {
+                if ((policyData.prodType === 'GIO' || policyData.prodType === 'Annuity') && policyData.birthdayAlert?.withinThreeMonths) {
                     msgs.push('Submit revised illustration with new age is required if payment date or document signed date is after insured\'s birthday. No back-dating will be allowed for saving plans or prepayments.');
+                }
+                if ((policyData.prodType === 'GIO' || policyData.prodType === 'Annuity') && policyData.birthdayAlert?.birthdayPassedAfterPrintBeforeCurrent) {
+                    msgs.push('(Pending) Please submit a revised illustration reflecting the new age, as the insured’s birthday has passed. No back-dating will be allowed for saving plans or prepayments.');
                 }
                 if (policyData.appType === 'Trust') {
                     msgs.push('Trust Application is subject to compliance clearance; further requirements may be required');
