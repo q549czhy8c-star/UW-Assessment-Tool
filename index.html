@@ -4644,6 +4644,52 @@ ${hnwFinancially || ''}`;
                 return null;
             }, [prodType, proposalDate, isSamePerson, phDob, insDob]);
 
+            const birthdayPassedAfterProposalAlert = useMemo(() => {
+                if (prodType !== 'GIO' && prodType !== 'Annuity') return null;
+                if (!proposalDate) return null;
+                const dobStr = isSamePerson ? phDob : insDob;
+                if (!dobStr) return null;
+
+                const proposal = new Date(proposalDate);
+                const dob = new Date(dobStr);
+                const today = new Date();
+                today.setHours(23, 59, 59, 999);
+
+                const proposalYear = proposal.getFullYear();
+                const todayYear = today.getFullYear();
+                let passedBirthday = null;
+
+                for (let y = proposalYear - 1; y <= todayYear + 1; y += 1) {
+                    const candidate = new Date(y, dob.getMonth(), dob.getDate());
+                    if (candidate > proposal && candidate <= today) {
+                        passedBirthday = candidate;
+                    }
+                }
+
+                if (!passedBirthday) return null;
+                return {
+                    type: 'warning',
+                    text: '受保人已過生日',
+                    birthdayDate: passedBirthday
+                };
+            }, [prodType, proposalDate, isSamePerson, phDob, insDob]);
+
+            const birthdayPassedPopupShownRef = useRef('');
+            useEffect(() => {
+                if (!birthdayPassedAfterProposalAlert) {
+                    birthdayPassedPopupShownRef.current = '';
+                    return;
+                }
+                const key = [
+                    proposalDate || '',
+                    isSamePerson ? phDob : insDob,
+                    prodType || ''
+                ].join('|');
+                if (birthdayPassedPopupShownRef.current === key) return;
+                birthdayPassedPopupShownRef.current = key;
+                window.alert('受保人已過生日');
+            }, [birthdayPassedAfterProposalAlert, proposalDate, prodType, isSamePerson, phDob, insDob]);
+
             const fnaRangeInfo = useMemo(() => {
                 if (!sumAssured || !prodType) return null;
                 if (prodType !== 'Life' && prodType !== 'CI') return null;
@@ -4774,6 +4820,9 @@ ${hnwFinancially || ''}`;
                 if (birthdayAlert) {
                     msgs.push({ type: 'warning', text: birthdayAlert.text, icon: <CalendarClock size={16}/> });
                 }
+                if (birthdayPassedAfterProposalAlert) {
+                    msgs.push({ type: 'warning', text: `提示：${birthdayPassedAfterProposalAlert.text}（生日：${formatDate(birthdayPassedAfterProposalAlert.birthdayDate)}）`, icon: <CalendarClock size={16}/> });
+                }
                 if (flyToBuyAmlRequired) {
                     msgs.push({ type: 'warning', text: 'please complete AML checklist for fly to buy client' });
                 }
@@ -4836,7 +4885,7 @@ ${hnwFinancially || ''}`;
                     }
                 }
                 return msgs;
-            }, [proposalDate, signingDate, applicationSigningDate, fnaSigningDate, phResidency, phArrivalDate, phExpiryDate, phIfsDate, appType, premAmount, curr, pdfAmount, paymentCurrency, birthdayAlert, flyToBuyAmlRequired]);
+            }, [proposalDate, signingDate, applicationSigningDate, fnaSigningDate, phResidency, phArrivalDate, phExpiryDate, phIfsDate, appType, premAmount, curr, pdfAmount, paymentCurrency, birthdayAlert, birthdayPassedAfterProposalAlert, flyToBuyAmlRequired]);
 
             // ==========================================
             // Jumbo Case (大額保單) Logic
@@ -4949,7 +4998,7 @@ ${hnwFinancially || ''}`;
                         commissionSpreading,
                         piInvestorType,
                         piScenarioKey,
-                        isDateBack, birthdayAlert, appType,
+                        isDateBack, birthdayAlert, birthdayPassedAfterProposalAlert, appType,
                         requiredSendToAFC: isSendToAFCChecked,
                         fnaDisposableIncome: fnaDisposableIncome || null,
                         fnaIncomePercent: fnaIncomePercent || null,
@@ -4988,7 +5037,7 @@ ${hnwFinancially || ''}`;
             }, [policyHydrated, phArrivalDate, fnaSigningDate, proposalDate, applicationSigningDate, signingDate, addressProofType, isSamePerson, phAge, phGender, phSmoker, phDob, insAge, insGender, insSmoker, insDob, planName, sumAssured, curr, prodType, otherInsurances, height, weight, medicalReq, financialReq, returnCheck, monthlyIncome, occupationStatus, position, employer, location, lifeCiEmployerToggle, bizNature, sofWealthSupplementType, premAmount, payMode, yearTerm, paymentDate, paymentCurrency, paymentAmount, paymentPayor, paymentMethod,
                 // Commission Spreading (Professional Investor - PI)
                 commissionSpreading, piInvestorType, piScenarioKey,
-                isDateBack, birthdayAlert, appType, trustDeclaration, niceActimize, pdfAmount, phResidency, phOtherCountry, reasonPurchaseHK, unpaidPremium, trustBeneficiaries, noFna, isSendToAFCChecked,
+                isDateBack, birthdayAlert, birthdayPassedAfterProposalAlert, appType, trustDeclaration, niceActimize, pdfAmount, phResidency, phOtherCountry, reasonPurchaseHK, unpaidPremium, trustBeneficiaries, noFna, isSendToAFCChecked,
                 showFinancialQuestionnaire, fqPurposeOfInsurance, fqSourceOfPremium, fqEarnedIncome, fqUnearnedIncome, fqAssets, fqLiabilities,
                 // Premium Financing dependencies
                 isPremiumFinancing, pfLoanAmount, pfLoanRate, pfLoanTenor, pfRepaymentAmount, pfIfsProvided, pfCustomerAuthorizationProvided]);
@@ -6367,6 +6416,9 @@ const showMed = (isPHNotSame && !isLifeOrCI)
                 }
                 if ((policyData.prodType === 'GIO' || policyData.prodType === 'Annuity') && policyData.birthdayAlert) {
                     msgs.push('Submit revised illustration with new age is required if payment date or document signed date is after insured\'s birthday. No back-dating will be allowed for saving plans or prepayments.');
+                }
+                if ((policyData.prodType === 'GIO' || policyData.prodType === 'Annuity') && policyData.birthdayPassedAfterProposalAlert) {
+                    msgs.push('(Pending) Please submit a revised illustration reflecting the new age, as the insured’s birthday has passed. No back-dating will be allowed for saving plans or prepayments.');
                 }
                 if (policyData.appType === 'Trust') {
                     msgs.push('Trust Application is subject to compliance clearance; further requirements may be required');
