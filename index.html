@@ -5844,7 +5844,7 @@ ${hnwFinancially || ''}`;
                                                 每月可用收入: {fnaDisposableIncome && fnaIncomePercent ? formatMoney((Number(fnaDisposableIncome) * Number(fnaIncomePercent) / 100)) : '0'}
                                                 ，可用資產: {fnaLiquidAssets && fnaAssetPercent ? formatMoney((Number(fnaLiquidAssets) * Number(fnaAssetPercent) / 100)) : '0'}
                                             </div>
-                                            {(planName === 'LionAchiever Elite' || planName === 'LionPrima') && (
+                                            {(planName === 'LionAchiever Elite' || planName === 'LionPrima' || isSendToAFCChecked) && (
                                                 <div className="grid grid-cols-2 gap-3">
                                                     <div><label className="text-xs font-bold text-slate-500">資金來源 (SoF)</label><MultiSelect options={SOF_OPTIONS} value={fnaSof} onChange={setFnaSof} placeholder="請選擇" /></div>
                                                     <div><label className="text-xs font-bold text-slate-500">財富來源 (SoW)</label><MultiSelect options={SOW_OPTIONS} value={fnaSow} onChange={setFnaSow} placeholder="請選擇" /></div>
@@ -6264,6 +6264,7 @@ const showMed = (isPHNotSame && !isLifeOrCI)
                     const planNameLower = (policyData.planName || '').toLowerCase();
                     if (
                         policyData.appType === 'Trust' ||
+                        policyData.requiredSendToAFC ||
                         policyData.lifeCiEmployerToggle ||
                         planNameLower === 'lionachiever elite'.toLowerCase() ||
                         planNameLower === 'lionprima'.toLowerCase() ||
@@ -6320,12 +6321,13 @@ const showMed = (isPHNotSame && !isLifeOrCI)
                         const holder = policyData.appType === 'Trust' ? 'Settlor' : 'Policyholder';
                         const ageStr = policyData.phAge !== undefined ? policyData.phAge : '';
                                                 const ageNum = Number(ageStr) || 0;
-                        if (assetHKD) {
+                        if (assetHKD || policyData.requiredSendToAFC) {
                             lines.push(`   => SoF and SoW appears to be commensurate with ${holder}’s background and no suspicions are found.`);
-                            if (ageNum && (ageNum - yearsToAccumulate) < 18) {
+                            if (assetHKD && ageNum && (ageNum - yearsToAccumulate) < 18) {
                                 lines.push(`   Considering the ${holder}’s age (${ageStr}) and the occupation, it is NOT reasonable to save the asset of ${formatHKDSign(assetHKD)}.`);
                             } else if (policyData.requiredSendToAFC) {
-                                lines.push(`   Considering the ${holder}’s age (${ageStr}) and the occupation, it is reasonable to save the asset of ${formatHKDSign(assetHKD)} => Suggest accepting AML.`);
+                                const assetText = assetHKD ? formatHKDSign(assetHKD) : 'N/A';
+                                lines.push(`   Considering the ${holder}’s age (${ageStr}) and the occupation, it is reasonable to save the asset of ${assetText} => Suggest accepting AML.`);
                             }
                         }
                     }
@@ -6975,6 +6977,7 @@ const shouldShowMed = () => {
                                 <div className="pl-4">=> Affordability {affordData.calculationResult.isPass ? 'Pass' : 'Failed'}</div>
                                 {policyData && (
                                     (policyData.appType === 'Trust') ||
+                                    policyData.requiredSendToAFC ||
                                     policyData.lifeCiEmployerToggle ||
                                     (policyData.planName && (
                                         policyData.planName.toLowerCase() === 'lionachiever elite'.toLowerCase() ||
@@ -7028,11 +7031,11 @@ const shouldShowMed = () => {
                                             {policyData.fnaSof && policyData.fnaSof.length ? <div>SoF: {policyData.fnaSof.join(', ')}</div> : null}
                                             {policyData.fnaSow && policyData.fnaSow.length ? <div>SoW: {policyData.fnaSow.join(', ')}</div> : null}
                                             {assetHKD && disposableMonthly ? <div>Assets take approx {years.toFixed(1)} years of disposable income to accumulate</div> : null}
-                                            {assetHKD ? <div>=> SoF and SoW appears to be commensurate with {holder}’s background and no suspicions are found.</div> : null}
-                                            {assetHKD ? (
-                                                (ageNum && (ageNum - years) < 18)
+                                            {(assetHKD || policyData.requiredSendToAFC) ? <div>=> SoF and SoW appears to be commensurate with {holder}’s background and no suspicions are found.</div> : null}
+                                            {(assetHKD || policyData.requiredSendToAFC) ? (
+                                                (assetHKD && ageNum && (ageNum - years) < 18)
                                                     ? <div>{`Considering the ${holder}’s age (${ageStr}) and the occupation, it is NOT reasonable to save the asset of ${formatHKDSign(assetHKD)}.`}</div>
-                                                    : (policyData.requiredSendToAFC ? <div>{`Considering the ${holder}’s age (${ageStr}) and the occupation, it is reasonable to save the asset of ${formatHKDSign(assetHKD)} => Suggest accepting AML.`}</div> : null)
+                                                    : (policyData.requiredSendToAFC ? <div>{`Considering the ${holder}’s age (${ageStr}) and the occupation, it is reasonable to save the asset of ${assetHKD ? formatHKDSign(assetHKD) : 'N/A'} => Suggest accepting AML.`}</div> : null)
                                             ) : null}
                                         </div>
                                     );
