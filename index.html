@@ -6221,7 +6221,8 @@ const showMed = (isPHNotSame && !isLifeOrCI)
                             // Edge case fix: If pre-retirement income is sufficient, show annual recurring amount even if post-retirement assets fail.
                             lines.push(`   ${isApplyingOnly ? 'Annual premium' : 'Total Annual Premiums'}: ${formatMoney(annualTotalHKD, 'HKD')}`);
                         } else if (mode === 'income') {
-                            lines.push(`   ${isApplyingOnly ? 'Annual premium' : 'Total annual premiums'}: ${formatMoney(totalPremHKD, 'HKD')}`);
+                            lines.push(`   ${isApplyingOnly ? 'Annual premium' : 'Total annual premiums'}: ${formatMoney(annualTotalHKD, 'HKD')}`);
+                            lines.push(`   Total premiums: ${formatMoney(totalPremHKD, 'HKD')}`);
                         } else {
                             lines.push(`   Total Premiums: ${formatMoney(totalPremHKD, 'HKD')}`);
                         }
@@ -6939,7 +6940,8 @@ const shouldShowMed = () => {
                                             lines.push(<div key="fna1" className="pl-4">{prefix}{isApplyingOnly ? 'Annual premium' : 'Total Annual Premiums'}: {formatMoney(annualTotalHKD, 'HKD')}{pdfSuffix}</div>);
                                         } else {
                                             if (mode === 'income') {
-                                                lines.push(<div key="fna1" className="pl-4">{prefix}{isApplyingOnly ? 'Annual premium' : 'Total annual premiums'}: {formatMoney(totalPremHKD, 'HKD')}{pdfSuffix}</div>);
+                                                lines.push(<div key="fna1" className="pl-4">{prefix}{isApplyingOnly ? 'Annual premium' : 'Total annual premiums'}: {formatMoney(annualTotalHKD, 'HKD')}{pdfSuffix}</div>);
+                                                lines.push(<div key="fna1b" className="pl-4">{prefix}Total Premiums: {formatMoney(totalPremHKD, 'HKD')}{pdfSuffix}</div>);
                                             } else {
                                                 lines.push(<div key="fna1" className="pl-4">{prefix}Total Premiums: {formatMoney(totalPremHKD, 'HKD')}{pdfSuffix}</div>);
                                             }
