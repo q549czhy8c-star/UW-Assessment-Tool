@@ -4297,6 +4297,14 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                 return calculateAge(hnwDOB, hnwAppSignDate);
             }, [hnwDOB, hnwAppSignDate]);
 
+            // Auto-fill FNA retire age with policyholder age when occupation is Retiree.
+            useEffect(() => {
+                if (occupationStatus !== "Retiree") return;
+                if (phAge === "" || phAge === null || phAge === undefined) return;
+                const policyholderAge = String(phAge);
+                setFnaRetireAge((prev) => (prev === policyholderAge ? prev : policyholderAge));
+            }, [occupationStatus, phAge]);
+
             // Update HNW warnings whenever relevant fields change
             useEffect(() => {
                 const warnings = [];
