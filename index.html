@@ -10,7 +10,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Updated version title -->
-    <title>UW assessment tool (v2.8.635)</title>
+    <title>UW assessment tool (v2.9.0)</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
 
@@ -3817,6 +3817,7 @@ const [addressProofType, setAddressProofType] = useState('');
             const [weight, setWeight] = useState('');
             const [isDateBack, setIsDateBack] = useState(false);
             const [isSamePerson, setIsSamePerson] = useState(true);
+            const [businessInsuranceEnabled, setBusinessInsuranceEnabled] = useState(false);
             const [proposalDate, setProposalDate] = useState("");
             const [signingDate, setSigningDate] = useState(""); // Kept for legacy compatibility if needed
             const [applicationSigningDate, setApplicationSigningDate] = useState("");
@@ -3970,6 +3971,7 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                         if (s.weight !== undefined) setWeight(s.weight);
                         if (s.isDateBack !== undefined) setIsDateBack(!!s.isDateBack);
                         if (s.isSamePerson !== undefined) setIsSamePerson(!!s.isSamePerson);
+                        if (s.businessInsuranceEnabled !== undefined) setBusinessInsuranceEnabled(!!s.businessInsuranceEnabled);
 
                         // Dates
                         if (s.proposalDate !== undefined) setProposalDate(s.proposalDate);
@@ -4104,6 +4106,7 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                         weight,
                         isDateBack,
                         isSamePerson,
+                        businessInsuranceEnabled,
                         proposalDate,
                         signingDate,
                         applicationSigningDate,
@@ -4208,7 +4211,7 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                     console.error('Failed to persist Policy Input full state', err);
                 }
             }, [
-                appType, trustReasonCompany, trustDeclaration, niceActimize, addressProofType, height, weight, isDateBack, isSamePerson,
+                appType, trustReasonCompany, trustDeclaration, niceActimize, addressProofType, height, weight, isDateBack, isSamePerson, businessInsuranceEnabled,
                 isEverestBroker, requiredSendToAFC,
                 proposalDate, signingDate, applicationSigningDate, fnaSigningDate,
                 phDob, phGender, phSmoker, phResidency, phOtherCountry, phArrivalDate, phExpiryDate, phIfsDate,
@@ -4972,6 +4975,7 @@ ${hnwFinancially || ''}`;
                         signingDate: signingDate || null,
                         addressProofType: addressProofType || null,
                         isSamePerson,
+                        businessInsuranceEnabled,
                         phAge, phGender, phSmoker, phDob,
                         insAge, insGender, insSmoker, insDob,
                         planName, sumAssured, curr, prodType, otherInsurances,
@@ -5024,13 +5028,13 @@ ${hnwFinancially || ''}`;
             }, [policyHydrated, phArrivalDate, fnaSigningDate, proposalDate, applicationSigningDate, signingDate, addressProofType, isSamePerson, phAge, phGender, phSmoker, phDob, insAge, insGender, insSmoker, insDob, planName, sumAssured, curr, prodType, otherInsurances, height, weight, medicalReq, financialReq, returnCheck, monthlyIncome, occupationStatus, position, employer, location, lifeCiEmployerToggle, bizNature, sofWealthSupplementType, premAmount, payMode, yearTerm, paymentDate, paymentCurrency, paymentAmount, paymentPayor, paymentMethod,
                 // Commission Spreading (Professional Investor - PI)
                 commissionSpreading, piInvestorType, piScenarioKey,
-                isDateBack, birthdayAlert, appType, trustDeclaration, niceActimize, pdfAmount, phResidency, phOtherCountry, reasonPurchaseHK, unpaidPremium, trustBeneficiaries, noFna, isSendToAFCChecked,
+                isDateBack, birthdayAlert, appType, businessInsuranceEnabled, trustDeclaration, niceActimize, pdfAmount, phResidency, phOtherCountry, reasonPurchaseHK, unpaidPremium, trustBeneficiaries, noFna, isSendToAFCChecked,
                 showFinancialQuestionnaire, fqPurposeOfInsurance, fqSourceOfPremium, fqEarnedIncome, fqUnearnedIncome, fqAssets, fqLiabilities,
                 // Premium Financing dependencies
                 isPremiumFinancing, pfLoanAmount, pfLoanRate, pfLoanTenor, pfRepaymentAmount, pfIfsProvided, pfCustomerAuthorizationProvided]);
 
             const handleResetPolicyInfo = () => {
-                setAppType('Individual'); setIsEverestBroker(false); setRequiredSendToAFC(false); setTrustDeclaration('No'); setNiceActimize(''); setAddressProofType(''); setHeight(''); setWeight(''); setIsSamePerson(true); setIsDateBack(false);
+                setAppType('Individual'); setIsEverestBroker(false); setRequiredSendToAFC(false); setTrustDeclaration('No'); setBusinessInsuranceEnabled(false); setNiceActimize(''); setAddressProofType(''); setHeight(''); setWeight(''); setIsSamePerson(true); setIsDateBack(false);
                 setProposalDate(""); setSigningDate(""); setApplicationSigningDate(""); setFnaSigningDate("");
                 setPhDob(""); setPhGender("M"); setPhSmoker("N"); setPhResidency("HK"); setPhOtherCountry(""); setPhArrivalDate(""); setPhExpiryDate(""); setPhIfsDate("");
                 setInsDob(""); setInsGender("M"); setInsSmoker("N"); setInsResidency("HK");
@@ -5158,9 +5162,13 @@ ${hnwFinancially || ''}`;
                                 {/* Render Trust Beneficiary card below Basic Information */}
                                 <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
                                     <div className="text-sm font-bold text-slate-700 uppercase tracking-wide border-l-4 border-blue-500 pl-2 mb-2">基本資料</div>
-                                    <div className="flex items-center gap-2 mb-4 p-2 bg-blue-50 rounded border border-blue-100">
+                                    <div className="flex items-center gap-2 mb-2 p-2 bg-blue-50 rounded border border-blue-100">
                                         <input type="checkbox" checked={isSamePerson} onChange={(e) =>setIsSamePerson(e.target.checked)} className="rounded text-blue-600"/>
                                         <span className="text-sm font-bold text-blue-800">受保人與持有人為同一人</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 mb-4 p-2 bg-amber-50 rounded border border-amber-200">
+                                        <input type="checkbox" checked={businessInsuranceEnabled} onChange={(e) => setBusinessInsuranceEnabled(e.target.checked)} className="rounded text-amber-600"/>
+                                        <span className="text-sm font-bold text-amber-800">Business Insurance 商業保險</span>
                                     </div>
                                     <div className="space-y-3 border-t pt-3">
                                         <div className="text-sm font-bold text-slate-700">{appType === 'Trust' ? 'Settlor (成立人 - formerly Policyholder)' : '持有人 (Policyholder)'}</div>
@@ -7390,11 +7398,164 @@ const shouldShowMed = () => {
         };
 
 
+        const BusinessInsuranceTab = () => {
+            const [policyData, setPolicyData] = useState(null);
+            const [biqCompleted, setBiqCompleted] = useState(false);
+            const [loanAgreementProvided, setLoanAgreementProvided] = useState(false);
+            const [ownershipPercent, setOwnershipPercent] = useState("");
+            const [companyMarketValue, setCompanyMarketValue] = useState("");
+            const [annualRemuneration, setAnnualRemuneration] = useState("");
+            const [companyGrossProfit3Y, setCompanyGrossProfit3Y] = useState("");
+            const [companyNetProfit3Y, setCompanyNetProfit3Y] = useState("");
+            const [loanAmount, setLoanAmount] = useState("");
+
+            useEffect(() => {
+                const hydrate = () => {
+                    try {
+                        const p = JSON.parse(localStorage.getItem('caseSummaryPolicyInfo') || 'null');
+                        setPolicyData(p);
+                    } catch (e) {
+                        setPolicyData(null);
+                    }
+                    try {
+                        const s = JSON.parse(localStorage.getItem('businessInsuranceState') || '{}');
+                        setBiqCompleted(!!s.biqCompleted);
+                        setLoanAgreementProvided(!!s.loanAgreementProvided);
+                        setOwnershipPercent(s.ownershipPercent || '');
+                        setCompanyMarketValue(s.companyMarketValue || '');
+                        setAnnualRemuneration(s.annualRemuneration || '');
+                        setCompanyGrossProfit3Y(s.companyGrossProfit3Y || '');
+                        setCompanyNetProfit3Y(s.companyNetProfit3Y || '');
+                        setLoanAmount(s.loanAmount || '');
+                    } catch (e) {}
+                };
+                hydrate();
+                window.addEventListener('caseSummaryUpdate', hydrate);
+                return () => window.removeEventListener('caseSummaryUpdate', hydrate);
+            }, []);
+
+            useEffect(() => {
+                const payload = { biqCompleted, loanAgreementProvided, ownershipPercent, companyMarketValue, annualRemuneration, companyGrossProfit3Y, companyNetProfit3Y, loanAmount };
+                localStorage.setItem('businessInsuranceState', JSON.stringify(payload));
+            }, [biqCompleted, loanAgreementProvided, ownershipPercent, companyMarketValue, annualRemuneration, companyGrossProfit3Y, companyNetProfit3Y, loanAmount]);
+
+            const purposes = policyData?.fqPurposeOfInsurance || [];
+            const hasPurpose = (txt) => purposes.some(p => p.includes(txt));
+            const isKeyPerson = hasPurpose('Key Person');
+            const isEmployeeBenefit = hasPurpose('Employee Benefit');
+            const isPartnership = hasPurpose('Partnership');
+            const isLoanProtection = hasPurpose('Business Loan');
+            const sumAssuredUSD = (() => {
+                const sa = Number(policyData?.sumAssured || 0);
+                if (!sa) return 0;
+                return policyData?.curr === 'HKD' ? sa / FIN_USD_RATE : sa;
+            })();
+
+            const isLionGuardianSeries = ['LionGuardian PlusOne', 'LionGuardian Beyond', 'LionAlong'].includes(policyData?.planName || '');
+            const requirementRows = [];
+            requirementRows.push({
+                label: 'Business Insurance Questionnaire (BIQ)',
+                ok: biqCompleted,
+                note: 'Business Insurance application必須提供 BIQ'
+            });
+            if (isLoanProtection) {
+                requirementRows.push({
+                    label: 'Loan protection agreement',
+                    ok: loanAgreementProvided,
+                    note: '申請 Loan protection 必須提供借貸合約'
+                });
+            }
+            if (isPartnership) {
+                const hasOwnership = Number(ownershipPercent) > 0 && Number(companyMarketValue) > 0;
+                requirementRows.push({
+                    label: '% of ownership × current market value',
+                    ok: hasOwnership,
+                    note: 'Partnership 需要填寫擁有權百分比及公司市值'
+                });
+            }
+            if (isKeyPerson) {
+                const hasKeyPersonSupport = Number(annualRemuneration) > 0 || Number(companyGrossProfit3Y) > 0 || Number(companyNetProfit3Y) > 0;
+                requirementRows.push({
+                    label: 'Key person financial basis',
+                    ok: hasKeyPersonSupport,
+                    note: '需填年薪、過去3年公司毛利、或過去3年公司淨利其中之一'
+                });
+            }
+            if (isLoanProtection) {
+                requirementRows.push({
+                    label: 'Loan amount',
+                    ok: Number(loanAmount) > 0,
+                    note: 'Loan protection 最高保障為貸款額 100%'
+                });
+            }
+
+            const hasFqPurpose = Array.isArray(purposes) && purposes.some((p) => p.startsWith('Business -'));
+
+            return (
+                <div className="h-full flex flex-col bg-slate-50 overflow-y-auto custom-scrollbar p-6 tab-content">
+                    <h2 className="text-lg font-bold text-slate-700 mb-4">Business Insurance Requirement Checking</h2>
+                    {!hasFqPurpose ? (
+                        <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded p-3 text-sm">請先於「保單資料輸入 > Financial Questionnaire > Purpose of Insurance」選擇 Business 類別用途，才可進行對應檢查。</div>
+                    ) : (
+                        <>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                                <div className="bg-white border border-slate-200 rounded p-3 text-sm"><span className="font-bold">Plan:</span> {policyData?.planName || '-'}</div>
+                                <div className="bg-white border border-slate-200 rounded p-3 text-sm"><span className="font-bold">Total Sum Assured (USD):</span> {sumAssuredUSD ? sumAssuredUSD.toLocaleString('en-US', { maximumFractionDigits: 0 }) : '-'}</div>
+                            </div>
+                            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                                <label className="flex items-center gap-2 text-sm font-medium"><input type="checkbox" checked={biqCompleted} onChange={(e) => setBiqCompleted(e.target.checked)} />BIQ 已完成</label>
+                                {isLoanProtection && <label className="flex items-center gap-2 text-sm font-medium"><input type="checkbox" checked={loanAgreementProvided} onChange={(e) => setLoanAgreementProvided(e.target.checked)} />借貸合約已提供</label>}
+                                {isPartnership && (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <div><label className="text-xs text-slate-500 font-bold">% of ownership</label><input type="number" value={ownershipPercent} onChange={(e)=>setOwnershipPercent(e.target.value)} className="w-full border rounded p-2 text-sm" /></div>
+                                        <div><label className="text-xs text-slate-500 font-bold">Current market value of company</label><input type="number" value={companyMarketValue} onChange={(e)=>setCompanyMarketValue(e.target.value)} className="w-full border rounded p-2 text-sm" /></div>
+                                    </div>
+                                )}
+                                {isKeyPerson && (
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                        <div><label className="text-xs text-slate-500 font-bold">Annual remuneration package</label><input type="number" value={annualRemuneration} onChange={(e)=>setAnnualRemuneration(e.target.value)} className="w-full border rounded p-2 text-sm" /></div>
+                                        <div><label className="text-xs text-slate-500 font-bold">Avg company gross profit (3y)</label><input type="number" value={companyGrossProfit3Y} onChange={(e)=>setCompanyGrossProfit3Y(e.target.value)} className="w-full border rounded p-2 text-sm" /></div>
+                                        <div><label className="text-xs text-slate-500 font-bold">Avg company net profit (3y)</label><input type="number" value={companyNetProfit3Y} onChange={(e)=>setCompanyNetProfit3Y(e.target.value)} className="w-full border rounded p-2 text-sm" /></div>
+                                    </div>
+                                )}
+                                {isLoanProtection && <div><label className="text-xs text-slate-500 font-bold">Loan amount</label><input type="number" value={loanAmount} onChange={(e)=>setLoanAmount(e.target.value)} className="w-full md:w-1/2 border rounded p-2 text-sm" /></div>}
+                            </div>
+                            <div className="mt-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                                <div className="text-sm font-bold mb-2">Requirement checking result</div>
+                                <div className="space-y-2">
+                                    {requirementRows.map((row, idx) => (
+                                        <div key={idx} className={`p-2 rounded border text-sm ${row.ok ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
+                                            <div className="font-semibold">{row.ok ? 'PASS' : 'MISSING'} - {row.label}</div>
+                                            <div className="text-xs mt-1">{row.note}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="text-xs text-slate-500 mt-3">{isLionGuardianSeries ? '已套用 LionGuardian 系列財務門檻提示。' : '已套用一般商業保險財務門檻提示。'}</div>
+                            </div>
+                        </>
+                    )}
+                </div>
+            );
+        };
+
+
         /* ========= Versioning & Update Log ========= */
         // Updated version constant to reflect latest enhancements
-        const CURRENT_VERSION = "v2.8.635";
+        const CURRENT_VERSION = "v2.9.0";
         const UPDATE_LOG_PASSWORD = "admin123";
         const versionHistory = [
+{
+    version: "v2.9.0",
+    date: "16 Apr 2026",
+    type: "Major Update",
+    changes: [
+        "Policy Info > 基本資料: Added new checkbox 'Business Insurance'.",
+        "Top navigation now conditionally adds a new 'Business Insurance' tab right after 保單資料輸入 when the checkbox is selected.",
+        "New Business Insurance page added for requirement checking based on policy inputs and business-purpose FQ selections, including extra fields such as % of ownership and company market value.",
+        "Added local persistence for Business Insurance inputs and reset cleanup.",
+        "Bumped application version to v2.9.0."
+    ]
+},
 {
     version: "v2.8.635",
     date: "01 Apr 2026",
@@ -7833,6 +7994,7 @@ const shouldShowMed = () => {
 
 const App = () => {
             const [activeTab, setActiveTab] = useState('policyInfo');
+            const [businessInsuranceEnabled, setBusinessInsuranceEnabled] = useState(false);
             // Global toast state. When copyToClipboard dispatches the 'showToast' event,
             // this state is set to show a temporary notification.
             const [toast, setToast] = useState({ show: false, message: '' });
@@ -8091,6 +8253,22 @@ const App = () => {
 
 
             useEffect(() => {
+                const syncBusinessInsurance = () => {
+                    try {
+                        const policy = JSON.parse(localStorage.getItem('policyInputFullState') || '{}');
+                        const summary = JSON.parse(localStorage.getItem('caseSummaryPolicyInfo') || '{}');
+                        const enabled = !!(policy.businessInsuranceEnabled || summary.businessInsuranceEnabled);
+                        setBusinessInsuranceEnabled(enabled);
+                        setActiveTab((prev) => (enabled || prev !== 'businessInsurance' ? prev : 'policyInfo'));
+                    } catch (e) {
+                        setBusinessInsuranceEnabled(false);
+                    }
+                };
+
+                syncBusinessInsurance();
+                window.addEventListener('caseSummaryUpdate', syncBusinessInsurance);
+                window.addEventListener('storage', syncBusinessInsurance);
+
                 const handler = (e) => {
                     const msg = e && e.detail ? e.detail : 'Copied';
                     setToast({ show: true, message: msg });
@@ -8104,6 +8282,8 @@ const App = () => {
 
                 window.addEventListener('showToast', handler);
                 return () => {
+                    window.removeEventListener('caseSummaryUpdate', syncBusinessInsurance);
+                    window.removeEventListener('storage', syncBusinessInsurance);
                     window.removeEventListener('showToast', handler);
                     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
                 };
@@ -8118,6 +8298,7 @@ const App = () => {
                     localStorage.removeItem('policyInfoForAffordability');
                     localStorage.removeItem('policyInputFullState');
                     localStorage.removeItem('affordabilityFullState');
+                    localStorage.removeItem('businessInsuranceState');
                 } catch (e) {}
                 window.location.reload();
             };
@@ -8386,6 +8567,7 @@ const App = () => {
                         <div className="flex gap-6 overflow-x-auto">
                             {/* Navigation order adjusted per requirements */}
                             <button onClick={() => setActiveTab('policyInfo')} className={`pb-3 px-2 flex items-center gap-2 transition-all border-b-2 ${activeTab === 'policyInfo' ? 'border-blue-600 text-blue-600 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700'}`}><FileText size={18}/> 保單資料輸入</button>
+                            {businessInsuranceEnabled && <button onClick={() => setActiveTab('businessInsurance')} className={`pb-3 px-2 flex items-center gap-2 transition-all border-b-2 ${activeTab === 'businessInsurance' ? 'border-blue-600 text-blue-600 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700'}`}><FileText size={18}/> Business Insurance</button>}
                             <button onClick={() => setActiveTab('affordability')} className={`pb-3 px-2 flex items-center gap-2 transition-all border-b-2 ${activeTab === 'affordability' ? 'border-blue-600 text-blue-600 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700'}`}><Calculator size={18}/> 負擔能力計算</button>
                             <button onClick={() => setActiveTab('summary')} className={`pb-3 px-2 flex items-center gap-2 transition-all border-b-2 ${activeTab === 'summary' ? 'border-blue-600 text-blue-600 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700'}`}><FileText size={18}/> Case Summary</button>
                             <button onClick={() => setActiveTab('splitter')} className={`pb-3 px-2 flex items-center gap-2 transition-all border-b-2 ${activeTab === 'splitter' ? 'border-blue-600 text-blue-600 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700'}`}><Split size={18}/> UN Screen</button>
@@ -8400,6 +8582,7 @@ const App = () => {
                     <div className="flex-1 overflow-hidden relative">
                         {/* Tab content order adjusted per requirements */}
                         <div style={{ display: activeTab === 'policyInfo' ? 'block' : 'none', height: '100%' }}><PolicyInfoTab onNavigate={setActiveTab} /></div>
+                        {businessInsuranceEnabled && <div style={{ display: activeTab === 'businessInsurance' ? 'block' : 'none', height: '100%' }}><BusinessInsuranceTab /></div>}
                         <div style={{ display: activeTab === 'affordability' ? 'block' : 'none', height: '100%' }}><AffordabilityTab /></div>
                         <div style={{ display: activeTab === 'summary' ? 'block' : 'none', height: '100%' }}><CaseSummaryTab onNavigate={setActiveTab} /></div>
                         <div style={{ display: activeTab === 'splitter' ? 'block' : 'none', height: '100%' }}><TextSplitterTab /></div>
