@@ -2233,6 +2233,19 @@ function formatResidentLoadingRule(rule) {
             return `${day} ${month} ${year}`;
         };
 
+        const normalizeDateInput = (dateStr) => {
+            const str = String(dateStr || '').trim();
+            return /^\d{4}-\d{2}-\d{2}$/.test(str) ? str : null;
+        };
+
+        const isDateWithinInclusiveRange = (dateStr, startStr, endStr) => {
+            const d = normalizeDateInput(dateStr);
+            const start = normalizeDateInput(startStr);
+            const end = normalizeDateInput(endStr);
+            if (!d || !start || !end) return false;
+            return d >= start && d <= end;
+        };
+
         // Global clipboard helper that also triggers a toast notification
         const copyToClipboard = (text, toastMessage = 'Copied') => {
             if (!text) return;
@@ -3971,7 +3984,7 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                         if (s.weight !== undefined) setWeight(s.weight);
                         if (s.isDateBack !== undefined) setIsDateBack(!!s.isDateBack);
                         if (s.isSamePerson !== undefined) setIsSamePerson(!!s.isSamePerson);
-                        if (s.businessInsuranceEnabled !== undefined) setBusinessInsuranceEnabled(!!s.businessInsuranceEnabled);
+                        setBusinessInsuranceEnabled(false);
 
                         // Dates
                         if (s.proposalDate !== undefined) setProposalDate(s.proposalDate);
@@ -4090,6 +4103,10 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                     setPolicyHydrated(true);
                 }
             }, []);
+
+            useEffect(() => {
+                if (businessInsuranceEnabled) setBusinessInsuranceEnabled(false);
+            }, [businessInsuranceEnabled]);
 
             // Save full Policy Input state for Export
             useEffect(() => {
@@ -4817,16 +4834,14 @@ ${hnwFinancially || ''}`;
                     msgs.push({ type: 'warning', text: 'please complete AML checklist for fly to buy client' });
                 }
                 const datesToCheck = [];
-                if (proposalDate) datesToCheck.push({ label: '印刷日期', date: new Date(proposalDate) });
-                if (signingDate) datesToCheck.push({ label: '簽署日期', date: new Date(signingDate) });
-                if (applicationSigningDate) datesToCheck.push({ label: '申請書簽署日期', date: new Date(applicationSigningDate) });
-                if (fnaSigningDate) datesToCheck.push({ label: '財務需求分析簽署日期', date: new Date(fnaSigningDate) });
+                if (proposalDate) datesToCheck.push({ label: '印刷日期', date: new Date(proposalDate), rawDate: proposalDate });
+                if (signingDate) datesToCheck.push({ label: '簽署日期', date: new Date(signingDate), rawDate: signingDate });
+                if (applicationSigningDate) datesToCheck.push({ label: '申請書簽署日期', date: new Date(applicationSigningDate), rawDate: applicationSigningDate });
+                if (fnaSigningDate) datesToCheck.push({ label: '財務需求分析簽署日期', date: new Date(fnaSigningDate), rawDate: fnaSigningDate });
 
                 if (appType !== 'Trust' && phResidency !== 'HK' && phArrivalDate && phExpiryDate) {
-                    const arr = new Date(phArrivalDate);
-                    const exp = new Date(phExpiryDate);
                     datesToCheck.forEach(item => {
-                        if (item.date < arr || item.date > exp) {
+                        if (!isDateWithinInclusiveRange(item.rawDate, phArrivalDate, phExpiryDate)) {
                             msgs.push({ type: 'error', text: `${item.label} 不在入境/逗留期限內` });
                         }
                     });
@@ -5167,7 +5182,7 @@ ${hnwFinancially || ''}`;
                                         <span className="text-sm font-bold text-blue-800">受保人與持有人為同一人</span>
                                     </div>
                                     <div className="flex items-center gap-2 mb-4 p-2 bg-amber-50 rounded border border-amber-200">
-                                        <input type="checkbox" checked={businessInsuranceEnabled} onChange={(e) => setBusinessInsuranceEnabled(e.target.checked)} className="rounded text-amber-600"/>
+                                        <input type="checkbox" checked={false} disabled className="rounded text-amber-600 opacity-60 cursor-not-allowed"/>
                                         <span className="text-sm font-bold text-amber-800">Business Insurance 商業保險</span>
                                     </div>
                                     <div className="space-y-3 border-t pt-3">
