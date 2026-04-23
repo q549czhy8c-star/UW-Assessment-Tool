@@ -4480,6 +4480,22 @@ ${hnwFinancially || ''}`;
 
             const selectedProductData = useMemo(() => PRODUCT_DB.find(p => p.name === planName), [planName]);
 
+            useEffect(() => {
+                if (appType !== 'Trust') return;
+                if (prodType !== 'CI') return;
+                setPlanName('');
+                setProdType('');
+            }, [appType, prodType]);
+
+            const trustPremiumTotalHKD = useMemo(() => {
+                if (appType !== 'Trust') return 0;
+                const premium = Number(String(premAmount || '').replace(/,/g, '')) || 0;
+                const pdf = (payMode === 'Prepay') ? (Number(String(pdfAmount || '').replace(/,/g, '')) || 0) : 0;
+                const total = premium + pdf;
+                if (!total) return 0;
+                return curr === 'USD' ? total * USD_RATE : total;
+            }, [appType, premAmount, pdfAmount, payMode, curr]);
+
             const residencyOptions = useMemo(() => {
                 const all = [
                     { val: 'HK', label: '香港 (Hong Kong)' },
@@ -4688,18 +4704,6 @@ ${hnwFinancially || ''}`;
                 return null;
             }, [prodType, proposalDate, isSamePerson, phDob, insDob]);
 
-            const birthdayPassedAlertShownRef = useRef(false);
-            useEffect(() => {
-                if (birthdayAlert?.birthdayPassedAfterPrintBeforeCurrent && !birthdayPassedAlertShownRef.current) {
-                    window.alert('受保人已過生日');
-                    birthdayPassedAlertShownRef.current = true;
-                    return;
-                }
-                if (!birthdayAlert?.birthdayPassedAfterPrintBeforeCurrent) {
-                    birthdayPassedAlertShownRef.current = false;
-                }
-            }, [birthdayAlert]);
-
             const fnaRangeInfo = useMemo(() => {
                 if (!sumAssured || !prodType) return null;
                 if (prodType !== 'Life' && prodType !== 'CI') return null;
@@ -4827,7 +4831,7 @@ ${hnwFinancially || ''}`;
 
             const checkCompliance = useMemo(() => {
                 let msgs = [];
-                if (birthdayAlert) {
+                if (birthdayAlert && !birthdayAlert.birthdayPassedAfterPrintBeforeCurrent) {
                     msgs.push({ type: 'warning', text: birthdayAlert.text, icon: <CalendarClock size={16}/> });
                 }
                 if (flyToBuyAmlRequired) {
@@ -5297,13 +5301,24 @@ ${hnwFinancially || ''}`;
                                             <label className="text-xs font-bold text-slate-500">計劃名稱</label>
                                             <select value={planName} onChange={(e) =>handlePlanChange(e.target.value)} className="w-full border rounded p-1.5 text-sm">
                                                 <option value="">請選擇...</option>
-                                                {['GIO', 'Life', 'CI', 'Annuity', 'HNW'].map(type => (
+                                                {['GIO', 'Life', 'CI', 'Annuity', 'HNW']
+                                                    .filter(type => !(appType === 'Trust' && type === 'CI'))
+                                                    .map(type => (
                                                     <optgroup key={type} label={type}>{productGroups[type]?.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}</optgroup>
                                                 ))}
                                             </select>
                                         </div>
                                         <div className="grid grid-cols-2 gap-3">
-                                            <div><label className="text-xs font-bold text-slate-500">印刷日期</label><input type="date" value={proposalDate} onChange={(e) =>setProposalDate(e.target.value)} className="w-full border rounded p-1.5 text-sm"/></div>
+                                            <div>
+                                                <label className="text-xs font-bold text-slate-500">印刷日期</label>
+                                                {birthdayAlert?.birthdayPassedAfterPrintBeforeCurrent && (
+                                                    <div className="mt-1 mb-1 p-2 rounded border border-orange-200 bg-orange-50 text-orange-700 text-xs font-bold flex items-center gap-1">
+                                                        <CalendarClock size={14}/>
+                                                        {birthdayAlert.text}
+                                                    </div>
+                                                )}
+                                                <input type="date" value={proposalDate} onChange={(e) =>setProposalDate(e.target.value)} className="w-full border rounded p-1.5 text-sm"/>
+                                            </div>
                                             <div><label className="text-xs font-bold text-slate-500">年期</label><input type="number" value={yearTerm} onChange={(e) =>setYearTerm(e.target.value)} className="w-full border rounded p-1.5 text-sm"/></div>
                                         </div>
                                         {prodType && <div className="bg-blue-50 px-3 py-2 rounded text-xs font-bold text-blue-700 flex justify-between"><span>產品類型: {prodType}</span>{selectedProductData?.multiplier && <span>(規則: 保額 x {selectedProductData.multiplier})</span>}</div>}
@@ -5326,6 +5341,11 @@ ${hnwFinancially || ''}`;
                                             </div>
                                             <div><label className="text-xs font-bold text-slate-500">保費</label><input type="number" value={premAmount} onChange={(e) =>setPremAmount(e.target.value)} className="w-full border rounded p-1.5 text-sm"/></div>
                                         </div>
+                                        {appType === 'Trust' && trustPremiumTotalHKD > 0 && trustPremiumTotalHKD < 100000 && (
+                                            <div className="mt-1 p-2 rounded border border-orange-200 bg-orange-50 text-orange-700 text-xs font-bold">
+                                                Trust case 提示：保費（包括預繳，如適用）低於港元 100,000。
+                                            </div>
+                                        )}
                                         {/* Premium Financing (PF) toggle and input fields */}
                                         <div className="flex items-center mt-2">
                                             <input type="checkbox" checked={isPremiumFinancing} onChange={(e) => setIsPremiumFinancing(e.target.checked)} className="mr-2" />
