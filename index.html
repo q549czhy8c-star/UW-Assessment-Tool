@@ -3214,21 +3214,6 @@ const HK_HOLIDAYS_2025_2026 = [
                 // dependencies for PF states
                 isPremiumFinancing, pfLoanAmount, pfLoanRate, pfLoanTenor, pfRepaymentAmount]);
 
-            // [UPDATE v2.8] When premium financing is toggled, automatically treat the applying policy as Single Pay
-            useEffect(() => {
-                // Do not run until hydration complete
-                if (!affHydrated) return;
-                setPolicies(prevPolicies => {
-                    return prevPolicies.map(p => {
-                        if (p.status === 'Applying') {
-                            // When PF is on, force payType to Single; when off, default to Regular if previously forced
-                            const forcedType = isPremiumFinancing ? 'Single' : (p.payType === 'Single' && p.status === 'Applying' ? 'Regular' : p.payType);
-                            return { ...p, payType: forcedType };
-                        }
-                        return p;
-                    });
-                });
-            }, [isPremiumFinancing, affHydrated]);
             // =========================================================
 
             const yearsToRetire = Math.max(0, retireAge - age);
@@ -3268,8 +3253,8 @@ const HK_HOLIDAYS_2025_2026 = [
                     const annualPremiumRaw = Number(p.premium);
                     const term = Number(p.term);
                     let premiumInHKD = p.currency === 'USD' ? annualPremiumRaw * USD_RATE : annualPremiumRaw;
-                    // Determine if this policy is treated as single pay: either user-selected or PF applying policy
-                    const isSinglePolicy = (p.payType === 'Single') || (isPremiumFinancing && p.status === 'Applying');
+                    // Determine if this policy is treated as single pay based on selected pay type
+                    const isSinglePolicy = (p.payType === 'Single');
 
                     if (isSinglePolicy) {
                         // For single pay, premium is paid once from assets; income is not used
