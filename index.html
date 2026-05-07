@@ -4583,20 +4583,26 @@ ${hnwFinancially || ''}`;
             const requiresNonEmpSelection = isNonEmployedElitePrimaCase || isNonEmployedOtherPlanCase;
 
             // Reveal Nature of Business + Job Title only after user selects context for non-employed cases
+            const isEddToComplianceChecked = useMemo(() => {
+                return requiredSendToAFC || appType === 'Trust' || isHighRisk || isEverestBroker;
+            }, [requiredSendToAFC, appType, isHighRisk, isEverestBroker]);
+
             const showBizJobFields = useMemo(() => {
+                if (isEddToComplianceChecked) return true;
                 if (!requiresNonEmpSelection) return true;
                 return !!sofWealthSupplementType;
-            }, [requiresNonEmpSelection, sofWealthSupplementType]);
+            }, [isEddToComplianceChecked, requiresNonEmpSelection, sofWealthSupplementType]);
 
             // Employer Name + Work Address:
             // - Elite/Prima non-employed: hidden until selection (existing v1.9 behavior)
             // - Other plans non-employed: ALWAYS hidden (v1.12)
             const showEmployerWorkFields = useMemo(() => {
+                if (isEddToComplianceChecked) return true;
                 if (!isEmployerInfoRequired) return false;
                 if (isNonEmployedOtherPlanCase) return false;
                 if (requiresNonEmpSelection) return !!sofWealthSupplementType;
                 return true;
-            }, [isEmployerInfoRequired, isNonEmployedOtherPlanCase, requiresNonEmpSelection, sofWealthSupplementType]);
+            }, [isEddToComplianceChecked, isEmployerInfoRequired, isNonEmployedOtherPlanCase, requiresNonEmpSelection, sofWealthSupplementType]);
 
             // Reset selection if trigger no longer matches
             useEffect(() => {
