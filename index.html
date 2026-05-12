@@ -7395,6 +7395,26 @@ const shouldShowMed = () => {
             }, [form]);
 
             const onFieldChange = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
+            const resetForm = () => {
+                const initialForm = {
+                    age: '',
+                    gender: '',
+                    resident: '',
+                    occupation: '',
+                    monthlyIncome: '',
+                    plan: '',
+                    tsaMed: '',
+                    tsaFin: '',
+                    healthCondition: '',
+                    height: '',
+                    weight: '',
+                    lapsedPeriod: '',
+                    hasNbSubmission: '',
+                    nbOffer: ''
+                };
+                setForm(initialForm);
+                localStorage.removeItem('psReinstatementState');
+            };
 
             const bmi = useMemo(() => {
                 const h = Number(form.height);
@@ -7407,7 +7427,7 @@ const shouldShowMed = () => {
 
             const summaryText = useMemo(() => {
                 return [
-                    `${form.age || '-'}/${form.gender || '-'}`,
+                    `${form.age || '-'}/${form.gender || '-'}/${form.resident || '-'}`,
                     `Occ declared at NB: ${form.occupation || '-'}, MI: HKD ${form.monthlyIncome || '-'}`,
                     ``,
                     `${form.plan || '-'}`,
@@ -7427,7 +7447,10 @@ const shouldShowMed = () => {
                 <div className="h-full flex flex-col bg-slate-50 overflow-y-auto custom-scrollbar p-6 tab-content">
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="text-lg font-bold text-slate-700">PS Reinstatement</h2>
-                        <button onClick={copySummary} className="text-xs bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700 flex items-center gap-1"><Copy size={12}/> Copy Summary</button>
+                        <div className="flex items-center gap-2">
+                            <button onClick={resetForm} className="text-xs bg-slate-200 text-slate-700 px-3 py-1.5 rounded hover:bg-slate-300">Reset Data</button>
+                            <button onClick={copySummary} className="text-xs bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700 flex items-center gap-1"><Copy size={12}/> Copy Summary</button>
+                        </div>
                     </div>
                     <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div><label className="text-xs text-slate-500 font-bold">Age</label><input type="number" value={form.age} onChange={(e)=>onFieldChange('age', e.target.value)} className="w-full border rounded p-2 text-sm"/></div>
