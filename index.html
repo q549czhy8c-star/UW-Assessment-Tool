@@ -3802,7 +3802,7 @@ const HK_HOLIDAYS_2025_2026 = [
         // ==========================================
         // Tab 3: Policy Info Component
         // ==========================================
-        const PolicyInfoTab = ({ onNavigate }) => {
+        const PolicyInfoTab = ({ onNavigate, onPsReinstatementToggle }) => {
             // Application-level states
             const [appType, setAppType] = useState('Individual');
             const [isEverestBroker, setIsEverestBroker] = useState(false);
@@ -3816,6 +3816,7 @@ const [addressProofType, setAddressProofType] = useState('');
             const [isDateBack, setIsDateBack] = useState(false);
             const [isSamePerson, setIsSamePerson] = useState(true);
             const [businessInsuranceEnabled, setBusinessInsuranceEnabled] = useState(false);
+            const [psReinstatementEnabled, setPsReinstatementEnabled] = useState(false);
             const [proposalDate, setProposalDate] = useState("");
             const [signingDate, setSigningDate] = useState(""); // Kept for legacy compatibility if needed
             const [applicationSigningDate, setApplicationSigningDate] = useState("");
@@ -4081,6 +4082,7 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                         if (s.unpaidPremium !== undefined) setUnpaidPremium(!!s.unpaidPremium);
                         if (s.reasonPurchaseHK !== undefined) setReasonPurchaseHK(s.reasonPurchaseHK);
                         if (Array.isArray(s.otherInsurances)) setOtherInsurances(normalizeOtherInsuranceList(s.otherInsurances, s.curr || curr));
+                        if (s.psReinstatementEnabled !== undefined) setPsReinstatementEnabled(!!s.psReinstatementEnabled);
                     }
                 } catch (err) {
                     console.error('Failed to hydrate Policy Input from import', err);
@@ -4109,6 +4111,7 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                         isDateBack,
                         isSamePerson,
                         businessInsuranceEnabled,
+                        psReinstatementEnabled,
                         proposalDate,
                         signingDate,
                         applicationSigningDate,
@@ -4213,7 +4216,7 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                     console.error('Failed to persist Policy Input full state', err);
                 }
             }, [
-                appType, trustReasonCompany, trustDeclaration, niceActimize, addressProofType, height, weight, isDateBack, isSamePerson, businessInsuranceEnabled,
+                appType, trustReasonCompany, trustDeclaration, niceActimize, addressProofType, height, weight, isDateBack, isSamePerson, businessInsuranceEnabled, psReinstatementEnabled,
                 isEverestBroker, requiredSendToAFC,
                 proposalDate, signingDate, applicationSigningDate, fnaSigningDate,
                 phDob, phGender, phSmoker, phResidency, phOtherCountry, phArrivalDate, phExpiryDate, phIfsDate,
@@ -4234,6 +4237,9 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                 policyHydrated
             ]);
             // =========================================================
+            useEffect(() => {
+                if (onPsReinstatementToggle) onPsReinstatementToggle(psReinstatementEnabled);
+            }, [psReinstatementEnabled, onPsReinstatementToggle]);
 
             const wrapperRef = useRef(null);
 
@@ -5154,6 +5160,16 @@ ${hnwFinancially || ''}`;
                             <span className="text-[11px] text-slate-600">
                                 {isAfcAutoRequired ? 'Trust / 高風險地區 / Everest broker / Jumbo case 會自動勾選且不能取消。' : '可自行勾選。'}
                             </span>
+                        </div>
+                        <div className="mt-1 mb-3 flex items-center gap-2">
+                            <label className="text-xs font-bold text-slate-700">Enable PS reinstatement tab:</label>
+                            <input
+                                type="checkbox"
+                                checked={psReinstatementEnabled}
+                                onChange={(e) => setPsReinstatementEnabled(e.target.checked)}
+                                className="h-4 w-4"
+                            />
+                            <span className="text-[11px] text-slate-600">勾選後才顯示上方 PS reinstatement 分頁。</span>
                         </div>
                         <div className="space-y-2 mb-6">
                             {isHighRisk && <div className="p-3 rounded border flex items-center gap-2 text-sm font-bold bg-red-100 border-red-300 text-red-800"><AlertTriangle size={16}/>⚠️ 高風險地區：請提交地址證明 (Address Proof Required)</div>}
@@ -8116,6 +8132,7 @@ const shouldShowMed = () => {
 const App = () => {
             const [activeTab, setActiveTab] = useState('policyInfo');
             const [businessInsuranceEnabled, setBusinessInsuranceEnabled] = useState(false);
+            const [psReinstatementEnabled, setPsReinstatementEnabled] = useState(false);
             // Global toast state. When copyToClipboard dispatches the 'showToast' event,
             // this state is set to show a temporary notification.
             const [toast, setToast] = useState({ show: false, message: '' });
@@ -8380,6 +8397,7 @@ const App = () => {
                         const summary = JSON.parse(localStorage.getItem('caseSummaryPolicyInfo') || '{}');
                         const enabled = !!(policy.businessInsuranceEnabled || summary.businessInsuranceEnabled);
                         setBusinessInsuranceEnabled(enabled);
+                        setPsReinstatementEnabled(!!policy.psReinstatementEnabled);
                         setActiveTab((prev) => (enabled || prev !== 'businessInsurance' ? prev : 'policyInfo'));
                     } catch (e) {
                         setBusinessInsuranceEnabled(false);
@@ -8409,6 +8427,12 @@ const App = () => {
                     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
                 };
             }, []);
+
+            useEffect(() => {
+                if (!psReinstatementEnabled && activeTab === 'psReinstatement') {
+                    setActiveTab('policyInfo');
+                }
+            }, [psReinstatementEnabled, activeTab]);
 
 
             const handleResetAll = () => {
@@ -8688,7 +8712,7 @@ const App = () => {
                         <div className="flex gap-6 overflow-x-auto">
                             {/* Navigation order adjusted per requirements */}
                             <button onClick={() => setActiveTab('policyInfo')} className={`pb-3 px-2 flex items-center gap-2 transition-all border-b-2 ${activeTab === 'policyInfo' ? 'border-blue-600 text-blue-600 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700'}`}><FileText size={18}/> 保單資料輸入</button>
-                            <button onClick={() => setActiveTab('psReinstatement')} className={`pb-3 px-2 flex items-center gap-2 transition-all border-b-2 ${activeTab === 'psReinstatement' ? 'border-blue-600 text-blue-600 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700'}`}><ClipboardList size={18}/> PS reinstatement</button>
+                            {psReinstatementEnabled && <button onClick={() => setActiveTab('psReinstatement')} className={`pb-3 px-2 flex items-center gap-2 transition-all border-b-2 ${activeTab === 'psReinstatement' ? 'border-blue-600 text-blue-600 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700'}`}><ClipboardList size={18}/> PS reinstatement</button>}
                             {businessInsuranceEnabled && <button onClick={() => setActiveTab('businessInsurance')} className={`pb-3 px-2 flex items-center gap-2 transition-all border-b-2 ${activeTab === 'businessInsurance' ? 'border-blue-600 text-blue-600 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700'}`}><FileText size={18}/> Business Insurance</button>}
                             <button onClick={() => setActiveTab('affordability')} className={`pb-3 px-2 flex items-center gap-2 transition-all border-b-2 ${activeTab === 'affordability' ? 'border-blue-600 text-blue-600 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700'}`}><Calculator size={18}/> 負擔能力計算</button>
                             <button onClick={() => setActiveTab('summary')} className={`pb-3 px-2 flex items-center gap-2 transition-all border-b-2 ${activeTab === 'summary' ? 'border-blue-600 text-blue-600 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700'}`}><FileText size={18}/> Case Summary</button>
@@ -8703,8 +8727,8 @@ const App = () => {
                     </div>
                     <div className="flex-1 overflow-hidden relative">
                         {/* Tab content order adjusted per requirements */}
-                        <div style={{ display: activeTab === 'policyInfo' ? 'block' : 'none', height: '100%' }}><PolicyInfoTab onNavigate={setActiveTab} /></div>
-                        <div style={{ display: activeTab === 'psReinstatement' ? 'block' : 'none', height: '100%' }}><PsReinstatementTab /></div>
+                        <div style={{ display: activeTab === 'policyInfo' ? 'block' : 'none', height: '100%' }}><PolicyInfoTab onNavigate={setActiveTab} onPsReinstatementToggle={setPsReinstatementEnabled} /></div>
+                        {psReinstatementEnabled && <div style={{ display: activeTab === 'psReinstatement' ? 'block' : 'none', height: '100%' }}><PsReinstatementTab /></div>}
                         {businessInsuranceEnabled && <div style={{ display: activeTab === 'businessInsurance' ? 'block' : 'none', height: '100%' }}><BusinessInsuranceTab /></div>}
                         <div style={{ display: activeTab === 'affordability' ? 'block' : 'none', height: '100%' }}><AffordabilityTab /></div>
                         <div style={{ display: activeTab === 'summary' ? 'block' : 'none', height: '100%' }}><CaseSummaryTab onNavigate={setActiveTab} /></div>
