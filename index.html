@@ -7142,6 +7142,35 @@ const shouldShowMed = () => {
             const [cMinorEn, setCMinorEn] = useState('');
             const [cMinorCn, setCMinorCn] = useState('');
             const [metastasis, setMetastasis] = useState(false);
+            const IMPAIRMENT_OPTIONS = [
+                { code: 'HABIT', detail: 'alcohol/smoke/drug habit' },
+                { code: 'AML', detail: 'AML' },
+                { code: 'TUM', detail: 'tumour' },
+                { code: 'BU', detail: 'build' },
+                { code: 'BP', detail: 'blood pressure' },
+                { code: 'CA', detail: 'cancer' },
+                { code: 'CVA', detail: 'cerebrovascular/heart' },
+                { code: 'DEM', detail: 'dermatology' },
+                { code: 'ENDO', detail: 'endocrine/metabolic' },
+                { code: 'EENT', detail: 'eye ear nose throat' },
+                { code: 'FH', detail: 'family history' },
+                { code: 'GEO', detail: 'geographical' },
+                { code: 'GI', detail: 'gastrointestinal' },
+                { code: 'GU', detail: 'genitourinary' },
+                { code: 'AV', detail: 'avocation' },
+                { code: 'HEM', detail: 'hematology' },
+                { code: 'INFE', detail: 'infectious' },
+                { code: 'MUS', detail: 'musculoskeletal/connective tissue' },
+                { code: 'NEU', detail: 'neurology' },
+                { code: 'OA', detail: 'overage' },
+                { code: 'OCC', detail: 'occupation' },
+                { code: 'REP', detail: 'respiratory' },
+                { code: 'PSY', detail: 'psychiatry' },
+                { code: 'PRE', detail: 'prematurity' },
+                { code: 'OTHER', detail: 'Other - pls specify' }
+            ];
+            const [impairmentSearch, setImpairmentSearch] = useState('');
+            const [selectedImpairmentCode, setSelectedImpairmentCode] = useState('');
 
             const nonCancerItems = useMemo(() => {
                 if (!ncMajorEn && !ncMajorCn && !ncMinorEn && !ncMinorCn) return [];
@@ -7187,6 +7216,17 @@ const shouldShowMed = () => {
                 });
                 return items;
             }, [cMajorEn, cMinorEn, cMajorCn, cMinorCn, metastasis]);
+            const filteredImpairments = useMemo(() => {
+                const keyword = impairmentSearch.trim().toLowerCase();
+                if (!keyword) return IMPAIRMENT_OPTIONS;
+                return IMPAIRMENT_OPTIONS.filter(({ code, detail }) =>
+                    code.toLowerCase().includes(keyword) || detail.toLowerCase().includes(keyword)
+                );
+            }, [impairmentSearch]);
+            const selectedImpairment = useMemo(
+                () => IMPAIRMENT_OPTIONS.find(({ code }) => code === selectedImpairmentCode),
+                [selectedImpairmentCode]
+            );
 
             // Use global copyToClipboard helper. Local alerts removed; toast will be shown globally.
 
@@ -7241,6 +7281,52 @@ const shouldShowMed = () => {
                                     })}
                                 </div>
                             )}
+                        </div>
+                        <div className="bg-white p-4 rounded border border-slate-200 shadow-sm">
+                            <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
+                                <div className="font-bold text-slate-700">Impairments</div>
+                                <div className="flex items-center gap-2">
+                                    <div className="relative">
+                                        <Search size={16} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
+                                        <input
+                                            type="text"
+                                            placeholder="Search"
+                                            value={impairmentSearch}
+                                            onChange={(e) => setImpairmentSearch(e.target.value)}
+                                            className="border rounded pl-8 pr-2 py-1 text-sm w-56"
+                                        />
+                                    </div>
+                                    <button
+                                        onClick={() => selectedImpairment && copyToClipboard(selectedImpairment.detail)}
+                                        disabled={!selectedImpairment}
+                                        className={`text-xs px-2 py-1 rounded ${selectedImpairment ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}
+                                    >
+                                        Copy Detail
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="border border-slate-200 rounded overflow-hidden">
+                                <div className="grid grid-cols-12 bg-slate-100 text-xs font-bold text-slate-600">
+                                    <div className="col-span-3 p-2">Code</div>
+                                    <div className="col-span-9 p-2">Detail</div>
+                                </div>
+                                <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                                    {filteredImpairments.map(({ code, detail }) => (
+                                        <button
+                                            key={code}
+                                            type="button"
+                                            onClick={() => setSelectedImpairmentCode(code)}
+                                            className={`w-full grid grid-cols-12 text-left text-sm border-t border-slate-100 hover:bg-blue-50 ${selectedImpairmentCode === code ? 'bg-blue-100' : 'bg-white'}`}
+                                        >
+                                            <div className="col-span-3 p-2 font-semibold text-slate-700">{code}</div>
+                                            <div className="col-span-9 p-2 text-slate-700">{detail}</div>
+                                        </button>
+                                    ))}
+                                    {filteredImpairments.length === 0 && (
+                                        <div className="p-3 text-sm text-slate-400 text-center border-t border-slate-100">No matching impairment found.</div>
+                                    )}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
