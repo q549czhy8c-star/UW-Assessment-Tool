@@ -7869,6 +7869,7 @@ const shouldShowMed = () => {
         // Updated version constant to reflect latest enhancements
         const CURRENT_VERSION = "v2.9.0";
         const UPDATE_LOG_PASSWORD = "admin123";
+        const SALARY_BENCHMARK_PAGE = "./salary-benchmark-dashboard-single.html";
         const versionHistory = [
 {
     version: "v2.9.0",
@@ -8317,6 +8318,14 @@ const shouldShowMed = () => {
             }
         ];
         /* =========================================== */
+
+        const SalaryBenchmarkTab = () => (
+            <iframe
+                title="Salary Benchmark"
+                src={SALARY_BENCHMARK_PAGE}
+                className="w-full h-full border-0 bg-white"
+            />
+        );
 
 const App = () => {
             const [activeTab, setActiveTab] = useState('policyInfo');
@@ -8908,8 +8917,9 @@ const App = () => {
                             <button onClick={() => setActiveTab('splitter')} className={`pb-3 px-2 flex items-center gap-2 transition-all border-b-2 ${activeTab === 'splitter' ? 'border-blue-600 text-blue-600 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700'}`}><Split size={18}/> UN Screen</button>
                             <button onClick={() => setActiveTab('pending')} className={`pb-3 px-2 flex items-center gap-2 transition-all border-b-2 ${activeTab === 'pending' ? 'border-blue-600 text-blue-600 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700'}`}><FileText size={18}/> Pending message sample</button>
                             <button onClick={() => setActiveTab('exclusion')} className={`pb-3 px-2 flex items-center gap-2 transition-all border-b-2 ${activeTab === 'exclusion' ? 'border-blue-600 text-blue-600 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700'}`}><Info size={18}/> Exclusion Code</button>
-                            {/* Occupation tab moved to last */}
+                            {/* Occupation-related tabs */}
                             <button onClick={() => setActiveTab('occupation')} className={`pb-3 px-2 flex items-center gap-2 transition-all border-b-2 ${activeTab === 'occupation' ? 'border-blue-600 text-blue-600 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700'}`}><Briefcase size={18}/> Occupation Rating</button>
+                            <button onClick={() => setActiveTab('salaryBenchmark')} className={`pb-3 px-2 flex items-center gap-2 transition-all border-b-2 ${activeTab === 'salaryBenchmark' ? 'border-blue-600 text-blue-600 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700'}`}><Calculator size={18}/> Salary Benchmark</button>
                             {/* New Master Broker List tab */}
                             <button onClick={() => setActiveTab('broker')} className={`pb-3 px-2 flex items-center gap-2 transition-all border-b-2 ${activeTab === 'broker' ? 'border-blue-600 text-blue-600 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>Master Broker List</button>
                         </div>
@@ -8925,6 +8935,7 @@ const App = () => {
                         <div style={{ display: activeTab === 'pending' ? 'block' : 'none', height: '100%' }}><PendingMessageTab /></div>
                         <div style={{ display: activeTab === 'exclusion' ? 'block' : 'none', height: '100%' }}><ExclusionCodeTab /></div>
                         <div style={{ display: activeTab === 'occupation' ? 'block' : 'none', height: '100%' }}><OccupationTab /></div>
+                        <div style={{ display: activeTab === 'salaryBenchmark' ? 'block' : 'none', height: '100%' }}><SalaryBenchmarkTab /></div>
                         <div style={{ display: activeTab === 'broker' ? 'block' : 'none', height: '100%' }}><BrokerListTab /></div>
                     </div>
                     {toast.show && (
