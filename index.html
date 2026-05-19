@@ -4308,6 +4308,16 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
             // - If Policyholder != Insured: insuredAgeForCalc == insAge (derived from Insured DOB)
             const insuredAgeForCalc = isSamePerson ? phAge : insAge;
 
+            const investmentPeriodDisplay = useMemo(() => {
+                if (targetYear !== "" && targetYear !== null && targetYear !== undefined) {
+                    return `${Number(targetYear)} years`;
+                }
+                if (phAge === "" || phAge === null || phAge === undefined) {
+                    return "N/A";
+                }
+                return `${Math.max(Number(phAge) - 25, 0)} years`;
+            }, [targetYear, phAge]);
+
             // Compute HNW age based on DOB and application sign date
             const hnwAge = useMemo(() => {
                 if (!hnwDOB || !hnwAppSignDate) return "";
@@ -5912,7 +5922,7 @@ ${hnwFinancially || ''}`;
                                                     <a href="https://www.tradingview.com/symbols/TWSE-TAIEX/" target="_blank" rel="noopener noreferrer" className="underline ml-1">TWN</a> /
                                                     <a href="https://www.tradingview.com/symbols/KRX-KOSPI/" target="_blank" rel="noopener noreferrer" className="underline ml-1">KOR</a> /
                                                     <a href="https://www.tradingview.com/symbols/SET-SET/" target="_blank" rel="noopener noreferrer" className="underline ml-1">THA</a>
-                                                    <span className="ml-2">Investment period: {targetYear ? `${Number(targetYear)} years` : 'N/A'}</span>
+                                                    <span className="ml-2">Investment period: {investmentPeriodDisplay}</span>
                                                 </div>
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                                     <div><label className="text-xs font-bold text-slate-500">可支配月收入 (HKD)</label><input type="number" value={fnaDisposableIncome} onChange={(e) =>setFnaDisposableIncome(e.target.value)} className="w-full border rounded p-1.5 text-sm bg-amber-50 border-amber-200" /></div>
