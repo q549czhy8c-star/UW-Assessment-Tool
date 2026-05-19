@@ -5897,23 +5897,25 @@ ${hnwFinancially || ''}`;
                                             )}
                                         </div>
                                             <div className="mt-4 space-y-3">
-                                            <div><label className="text-xs font-bold text-slate-500">預期退休年齡</label><input type="number" value={fnaRetireAge} onChange={(e) =>setFnaRetireAge(e.target.value)} className="w-full border rounded p-1.5 text-sm" /></div>
                                             <div className="grid grid-cols-3 gap-3">
-                                                <div><label className="text-xs font-bold text-slate-500">可支配月收入 (HKD)</label><input type="number" value={fnaDisposableIncome} onChange={(e) =>setFnaDisposableIncome(e.target.value)} className="w-full border rounded p-1.5 text-sm" /></div>
+                                                <div><label className="text-xs font-bold text-slate-500">預期退休年齡</label><input type="number" value={fnaRetireAge} onChange={(e) =>setFnaRetireAge(e.target.value)} className="w-full border rounded p-1.5 text-sm" /></div>
                                                 <div><label className="text-xs font-bold text-slate-500">儲蓄比率 (%)</label><input type="number" value={fnaSavingRate} onChange={(e) =>setFnaSavingRate(e.target.value)} className="w-full border rounded p-1.5 text-sm" /></div>
-                                                <div><label className="text-xs font-bold text-slate-500">收入使用比例 (%)</label><input type="number" value={fnaIncomePercent} onChange={(e) =>setFnaIncomePercent(e.target.value)} className="w-full border rounded p-1.5 text-sm" /></div>
-                                            </div>
-                                            <div>
-                                                <label className="text-xs font-bold text-slate-500">年化利率 (%) - 指數參考</label>
-                                                <input type="number" value={fnaAnnualInterestRate} onChange={(e) =>setFnaAnnualInterestRate(e.target.value)} className="w-full border rounded p-1.5 text-sm" />
-                                                <div className="text-[10px] text-blue-600 mt-1">
-                                                    參考連結：
-                                                    <a href="https://www.tradingview.com/symbols/SSE-000001/" target="_blank" rel="noopener noreferrer" className="underline ml-1">SSE</a> /
-                                                    <a href="https://www.tradingview.com/symbols/HKEX-HSI/" target="_blank" rel="noopener noreferrer" className="underline ml-1">HSI</a> /
-                                                    <a href="https://www.tradingview.com/symbols/TWSE-TAIEX/" target="_blank" rel="noopener noreferrer" className="underline ml-1">TAIEX</a> /
-                                                    <a href="https://www.tradingview.com/symbols/KRX-KOSPI/" target="_blank" rel="noopener noreferrer" className="underline ml-1">KOSPI</a> /
-                                                    <a href="https://www.tradingview.com/symbols/SET-SET/" target="_blank" rel="noopener noreferrer" className="underline ml-1">SET</a>
+                                                <div>
+                                                    <label className="text-xs font-bold text-slate-500">年化利率 (%) - 指數參考</label>
+                                                    <input type="number" value={fnaAnnualInterestRate} onChange={(e) =>setFnaAnnualInterestRate(e.target.value)} className="w-full border rounded p-1.5 text-sm" />
+                                                    <div className="text-[10px] text-blue-600 mt-1">
+                                                        參考連結：
+                                                        <a href="https://www.tradingview.com/symbols/SSE-000001/" target="_blank" rel="noopener noreferrer" className="underline ml-1">SSE</a> /
+                                                        <a href="https://www.tradingview.com/symbols/HKEX-HSI/" target="_blank" rel="noopener noreferrer" className="underline ml-1">HSI</a> /
+                                                        <a href="https://www.tradingview.com/symbols/TWSE-TAIEX/" target="_blank" rel="noopener noreferrer" className="underline ml-1">TAIEX</a> /
+                                                        <a href="https://www.tradingview.com/symbols/KRX-KOSPI/" target="_blank" rel="noopener noreferrer" className="underline ml-1">KOSPI</a> /
+                                                        <a href="https://www.tradingview.com/symbols/SET-SET/" target="_blank" rel="noopener noreferrer" className="underline ml-1">SET</a>
+                                                    </div>
                                                 </div>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div><label className="text-xs font-bold text-slate-500">可支配月收入 (HKD)</label><input type="number" value={fnaDisposableIncome} onChange={(e) =>setFnaDisposableIncome(e.target.value)} className="w-full border rounded p-1.5 text-sm" /></div>
+                                                <div><label className="text-xs font-bold text-slate-500">收入使用比例 (%)</label><input type="number" value={fnaIncomePercent} onChange={(e) =>setFnaIncomePercent(e.target.value)} className="w-full border rounded p-1.5 text-sm" /></div>
                                             </div>
                                             <div className="grid grid-cols-2 gap-3">
                                                 <div><label className="text-xs font-bold text-slate-500">資產 (HKD)</label><input type="number" value={fnaLiquidAssets} onChange={(e) =>setFnaLiquidAssets(e.target.value)} className="w-full border rounded p-1.5 text-sm" /></div>
