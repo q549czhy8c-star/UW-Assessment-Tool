@@ -5866,7 +5866,8 @@ ${hnwFinancially || ''}`;
                                         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                                             <div className="space-y-3 p-3 rounded-lg border border-slate-200 bg-white">
                                                 <div className="text-xs font-bold text-slate-600">目標與回報</div>
-                                                <div><label className="text-xs font-bold text-slate-500">簽署日期</label><input type="date" value={fnaSigningDate} onChange={(e) =>setFnaSigningDate(e.target.value)} className="w-full border rounded p-1.5 text-sm bg-amber-50 border-amber-200" /></div>
+                                                <div><label className="text-xs font-bold text-slate-500">簽署日期</label><input type="date" value={fnaSigningDate} onChange={(e) =>setFnaSigningDate(e.target.value)} className="w-full border rounded p-1.5 text-sm bg-amber-50 border-amber-200" />
+                                                </div>
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                                     <div><label className="text-xs font-bold text-slate-500">目標儲蓄 (HKD)</label><input type="number" value={targetSavingHKD} onChange={(e) =>setTargetSavingHKD(e.target.value)} className="w-full border rounded p-1.5 text-sm bg-amber-50 border-amber-200"/></div>
                                                     <div><label className="text-xs font-bold text-slate-500">目標年期</label><input type="number" value={targetYear} onChange={(e) =>setTargetYear(e.target.value)} className="w-full border rounded p-1.5 text-sm bg-amber-50 border-amber-200"/></div>
@@ -5905,12 +5906,13 @@ ${hnwFinancially || ''}`;
                                                     <div><label className="text-xs font-bold text-slate-500">年化利率 (%)</label><input type="number" value={fnaAnnualInterestRate} onChange={(e) =>setFnaAnnualInterestRate(e.target.value)} className="w-full border rounded p-1.5 text-sm bg-amber-50 border-amber-200" /></div>
                                                 </div>
                                                 <div className="text-[10px] text-blue-600 -mt-1">
-                                                    參考連結：
-                                                    <a href="https://www.tradingview.com/symbols/SSE-000001/" target="_blank" rel="noopener noreferrer" className="underline ml-1">SSE</a> /
-                                                    <a href="https://www.tradingview.com/symbols/HKEX-HSI/" target="_blank" rel="noopener noreferrer" className="underline ml-1">HSI</a> /
-                                                    <a href="https://www.tradingview.com/symbols/TWSE-TAIEX/" target="_blank" rel="noopener noreferrer" className="underline ml-1">TAIEX</a> /
-                                                    <a href="https://www.tradingview.com/symbols/KRX-KOSPI/" target="_blank" rel="noopener noreferrer" className="underline ml-1">KOSPI</a> /
-                                                    <a href="https://www.tradingview.com/symbols/SET-SET/" target="_blank" rel="noopener noreferrer" className="underline ml-1">SET</a>
+                                                    Stock index參考連結：
+                                                    <a href="https://www.tradingview.com/symbols/SSE-000001/" target="_blank" rel="noopener noreferrer" className="underline ml-1">CHN</a> /
+                                                    <a href="https://www.tradingview.com/symbols/HKEX-HSI/" target="_blank" rel="noopener noreferrer" className="underline ml-1">HKG</a> /
+                                                    <a href="https://www.tradingview.com/symbols/TWSE-TAIEX/" target="_blank" rel="noopener noreferrer" className="underline ml-1">TWN</a> /
+                                                    <a href="https://www.tradingview.com/symbols/KRX-KOSPI/" target="_blank" rel="noopener noreferrer" className="underline ml-1">KOR</a> /
+                                                    <a href="https://www.tradingview.com/symbols/SET-SET/" target="_blank" rel="noopener noreferrer" className="underline ml-1">THA</a>
+                                                    <span className="ml-2">Investment period: {targetYear ? `${Number(targetYear)} years` : 'N/A'}</span>
                                                 </div>
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                                     <div><label className="text-xs font-bold text-slate-500">可支配月收入 (HKD)</label><input type="number" value={fnaDisposableIncome} onChange={(e) =>setFnaDisposableIncome(e.target.value)} className="w-full border rounded p-1.5 text-sm bg-amber-50 border-amber-200" /></div>
@@ -6410,13 +6412,23 @@ const showMed = (isPHNotSame && !isLifeOrCI)
                                 ? monthlySavings * ((Math.pow(1 + monthlyRate, totalMonths) - 1) / monthlyRate)
                                 : monthlySavings * totalMonths;
                         }
-                        const yearsToAccumulate = totalMonths / 12;
-                        if (assetHKD && disposableMonthly && monthlySavings && totalMonths) {
-                            lines.push(`   Monthly savings: ${formatMoney(monthlySavings)}`);
-                            lines.push(`   Annual interest rate: ${(annualRate * 100).toFixed(2)}%`);
-                            lines.push(`   Total investment period: ${yearsToAccumulate.toFixed(1)} years (${totalMonths} months)`);
-                            lines.push(`   Estimated assets accumulation: ${formatMoney(estimatedAssetAccumulation)}`);
-                            lines.push(`   Assets take approx ${yearsToAccumulate.toFixed(1)} years of disposable income to accumulate`);
+                        let yearsToAccumulate = 0;
+                        if (assetHKD > 0 && monthlySavings > 0) {
+                            if (monthlyRate > 0) {
+                                yearsToAccumulate = Math.log(1 + ((assetHKD * monthlyRate) / monthlySavings)) / Math.log(1 + monthlyRate) / 12;
+                            } else {
+                                yearsToAccumulate = assetHKD / monthlySavings / 12;
+                            }
+                        }
+                        const shouldIncludeSavingsDetailsInCopy = !!(policyData.isHighRisk || policyData.requiredSendToAFC || (assetHKD && estimatedAssetAccumulation > 0 && assetHKD > estimatedAssetAccumulation));
+                        if (assetHKD && monthlySavings > 0 && Number.isFinite(yearsToAccumulate) && yearsToAccumulate > 0) {
+                            if (shouldIncludeSavingsDetailsInCopy) {
+                                lines.push(`   Monthly savings: ${formatMoney(monthlySavings)}`);
+                                lines.push(`   Annual interest rate: ${(annualRate * 100).toFixed(2)}%`);
+                                lines.push(`   Total investment period: ${yearsToAccumulate.toFixed(1)} years (${Math.round(yearsToAccumulate * 12)} months)`);
+                                lines.push(`   Estimated assets accumulation: ${formatMoney(estimatedAssetAccumulation)}`);
+                            }
+                            lines.push(`   Declared assets (${formatMoney(assetHKD)}) take approx ${yearsToAccumulate.toFixed(1)} years of savings to accumulate`);
                         }
                         const holder = policyData.appType === 'Trust' ? 'Settlor' : 'Policyholder';
                         const ageStr = policyData.phAge !== undefined ? policyData.phAge : '';
@@ -7099,7 +7111,6 @@ const shouldShowMed = () => {
                                     const monthlyRate = annualRate / 12;
                                     const ageNum = Number(policyData.phAge || 0);
                                     const totalMonths = Math.max(0, (ageNum - 25) * 12);
-                                    const years = totalMonths / 12;
                                     const estimatedAssetAccumulation = (monthlySavings > 0 && totalMonths > 0)
                                         ? (monthlyRate > 0
                                             ? monthlySavings * ((Math.pow(1 + monthlyRate, totalMonths) - 1) / monthlyRate)
@@ -7140,10 +7151,21 @@ const shouldShowMed = () => {
                                             {monthlySavings ? <div>Monthly savings: {formatMoney(monthlySavings)}</div> : null}
                                             {annualRate ? <div>Annual interest rate: {(annualRate * 100).toFixed(2)}%</div> : null}
                                             {assetHKD ? <div>Assets: {formatMoney(assetHKD)}</div> : null}
+                                            {(() => {
+                                                let yearsToAccumulate = 0;
+                                                if (assetHKD > 0 && monthlySavings > 0) {
+                                                    yearsToAccumulate = monthlyRate > 0
+                                                        ? Math.log(1 + ((assetHKD * monthlyRate) / monthlySavings)) / Math.log(1 + monthlyRate) / 12
+                                                        : assetHKD / monthlySavings / 12;
+                                                }
+                                                if (assetHKD > 0 && monthlySavings > 0 && Number.isFinite(yearsToAccumulate) && yearsToAccumulate > 0) {
+                                                    return <div>Declared assets ({formatMoney(assetHKD)}) take approx {yearsToAccumulate.toFixed(1)} years of savings to accumulate</div>;
+                                                }
+                                                return null;
+                                            })()}
                                             {policyData.fnaSof && policyData.fnaSof.length ? <div>SoF: {policyData.fnaSof.join(', ')}</div> : null}
                                             {policyData.fnaSow && policyData.fnaSow.length ? <div>SoW: {policyData.fnaSow.join(', ')}</div> : null}
                                             {estimatedAssetAccumulation ? <div>Estimated assets accumulation: {formatMoney(estimatedAssetAccumulation)}</div> : null}
-                                            {assetHKD && disposableMonthly ? <div>Assets take approx {years.toFixed(1)} years of disposable income to accumulate</div> : null}
                                             {(assetHKD || policyData.requiredSendToAFC) ? <div>=> SoF and SoW appears to be commensurate with {holder}’s background and no suspicions are found.</div> : null}
                                             {(assetHKD || policyData.requiredSendToAFC) ? (
                                                 (assetHKD && estimatedAssetAccumulation > 0 && assetHKD > estimatedAssetAccumulation)
