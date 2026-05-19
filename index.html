@@ -5833,9 +5833,9 @@ ${hnwFinancially || ''}`;
                                     </div>
                                 </div>
                                 {/* Trust Beneficiary card removed from this position; it is now rendered below Basic Information */}
-                                <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                                <div className="bg-[#efefef] p-4 rounded-xl border border-slate-300 shadow-inner">
                                     <div className="flex justify-between items-center mb-2">
-                                        <div className="text-sm font-bold text-slate-700 uppercase tracking-wide border-l-4 border-blue-500 pl-2">財務需求分析 (FNA)</div>
+                                        <div className="text-sm font-bold text-slate-700 uppercase tracking-wide border-l-4 border-emerald-600 pl-2">財務需求分析 (FNA)</div>
                                         <button onClick={() => onNavigate('affordability')} className="text-xs bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 flex items-center gap-1 shadow-sm"><Calculator size={12}/> 計算負擔能力</button>
                                     </div>
                                     {showNewFnaReminder && (
@@ -5852,7 +5852,7 @@ ${hnwFinancially || ''}`;
                                     )}
                                     {!noFna && (
                                     <>
-                                        <div className="bg-slate-50 p-4 rounded border border-slate-100 mb-4">
+                                        <div className="bg-[#f7f4ce] p-3 rounded border border-[#e3dfaf] mb-3">
                                             <div className="text-xs font-bold text-slate-600 mb-2 border-b border-slate-200 pb-1">適當性檢查參考</div>
                                             {selectedProductData ? (
                                                 <div className="space-y-2 text-xs">
@@ -5865,14 +5865,14 @@ ${hnwFinancially || ''}`;
 
                                         </div>
                                         <div className="space-y-3">
-                                            <div><label className="text-xs font-bold text-slate-500">簽署日期</label><input type="date" value={fnaSigningDate} onChange={(e) =>setFnaSigningDate(e.target.value)} className="w-full border rounded p-1.5 text-sm" /></div>
+                                            <div><label className="text-xs font-bold text-slate-600">簽署日期</label><input type="date" value={fnaSigningDate} onChange={(e) =>setFnaSigningDate(e.target.value)} className="w-full border border-[#d8d3a0] bg-[#f7f4ce] rounded px-2 py-1.5 text-sm" /></div>
                                             <div className="grid grid-cols-2 gap-3">
-                                                <div><label className="text-xs font-bold text-slate-500">目標儲蓄 (HKD)</label><input type="number" value={targetSavingHKD} onChange={(e) =>setTargetSavingHKD(e.target.value)} className="w-full border rounded p-1.5 text-sm"/></div>
-                                                <div><label className="text-xs font-bold text-slate-500">目標年期</label><input type="number" value={targetYear} onChange={(e) =>setTargetYear(e.target.value)} className="w-full border rounded p-1.5 text-sm"/></div>
+                                                <div><label className="text-xs font-bold text-slate-600">目標儲蓄 (HKD)</label><input type="number" value={targetSavingHKD} onChange={(e) =>setTargetSavingHKD(e.target.value)} className="w-full border border-[#d8d3a0] bg-[#f7f4ce] rounded px-2 py-1.5 text-sm"/></div>
+                                                <div><label className="text-xs font-bold text-slate-600">目標年期</label><input type="number" value={targetYear} onChange={(e) =>setTargetYear(e.target.value)} className="w-full border border-[#d8d3a0] bg-[#f7f4ce] rounded px-2 py-1.5 text-sm"/></div>
                                             </div>
                                             <div>
-                                                <label className="text-xs font-bold text-slate-500">建議書退保價值 (USD)</label>
-                                                <input type="number" value={surrenderValueUSD} onChange={(e) =>setSurrenderValueUSD(e.target.value)} className="w-full border rounded p-1.5 text-sm"/>
+                                                <label className="text-xs font-bold text-slate-600">建議書退保價值 (USD)</label>
+                                                <input type="number" value={surrenderValueUSD} onChange={(e) =>setSurrenderValueUSD(e.target.value)} className="w-full border border-[#d8d3a0] bg-[#f7f4ce] rounded px-2 py-1.5 text-sm"/>
                                                 <div className="text-[10px] text-slate-400 mt-1">≈ {formatMoney(surrenderValueUSD ? Number(surrenderValueUSD) * 7.8 : 0)} HKD</div>
                                             </div>
                                             {fnaRangeInfo && (
@@ -5897,15 +5897,15 @@ ${hnwFinancially || ''}`;
                                             )}
                                         </div>
                                             <div className="mt-4 space-y-3">
-                                            <div><label className="text-xs font-bold text-slate-500">預期退休年齡</label><input type="number" value={fnaRetireAge} onChange={(e) =>setFnaRetireAge(e.target.value)} className="w-full border rounded p-1.5 text-sm" /></div>
+                                            <div><label className="text-xs font-bold text-slate-600">預期退休年齡</label><input type="number" value={fnaRetireAge} onChange={(e) =>setFnaRetireAge(e.target.value)} className="w-full border border-[#d8d3a0] bg-[#f7f4ce] rounded px-2 py-1.5 text-sm" /></div>
                                             <div className="grid grid-cols-3 gap-3">
-                                                <div><label className="text-xs font-bold text-slate-500">可支配月收入 (HKD)</label><input type="number" value={fnaDisposableIncome} onChange={(e) =>setFnaDisposableIncome(e.target.value)} className="w-full border rounded p-1.5 text-sm" /></div>
-                                                <div><label className="text-xs font-bold text-slate-500">儲蓄比率 (%)</label><input type="number" value={fnaSavingRate} onChange={(e) =>setFnaSavingRate(e.target.value)} className="w-full border rounded p-1.5 text-sm" /></div>
-                                                <div><label className="text-xs font-bold text-slate-500">收入使用比例 (%)</label><input type="number" value={fnaIncomePercent} onChange={(e) =>setFnaIncomePercent(e.target.value)} className="w-full border rounded p-1.5 text-sm" /></div>
+                                                <div><label className="text-xs font-bold text-slate-600">可支配月收入 (HKD)</label><input type="number" value={fnaDisposableIncome} onChange={(e) =>setFnaDisposableIncome(e.target.value)} className="w-full border border-[#d8d3a0] bg-[#f7f4ce] rounded px-2 py-1.5 text-sm" /></div>
+                                                <div><label className="text-xs font-bold text-slate-600">儲蓄比率 (%)</label><input type="number" value={fnaSavingRate} onChange={(e) =>setFnaSavingRate(e.target.value)} className="w-full border border-[#d8d3a0] bg-[#f7f4ce] rounded px-2 py-1.5 text-sm" /></div>
+                                                <div><label className="text-xs font-bold text-slate-600">收入使用比例 (%)</label><input type="number" value={fnaIncomePercent} onChange={(e) =>setFnaIncomePercent(e.target.value)} className="w-full border border-[#d8d3a0] bg-[#f7f4ce] rounded px-2 py-1.5 text-sm" /></div>
                                             </div>
                                             <div>
-                                                <label className="text-xs font-bold text-slate-500">年化利率 (%) - 指數參考</label>
-                                                <input type="number" value={fnaAnnualInterestRate} onChange={(e) =>setFnaAnnualInterestRate(e.target.value)} className="w-full border rounded p-1.5 text-sm" />
+                                                <label className="text-xs font-bold text-slate-600">年化利率 (%) - 指數參考</label>
+                                                <input type="number" value={fnaAnnualInterestRate} onChange={(e) =>setFnaAnnualInterestRate(e.target.value)} className="w-full border border-[#d8d3a0] bg-[#f7f4ce] rounded px-2 py-1.5 text-sm" />
                                                 <div className="text-[10px] text-blue-600 mt-1">
                                                     參考連結：
                                                     <a href="https://www.tradingview.com/symbols/SSE-000001/" target="_blank" rel="noopener noreferrer" className="underline ml-1">SSE</a> /
@@ -5916,8 +5916,8 @@ ${hnwFinancially || ''}`;
                                                 </div>
                                             </div>
                                             <div className="grid grid-cols-2 gap-3">
-                                                <div><label className="text-xs font-bold text-slate-500">資產 (HKD)</label><input type="number" value={fnaLiquidAssets} onChange={(e) =>setFnaLiquidAssets(e.target.value)} className="w-full border rounded p-1.5 text-sm" /></div>
-                                                <div><label className="text-xs font-bold text-slate-500">資產使用比例 (%)</label><input type="number" value={fnaAssetPercent} onChange={(e) =>setFnaAssetPercent(e.target.value)} className="w-full border rounded p-1.5 text-sm" /></div>
+                                                <div><label className="text-xs font-bold text-slate-600">資產 (HKD)</label><input type="number" value={fnaLiquidAssets} onChange={(e) =>setFnaLiquidAssets(e.target.value)} className="w-full border border-[#d8d3a0] bg-[#f7f4ce] rounded px-2 py-1.5 text-sm" /></div>
+                                                <div><label className="text-xs font-bold text-slate-600">資產使用比例 (%)</label><input type="number" value={fnaAssetPercent} onChange={(e) =>setFnaAssetPercent(e.target.value)} className="w-full border border-[#d8d3a0] bg-[#f7f4ce] rounded px-2 py-1.5 text-sm" /></div>
                                             </div>
                                             <div className="text-[10px] text-blue-600 font-bold">
                                                 每月可用收入: {fnaDisposableIncome && fnaIncomePercent ? formatMoney((Number(fnaDisposableIncome) * Number(fnaIncomePercent) / 100)) : '0'}
