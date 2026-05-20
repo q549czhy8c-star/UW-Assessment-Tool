@@ -4315,17 +4315,12 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
             const insuredAgeForCalc = isSamePerson ? phAge : insAge;
 
             const investmentPeriodDisplay = useMemo(() => {
-                const targetYearsNum = Number(targetYear);
-                if (targetYear !== "" && targetYear !== null && targetYear !== undefined && Number.isFinite(targetYearsNum) && targetYearsNum > 0) {
-                    return `${targetYearsNum} years`;
-                }
-                const retireAgeNum = Number(fnaRetireAge);
                 const phAgeNum = Number(phAge);
-                if (fnaRetireAge !== "" && phAge !== "" && Number.isFinite(retireAgeNum) && Number.isFinite(phAgeNum) && retireAgeNum >= phAgeNum) {
-                    return `${Math.max(retireAgeNum - phAgeNum, 0)} years`;
+                if (phAge !== "" && phAge !== null && phAge !== undefined && Number.isFinite(phAgeNum)) {
+                    return `${Math.max(phAgeNum - 25, 0)} years`;
                 }
                 return "N/A";
-            }, [targetYear, fnaRetireAge, phAge]);
+            }, [phAge]);
 
             const investmentPeriodYears = useMemo(() => {
                 const yearsText = String(investmentPeriodDisplay || "");
