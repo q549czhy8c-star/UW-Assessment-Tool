@@ -3932,7 +3932,7 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
             const [otherInsurances, setOtherInsurances] = useState(() => normalizeOtherInsuranceList([], curr));
 
             const [showSuggestions, setShowSuggestions] = useState(false);
-            const pfBankSuggestedDate = useMemo(() => {
+            const pfBankExpectedCloseDate = useMemo(() => {
                 if (!isPremiumFinancing || !pfBank) return "";
                 const daysMap = { DBS: 120, EleBank: 30, CMB: 120 };
                 const daysToAdd = daysMap[pfBank];
@@ -5488,14 +5488,14 @@ ${hnwFinancially || ''}`;
                                                         ))}
                                                     </select>
                                                 </div>
-                                                {pfBankSuggestedDate && (
+                                                {pfBankExpectedCloseDate && (
                                                     <div className="col-span-2">
-                                                        <label className="text-xs font-bold text-slate-500">Suggested Date (DD/MM/YYYY)</label>
+                                                        <label className="text-xs font-bold text-slate-500">Expected Close Date (DD/MM/YYYY)</label>
                                                         <div className="flex items-center gap-2">
-                                                            <input type="text" readOnly value={pfBankSuggestedDate} className="w-full border rounded p-1.5 text-sm bg-slate-100" />
+                                                            <input type="text" readOnly value={pfBankExpectedCloseDate} className="w-full border rounded p-1.5 text-sm bg-slate-100" />
                                                             <button
                                                                 type="button"
-                                                                onClick={() => copyToClipboard(pfBankSuggestedDate, 'Suggested date copied')}
+                                                                onClick={() => copyToClipboard(pfBankExpectedCloseDate, 'Expected close date copied')}
                                                                 className="text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 flex items-center gap-1"
                                                             >
                                                                 <Copy size={12} /> Copy
