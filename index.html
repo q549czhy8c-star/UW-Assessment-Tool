@@ -3877,6 +3877,8 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
             const [fnaDisposableIncome, setFnaDisposableIncome] = useState("");
             const [fnaSavingRate, setFnaSavingRate] = useState("");
             const [fnaAnnualInterestRate, setFnaAnnualInterestRate] = useState("");
+            const [fnaCurrentValue, setFnaCurrentValue] = useState("");
+            const [fnaPastValue, setFnaPastValue] = useState("");
             const [fnaIncomePercent, setFnaIncomePercent] = useState(100);
             const [fnaLiquidAssets, setFnaLiquidAssets] = useState("");
             const [fnaAssetPercent, setFnaAssetPercent] = useState(100);
@@ -4052,6 +4054,8 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                         if (s.fnaDisposableIncome !== undefined) setFnaDisposableIncome(s.fnaDisposableIncome);
                         if (s.fnaSavingRate !== undefined) setFnaSavingRate(s.fnaSavingRate);
                         if (s.fnaAnnualInterestRate !== undefined) setFnaAnnualInterestRate(s.fnaAnnualInterestRate);
+                        if (s.fnaCurrentValue !== undefined) setFnaCurrentValue(s.fnaCurrentValue);
+                        if (s.fnaPastValue !== undefined) setFnaPastValue(s.fnaPastValue);
                         if (s.fnaIncomePercent !== undefined && s.fnaIncomePercent !== null) setFnaIncomePercent(Number(s.fnaIncomePercent));
                         if (s.fnaLiquidAssets !== undefined) setFnaLiquidAssets(s.fnaLiquidAssets);
                         if (s.fnaAssetPercent !== undefined && s.fnaAssetPercent !== null) setFnaAssetPercent(Number(s.fnaAssetPercent));
@@ -4160,6 +4164,8 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                         fnaDisposableIncome,
                         fnaSavingRate,
                         fnaAnnualInterestRate,
+                        fnaCurrentValue,
+                        fnaPastValue,
                         fnaIncomePercent,
                         fnaLiquidAssets,
                         fnaAssetPercent,
@@ -4317,6 +4323,29 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                 }
                 return `${Math.max(Number(phAge) - 25, 0)} years`;
             }, [targetYear, phAge]);
+
+            const investmentPeriodYears = useMemo(() => {
+                if (targetYear !== "" && targetYear !== null && targetYear !== undefined) {
+                    return Number(targetYear);
+                }
+                if (phAge === "" || phAge === null || phAge === undefined) {
+                    return 0;
+                }
+                return Math.max(Number(phAge) - 25, 0);
+            }, [targetYear, phAge]);
+
+            useEffect(() => {
+                const currentValue = Number(fnaCurrentValue);
+                const pastValue = Number(fnaPastValue);
+                const years = Number(investmentPeriodYears);
+                if (!Number.isFinite(currentValue) || !Number.isFinite(pastValue) || !Number.isFinite(years)) return;
+                if (currentValue <= 0 || pastValue <= 0 || years <= 0) return;
+
+                const annualRate = (Math.pow(currentValue / pastValue, 1 / years) - 1) * 100;
+                if (Number.isFinite(annualRate)) {
+                    setFnaAnnualInterestRate(annualRate.toFixed(4));
+                }
+            }, [fnaCurrentValue, fnaPastValue, investmentPeriodYears]);
 
             // Compute HNW age based on DOB and application sign date
             const hnwAge = useMemo(() => {
@@ -5017,7 +5046,7 @@ ${hnwFinancially || ''}`;
                 } catch (err) {
                     console.error('Failed to save policy info for affordability', err);
                 }
-            }, [policyHydrated, isSamePerson, phAge, insAge, fnaRetireAge, fnaDisposableIncome, fnaLiquidAssets, fnaSavingRate, fnaAnnualInterestRate, fnaIncomePercent, fnaAssetPercent, fnaSof, premAmount, yearTerm, payMode, curr,
+            }, [policyHydrated, isSamePerson, phAge, insAge, fnaRetireAge, fnaDisposableIncome, fnaLiquidAssets, fnaSavingRate, fnaAnnualInterestRate, fnaCurrentValue, fnaPastValue, fnaIncomePercent, fnaAssetPercent, fnaSof, premAmount, yearTerm, payMode, curr,
                 // watch PF states to update affordability data when they change
                 isPremiumFinancing, pfLoanAmount, pfLoanRate, pfLoanTenor, pfRepaymentAmount]);
 
@@ -5051,6 +5080,8 @@ ${hnwFinancially || ''}`;
                         fnaDisposableIncome: fnaDisposableIncome || null,
                         fnaSavingRate: fnaSavingRate || null,
                         fnaAnnualInterestRate: fnaAnnualInterestRate || null,
+                        fnaCurrentValue: fnaCurrentValue || null,
+                        fnaPastValue: fnaPastValue || null,
                         fnaIncomePercent: fnaIncomePercent || null,
                         fnaLiquidAssets: fnaLiquidAssets || null,
                         fnaAssetPercent: fnaAssetPercent || null,
@@ -5939,6 +5970,10 @@ ${hnwFinancially || ''}`;
                                                     <div><label className="text-xs font-bold text-slate-500">預期退休年齡</label><input type="number" value={fnaRetireAge} onChange={(e) =>setFnaRetireAge(e.target.value)} className="w-full border rounded p-1.5 text-sm bg-amber-50 border-amber-200" /></div>
                                                     <div><label className="text-xs font-bold text-slate-500">儲蓄比率 (%)</label><input type="number" value={fnaSavingRate} onChange={(e) =>setFnaSavingRate(e.target.value)} className="w-full border rounded p-1.5 text-sm bg-amber-50 border-amber-200" /></div>
                                                     <div><label className="text-xs font-bold text-slate-500">年化利率 (%)</label><input type="number" value={fnaAnnualInterestRate} onChange={(e) =>setFnaAnnualInterestRate(e.target.value)} className="w-full border rounded p-1.5 text-sm bg-amber-50 border-amber-200" /></div>
+                                                </div>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                    <div><label className="text-xs font-bold text-slate-500">現值</label><input type="number" value={fnaCurrentValue} onChange={(e) =>setFnaCurrentValue(e.target.value)} className="w-full border rounded p-1.5 text-sm bg-amber-50 border-amber-200" /></div>
+                                                    <div><label className="text-xs font-bold text-slate-500">過往</label><input type="number" value={fnaPastValue} onChange={(e) =>setFnaPastValue(e.target.value)} className="w-full border rounded p-1.5 text-sm bg-amber-50 border-amber-200" /></div>
                                                 </div>
                                                 <div className="text-[10px] text-blue-600 -mt-1">
                                                     Stock index參考連結：
