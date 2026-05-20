@@ -6440,12 +6440,12 @@ const showMed = (isPHNotSame && !isLifeOrCI)
                         const monthlySavings = disposableMonthly * savingRate;
                         const monthlyRate = annualRate / 12;
                         const ageNum = Number(policyData.phAge || 0);
-                        const totalMonths = Math.max(0, (ageNum - 25) * 12);
+                        const investmentMonths = Math.max(0, (ageNum - 25) * 12);
                         let estimatedAssetAccumulation = 0;
-                        if (monthlySavings > 0 && totalMonths > 0) {
+                        if (monthlySavings > 0 && investmentMonths > 0) {
                             estimatedAssetAccumulation = monthlyRate > 0
-                                ? monthlySavings * ((Math.pow(1 + monthlyRate, totalMonths) - 1) / monthlyRate)
-                                : monthlySavings * totalMonths;
+                                ? monthlySavings * ((Math.pow(1 + monthlyRate, investmentMonths) - 1) / monthlyRate)
+                                : monthlySavings * investmentMonths;
                         }
                         let yearsToAccumulate = 0;
                         if (assetHKD > 0 && monthlySavings > 0) {
@@ -6463,7 +6463,8 @@ const showMed = (isPHNotSame && !isLifeOrCI)
                                 const savingRateRef = getSavingRateReference();
                                 if (savingRateRef) lines.push(`   Saving rate reference (${savingRateRef.label}): ${savingRateRef.url}`);
                                 lines.push(`   Annual interest rate: ${(annualRate * 100).toFixed(2)}%`);
-                                lines.push(`   Total investment period: ${yearsToAccumulate.toFixed(1)} years (${Math.round(yearsToAccumulate * 12)} months)`);
+                                lines.push(`   Total investment period: ${(investmentMonths / 12).toFixed(1)} years (${investmentMonths} months)`);
+                                lines.push(`   Declared assets accumulation period: ${yearsToAccumulate.toFixed(1)} years (${Math.round(yearsToAccumulate * 12)} months)`);
                                 lines.push(`   Estimated assets accumulation: ${formatMoney(estimatedAssetAccumulation)}`);
                             }
                         }
@@ -7158,11 +7159,11 @@ const shouldShowMed = () => {
                                     const monthlySavings = disposableMonthly * savingRate;
                                     const monthlyRate = annualRate / 12;
                                     const ageNum = Number(policyData.phAge || 0);
-                                    const totalMonths = Math.max(0, (ageNum - 25) * 12);
-                                    const estimatedAssetAccumulation = (monthlySavings > 0 && totalMonths > 0)
+                                    const investmentMonths = Math.max(0, (ageNum - 25) * 12);
+                                    const estimatedAssetAccumulation = (monthlySavings > 0 && investmentMonths > 0)
                                         ? (monthlyRate > 0
-                                            ? monthlySavings * ((Math.pow(1 + monthlyRate, totalMonths) - 1) / monthlyRate)
-                                            : monthlySavings * totalMonths)
+                                            ? monthlySavings * ((Math.pow(1 + monthlyRate, investmentMonths) - 1) / monthlyRate)
+                                            : monthlySavings * investmentMonths)
                                         : 0;
                                     const holder = policyData.appType === 'Trust' ? 'Settlor' : 'Policyholder';
                                     const ageStr = policyData.phAge !== undefined ? policyData.phAge : '';
