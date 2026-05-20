@@ -6459,11 +6459,11 @@ const showMed = (isPHNotSame && !isLifeOrCI)
                         if (assetHKD && monthlySavings > 0 && Number.isFinite(yearsToAccumulate) && yearsToAccumulate > 0) {
                             if (shouldIncludeSavingsDetailsInCopy) {
                                 lines.push(`   Monthly savings: ${formatMoney(monthlySavings)}`);
+                                lines.push(`   Saving rate: ${(savingRate * 100).toFixed(2)}%`);
                                 lines.push(`   Annual interest rate: ${(annualRate * 100).toFixed(2)}%`);
                                 lines.push(`   Total investment period: ${yearsToAccumulate.toFixed(1)} years (${Math.round(yearsToAccumulate * 12)} months)`);
                                 lines.push(`   Estimated assets accumulation: ${formatMoney(estimatedAssetAccumulation)}`);
                             }
-                            lines.push(`   Declared assets (${formatMoney(assetHKD)}) take approx ${yearsToAccumulate.toFixed(1)} years of savings to accumulate`);
                         }
                         const holder = policyData.appType === 'Trust' ? 'Settlor' : 'Policyholder';
                         const ageStr = policyData.phAge !== undefined ? policyData.phAge : '';
@@ -7153,6 +7153,14 @@ const shouldShowMed = () => {
                                         : 0;
                                     const holder = policyData.appType === 'Trust' ? 'Settlor' : 'Policyholder';
                                     const ageStr = policyData.phAge !== undefined ? policyData.phAge : '';
+                                    const savingRateRefMap = {
+                                        HK: { label: 'Hong Kong', url: 'https://www.censtatd.gov.hk/en/scode460.html' },
+                                        CN: { label: 'China', url: 'https://www.stats.gov.cn/english/' },
+                                        TW: { label: 'Taiwan', url: 'https://eng.stat.gov.tw/' },
+                                        MO: { label: 'Macau', url: 'https://www.dsec.gov.mo/en-US/' },
+                                        KR: { label: 'South Korea', url: 'https://kostat.go.kr/portal/eng/index.action' }
+                                    };
+                                    const savingRateRef = savingRateRefMap[policyData.phResidency || ''] || null;
                                     return (
                                         <div className="pl-4 mt-2 space-y-1">
                                             <div>{(() => {
@@ -7184,6 +7192,13 @@ const shouldShowMed = () => {
                                             {policyData.monthlyIncome && <div>Monthly Income : {formatMoney(Number(policyData.monthlyIncome), 'HKD')}</div>}
                                             {disposableMonthly ? <div>Disposable monthly income: {formatMoney(disposableMonthly)}</div> : null}
                                             {monthlySavings ? <div>Monthly savings: {formatMoney(monthlySavings)}</div> : null}
+                                            {monthlySavings ? <div>Saving rate: {(savingRate * 100).toFixed(2)}%</div> : null}
+                                            {monthlySavings && savingRateRef ? (
+                                                <div>
+                                                    Saving rate reference ({savingRateRef.label}):{' '}
+                                                    <a href={savingRateRef.url} target="_blank" rel="noreferrer" className="text-blue-600 underline">{savingRateRef.url}</a>
+                                                </div>
+                                            ) : null}
                                             {annualRate ? <div>Annual interest rate: {(annualRate * 100).toFixed(2)}%</div> : null}
                                             {assetHKD ? <div>Assets: {formatMoney(assetHKD)}</div> : null}
                                             {(() => {
