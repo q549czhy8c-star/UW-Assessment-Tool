@@ -4518,6 +4518,31 @@ ${hnwFinancially || ''}`;
                 return all;
             }, [appType]);
 
+
+            // Auto-fill FNA default saving/interest rates by residency.
+            useEffect(() => {
+                const grossSavingRateByResidency = {
+                    HK: 28.3,
+                    CN: 43.4,
+                    TW: 43.6,
+                    KR: 35.2,
+                    TH: 21.2
+                };
+
+                let nextSavingRate = 100;
+                if (phResidency && grossSavingRateByResidency[phResidency] !== undefined) {
+                    nextSavingRate = grossSavingRateByResidency[phResidency];
+                } else if (phResidency === 'Other') {
+                    const country = String(phOtherCountry || '').trim().toLowerCase();
+                    if (country === 'thailand' || country === 'thai' || country === '泰國') {
+                        nextSavingRate = grossSavingRateByResidency.TH;
+                    }
+                }
+
+                setFnaSavingRate(String(nextSavingRate));
+                setFnaAnnualInterestRate('0');
+            }, [phResidency, phOtherCountry]);
+
             const riskLevel = useMemo(() => {
                 const lookupRisk = (countryName) => {
                     if (!countryName) return null;
