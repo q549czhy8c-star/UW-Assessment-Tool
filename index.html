@@ -136,6 +136,7 @@
             "Business - Business Loan"
         ];
         const FQ_SOURCE_OF_PREMIUM_OPTIONS = ["Own income", "Own Wealth", "Premium Financing", "Others"];
+        const PF_BANK_OPTIONS = ["DBS", "EleBank", "CMB"];
 
 
 
@@ -3869,6 +3870,7 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
     const [pfLoanTenor, setPfLoanTenor] = useState("");
     // Optional repayment amount per period. Captured for reference only and not used in calculations.
     const [pfRepaymentAmount, setPfRepaymentAmount] = useState("");
+    const [pfBank, setPfBank] = useState("");
     // Premium Financing supporting documents
     const [pfIfsProvided, setPfIfsProvided] = useState("");
     const [pfCustomerAuthorizationProvided, setPfCustomerAuthorizationProvided] = useState("");
@@ -3930,6 +3932,19 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
             const [otherInsurances, setOtherInsurances] = useState(() => normalizeOtherInsuranceList([], curr));
 
             const [showSuggestions, setShowSuggestions] = useState(false);
+            const pfBankSuggestedDate = useMemo(() => {
+                if (!isPremiumFinancing || !pfBank) return "";
+                const daysMap = { DBS: 120, EleBank: 30, CMB: 120 };
+                const daysToAdd = daysMap[pfBank];
+                if (!daysToAdd) return "";
+                const date = new Date();
+                date.setDate(date.getDate() + daysToAdd);
+                const dd = String(date.getDate()).padStart(2, '0');
+                const mm = String(date.getMonth() + 1).padStart(2, '0');
+                const yyyy = date.getFullYear();
+                const formatted = `${dd}/${mm}/${yyyy}`;
+                return pfBank === "CMB" ? `${formatted} (TBC)` : formatted;
+            }, [isPremiumFinancing, pfBank]);
 
             // ====== HNW (LionMaster) fields ======
             // When the plan is LionMaster, these fields capture the high-net-worth inputs. They are kept separate
@@ -4048,6 +4063,7 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                         if (s.pfRepaymentAmount !== undefined) setPfRepaymentAmount(s.pfRepaymentAmount);
                         if (s.pfIfsProvided !== undefined) setPfIfsProvided(s.pfIfsProvided);
                         if (s.pfCustomerAuthorizationProvided !== undefined) setPfCustomerAuthorizationProvided(s.pfCustomerAuthorizationProvided);
+                        if (s.pfBank !== undefined) setPfBank(s.pfBank);
 
                         // FNA inputs
                         if (s.fnaRetireAge !== undefined) setFnaRetireAge(s.fnaRetireAge);
@@ -4205,6 +4221,7 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                         pfRepaymentAmount,
                         pfIfsProvided,
                         pfCustomerAuthorizationProvided,
+                        pfBank,
 
                     // Persist HNW (LionMaster) fields so that they are restored upon reload
                     hnwAppSignDate,
@@ -4242,7 +4259,7 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                 commissionSpreading, piInvestorType, piScenarioKey,
                 trustBeneficiaries, unpaidPremium, reasonPurchaseHK, otherInsurances, niceActimize,
                 // dependencies for PF fields
-                isPremiumFinancing, pfLoanAmount, pfLoanRate, pfLoanTenor, pfRepaymentAmount, pfIfsProvided, pfCustomerAuthorizationProvided,
+                isPremiumFinancing, pfLoanAmount, pfLoanRate, pfLoanTenor, pfRepaymentAmount, pfIfsProvided, pfCustomerAuthorizationProvided, pfBank,
                 // HNW fields dependencies
                 hnwAppSignDate, hnwDOB, hnwGender, hnwSmoking, hnwClass, hnwNationality, hnwResidency,
                 hnwSumAssured, hnwTerms, hnwAnnualPremium, hnwExistingSA, hnwOccupation, hnwMedically, hnwFinancially, hnwAnnualIncome,
@@ -5102,7 +5119,8 @@ ${hnwFinancially || ''}`;
                         pfLoanTenor,
                         pfRepaymentAmount,
                         pfIfsProvided,
-                        pfCustomerAuthorizationProvided
+                        pfCustomerAuthorizationProvided,
+                        pfBank
                     };
                     localStorage.setItem('caseSummaryPolicyInfo', JSON.stringify(summary));
                     window.dispatchEvent(new CustomEvent('caseSummaryUpdate'));
@@ -5115,7 +5133,7 @@ ${hnwFinancially || ''}`;
                 isDateBack, birthdayAlert, appType, businessInsuranceEnabled, trustDeclaration, niceActimize, pdfAmount, phResidency, phOtherCountry, reasonPurchaseHK, unpaidPremium, trustBeneficiaries, noFna, isSendToAFCChecked,
                 showFinancialQuestionnaire, fqPurposeOfInsurance, fqSourceOfPremium, fqEarnedIncome, fqUnearnedIncome, fqAssets, fqLiabilities,
                 // Premium Financing dependencies
-                isPremiumFinancing, pfLoanAmount, pfLoanRate, pfLoanTenor, pfRepaymentAmount, pfIfsProvided, pfCustomerAuthorizationProvided]);
+                isPremiumFinancing, pfLoanAmount, pfLoanRate, pfLoanTenor, pfRepaymentAmount, pfIfsProvided, pfCustomerAuthorizationProvided, pfBank]);
 
             const handleResetPolicyInfo = () => {
                 setAppType('Individual'); setIsEverestBroker(false); setRequiredSendToAFC(false); setTrustDeclaration('No'); setBusinessInsuranceEnabled(false); setNiceActimize(''); setAddressProofType(''); setHeight(''); setWeight(''); setIsSamePerson(true); setIsDateBack(false);
@@ -5149,6 +5167,7 @@ ${hnwFinancially || ''}`;
                 setPfRepaymentAmount('');
                 setPfIfsProvided('');
                 setPfCustomerAuthorizationProvided('');
+                setPfBank('');
             };
 
             return (
@@ -5460,6 +5479,30 @@ ${hnwFinancially || ''}`;
                                                         <option value="No">No</option>
                                                     </select>
                                                 </div>
+                                                <div>
+                                                    <label className="text-xs font-bold text-slate-500">Bank</label>
+                                                    <select value={pfBank} onChange={(e) => setPfBank(e.target.value)} className="w-full border rounded p-1.5 text-sm bg-yellow-50">
+                                                        <option value="">請選擇...</option>
+                                                        {PF_BANK_OPTIONS.map((bank) => (
+                                                            <option key={bank} value={bank}>{bank}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                                {pfBankSuggestedDate && (
+                                                    <div className="col-span-2">
+                                                        <label className="text-xs font-bold text-slate-500">Suggested Date (DD/MM/YYYY)</label>
+                                                        <div className="flex items-center gap-2">
+                                                            <input type="text" readOnly value={pfBankSuggestedDate} className="w-full border rounded p-1.5 text-sm bg-slate-100" />
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => copyToClipboard(pfBankSuggestedDate, 'Suggested date copied')}
+                                                                className="text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 flex items-center gap-1"
+                                                            >
+                                                                <Copy size={12} /> Copy
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
                                         {isPremiumFinancing && (
