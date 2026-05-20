@@ -5943,7 +5943,7 @@ ${hnwFinancially || ''}`;
                                                 <div className="text-[10px] text-blue-600 -mt-1">
                                                     Stock index參考連結：
                                                     <a href="https://www.tradingview.com/symbols/SSE-000001/" target="_blank" rel="noopener noreferrer" className="underline ml-1">CHN</a> /
-                                                    <a href="https://www.tradingview.com/symbols/HKEX-HSI/" target="_blank" rel="noopener noreferrer" className="underline ml-1">HKG</a> /
+                                                    <a href="https://www.tradingview.com/symbols/HSI-HSI/" target="_blank" rel="noopener noreferrer" className="underline ml-1">HKG</a> /
                                                     <a href="https://www.tradingview.com/symbols/TWSE-TAIEX/" target="_blank" rel="noopener noreferrer" className="underline ml-1">TWN</a> /
                                                     <a href="https://www.tradingview.com/symbols/KRX-KOSPI/" target="_blank" rel="noopener noreferrer" className="underline ml-1">KOR</a> /
                                                     <a href="https://www.tradingview.com/symbols/SET-SET/" target="_blank" rel="noopener noreferrer" className="underline ml-1">THA</a>
@@ -6460,6 +6460,8 @@ const showMed = (isPHNotSame && !isLifeOrCI)
                             if (shouldIncludeSavingsDetailsInCopy) {
                                 lines.push(`   Monthly savings: ${formatMoney(monthlySavings)}`);
                                 lines.push(`   Saving rate: ${(savingRate * 100).toFixed(2)}%`);
+                                const savingRateRef = getSavingRateReference();
+                                if (savingRateRef) lines.push(`   Saving rate reference (${savingRateRef.label}): ${savingRateRef.url}`);
                                 lines.push(`   Annual interest rate: ${(annualRate * 100).toFixed(2)}%`);
                                 lines.push(`   Total investment period: ${yearsToAccumulate.toFixed(1)} years (${Math.round(yearsToAccumulate * 12)} months)`);
                                 lines.push(`   Estimated assets accumulation: ${formatMoney(estimatedAssetAccumulation)}`);
@@ -6494,6 +6496,17 @@ const showMed = (isPHNotSame && !isLifeOrCI)
                 const pd = getPdDate();
                 lines.push(`*PD: ${pd || ''}`);
                 return lines;
+            };
+
+            const getSavingRateReference = () => {
+                const refMap = {
+                    HK: { label: 'Hong Kong', url: 'https://www.ceicdata.com/en/indicator/hong-kong/savings-rate' },
+                    CN: { label: 'China', url: 'https://www.ceicdata.com/en/indicator/china/savings-rate' },
+                    TW: { label: 'Taiwan', url: 'https://www.ceicdata.com/en/indicator/taiwan/savings-rate' },
+                    MO: { label: 'Macau', url: 'https://www.ceicdata.com/en/indicator/macau/savings-rate' },
+                    KR: { label: 'South Korea', url: 'https://www.ceicdata.com/en/indicator/south-korea/savings-rate' }
+                };
+                return refMap[policyData?.phResidency || ''] || null;
             };
 
             // Helper to display residency for non-HK residents
@@ -7153,14 +7166,7 @@ const shouldShowMed = () => {
                                         : 0;
                                     const holder = policyData.appType === 'Trust' ? 'Settlor' : 'Policyholder';
                                     const ageStr = policyData.phAge !== undefined ? policyData.phAge : '';
-                                    const savingRateRefMap = {
-                                        HK: { label: 'Hong Kong', url: 'https://www.censtatd.gov.hk/en/scode460.html' },
-                                        CN: { label: 'China', url: 'https://www.stats.gov.cn/english/' },
-                                        TW: { label: 'Taiwan', url: 'https://eng.stat.gov.tw/' },
-                                        MO: { label: 'Macau', url: 'https://www.dsec.gov.mo/en-US/' },
-                                        KR: { label: 'South Korea', url: 'https://kostat.go.kr/portal/eng/index.action' }
-                                    };
-                                    const savingRateRef = savingRateRefMap[policyData.phResidency || ''] || null;
+                                    const savingRateRef = getSavingRateReference();
                                     return (
                                         <div className="pl-4 mt-2 space-y-1">
                                             <div>{(() => {
