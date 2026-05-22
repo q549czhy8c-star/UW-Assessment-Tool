@@ -85,6 +85,27 @@
             .affordability-print-target * {
                 visibility: visible !important;
             }
+            /* 調整列印字體避免 policy 全部顯示時，差額欄位被截斷 */
+            .affordability-print-target {
+                font-size: 11px !important;
+                line-height: 1.2 !important;
+            }
+            .affordability-print-target .text-xs {
+                font-size: 10px !important;
+            }
+            .affordability-print-target .text-sm {
+                font-size: 11px !important;
+            }
+            .affordability-print-target .text-lg {
+                font-size: 15px !important;
+            }
+            .affordability-print-target table,
+            .affordability-print-target th,
+            .affordability-print-target td,
+            .affordability-print-target input,
+            .affordability-print-target select {
+                font-size: 10px !important;
+            }
             .no-print {
                 display: none !important;
             }
