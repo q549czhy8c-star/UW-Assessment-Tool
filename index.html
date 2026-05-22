@@ -4653,19 +4653,20 @@ ${hnwFinancially || ''}`;
             }, [prodType, appType, isHighRisk, isEverestBroker, lifeCiEmployerToggle]);
 
             // v1.9 / v1.12 Non-employed supplementary triggers
-            const isNonEmployedElitePrimaCase = useMemo(() => {
-                const isTargetPlan = (planName === 'LionAchiever Elite' || planName === 'LionPrima');
-                const nonEmployed = (occupationStatus !== 'Employed' && occupationStatus !== 'SelfEmployed');
-                return isTargetPlan && nonEmployed;
-            }, [planName, occupationStatus]);
+            const SOF_SOW_REQUIRED_PLANS = useMemo(() => new Set(['LionAchiever Elite', 'LionPrima', 'Pearl', 'Emerald']), []);
+            const isSofSowRequiredPlan = useMemo(() => SOF_SOW_REQUIRED_PLANS.has(planName), [SOF_SOW_REQUIRED_PLANS, planName]);
 
-            // v1.12 General non-employed case (ALL plans except LionAchiever Elite / LionPrima)
+            const isNonEmployedElitePrimaCase = useMemo(() => {
+                const nonEmployed = (occupationStatus !== 'Employed' && occupationStatus !== 'SelfEmployed');
+                return isSofSowRequiredPlan && nonEmployed;
+            }, [isSofSowRequiredPlan, occupationStatus]);
+
+            // v1.12 General non-employed case (ALL plans except SoF/SoW required plans)
             const isNonEmployedOtherPlanCase = useMemo(() => {
                 const hasPlan = !!planName;
-                const isExcluded = (planName === 'LionAchiever Elite' || planName === 'LionPrima');
                 const nonEmployed = (occupationStatus !== 'Employed' && occupationStatus !== 'SelfEmployed');
-                return hasPlan && !isExcluded && nonEmployed;
-            }, [planName, occupationStatus]);
+                return hasPlan && !isSofSowRequiredPlan && nonEmployed;
+            }, [planName, isSofSowRequiredPlan, occupationStatus]);
 
             const requiresNonEmpSelection = isNonEmployedElitePrimaCase || isNonEmployedOtherPlanCase;
 
@@ -6073,7 +6074,7 @@ ${hnwFinancially || ''}`;
                                                 </div>
                                             </div>
                                         </div>
-                                        {(planName === 'LionAchiever Elite' || planName === 'LionPrima' || isSendToAFCChecked) && (
+                                        {(isSofSowRequiredPlan || isSendToAFCChecked) && (
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3 p-3 rounded-lg border border-slate-200 bg-slate-50">
                                                 <div><label className="text-xs font-bold text-slate-500">資金來源 (SoF)</label><MultiSelect options={SOF_OPTIONS} value={fnaSof} onChange={setFnaSof} placeholder="請選擇" /></div>
                                                 <div><label className="text-xs font-bold text-slate-500">財富來源 (SoW)</label><MultiSelect options={SOW_OPTIONS} value={fnaSow} onChange={setFnaSow} placeholder="請選擇" /></div>
@@ -6664,7 +6665,7 @@ const showMed = (isPHNotSame && !isLifeOrCI)
                 if (!policyData) return;
                 let msgs = [];
                 const plan = policyData.planName || '';
-                if (plan === 'LionAchiever Elite' || plan === 'LionPrima') {
+                if (['LionAchiever Elite', 'LionPrima', 'Pearl', 'Emerald'].includes(plan)) {
                     msgs.push('a. Anonymous/cash payment is not allowed for high return products; b. Payor will be required to submit of Source(s) of Funds/Wealth Supplementary Information Questionnaire if premium payment is not fully made by proposed policyholder.');
                 }
                 if ((policyData.prodType === 'GIO' || policyData.prodType === 'Annuity') && policyData.birthdayAlert?.withinThreeMonths) {
