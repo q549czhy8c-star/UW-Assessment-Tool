@@ -58,16 +58,32 @@
                 overflow: hidden !important;
             }
             #root {
-                width: 281mm;
-                height: 194mm;
-                margin: 0 auto;
-                overflow: hidden !important;
+                width: 100% !important;
+                height: auto !important;
+                margin: 0 !important;
+                overflow: visible !important;
             }
             .affordability-print-page {
                 width: 100% !important;
-                height: 100% !important;
-                transform: scale(var(--affordability-print-scale, 1));
-                transform-origin: top left;
+                height: auto !important;
+                min-height: 0 !important;
+                overflow: visible !important;
+                transform: none !important;
+            }
+            .affordability-print-target {
+                display: block !important;
+                position: absolute !important;
+                inset: 0 !important;
+                width: 100% !important;
+                background: #fff !important;
+                z-index: 9999 !important;
+            }
+            body * {
+                visibility: hidden !important;
+            }
+            .affordability-print-target,
+            .affordability-print-target * {
+                visibility: visible !important;
             }
             .no-print {
                 display: none !important;
@@ -3507,20 +3523,7 @@ const HK_HOLIDAYS_2025_2026 = [
             };
 
             const handlePrintAffordability = () => {
-                const page = affordabilityPrintRef.current;
-                if (page) {
-                    const mmToPx = 96 / 25.4;
-                    const printableWidthPx = (297 - 16) * mmToPx;
-                    const printableHeightPx = (210 - 16) * mmToPx;
-                    const widthScale = printableWidthPx / page.scrollWidth;
-                    const heightScale = printableHeightPx / page.scrollHeight;
-                    const scale = Math.min(widthScale, heightScale, 1);
-                    page.style.setProperty('--affordability-print-scale', String(scale));
-                }
                 window.print();
-                if (page) {
-                    setTimeout(() => page.style.removeProperty('--affordability-print-scale'), 300);
-                }
             };
 
             useEffect(() => {
@@ -3558,7 +3561,7 @@ const HK_HOLIDAYS_2025_2026 = [
                 isPremiumFinancing, pfLoanAmount, pfLoanRate, pfLoanTenor, pfRepaymentAmount]);
 
             return (
-                <div ref={affordabilityPrintRef} className="affordability-print-page flex flex-col h-full bg-slate-50 overflow-hidden">
+                <div ref={affordabilityPrintRef} className="affordability-print-page affordability-print-target flex flex-col h-full bg-slate-50 overflow-hidden">
                     {/* Top Inputs */}
                     <div className="p-4 bg-white border-b border-slate-200 shadow-sm">
                         <div className="mb-4 flex justify-between items-center">
