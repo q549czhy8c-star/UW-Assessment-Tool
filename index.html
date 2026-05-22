@@ -51,12 +51,23 @@
         }
 
         @media print {
-            body {
+            html, body {
+                width: 297mm;
+                height: 210mm;
                 background: #fff !important;
-                overflow: visible !important;
+                overflow: hidden !important;
             }
             #root {
-                zoom: 0.86; /* fit to one PDF page in common A4/Letter landscape */
+                width: 281mm;
+                height: 194mm;
+                margin: 0 auto;
+                overflow: hidden !important;
+            }
+            .affordability-print-page {
+                width: 100% !important;
+                height: 100% !important;
+                transform: scale(var(--affordability-print-scale, 1));
+                transform-origin: top left;
             }
             .no-print {
                 display: none !important;
@@ -3164,7 +3175,7 @@ const HK_HOLIDAYS_2025_2026 = [
             const [pfLoanTenor, setPfLoanTenor] = useState(0);
             // [UPDATE v2.8] Capture repayment amount per period for PF (for display only)
             const [pfRepaymentAmount, setPfRepaymentAmount] = useState(0);
-
+            const affordabilityPrintRef = useRef(null);
 
             // ===== v2.0 Export/Import Hydration (Affordability) =====
             const [affHydrated, setAffHydrated] = useState(false);
@@ -3496,7 +3507,20 @@ const HK_HOLIDAYS_2025_2026 = [
             };
 
             const handlePrintAffordability = () => {
+                const page = affordabilityPrintRef.current;
+                if (page) {
+                    const mmToPx = 96 / 25.4;
+                    const printableWidthPx = (297 - 16) * mmToPx;
+                    const printableHeightPx = (210 - 16) * mmToPx;
+                    const widthScale = printableWidthPx / page.scrollWidth;
+                    const heightScale = printableHeightPx / page.scrollHeight;
+                    const scale = Math.min(widthScale, heightScale, 1);
+                    page.style.setProperty('--affordability-print-scale', String(scale));
+                }
                 window.print();
+                if (page) {
+                    setTimeout(() => page.style.removeProperty('--affordability-print-scale'), 300);
+                }
             };
 
             useEffect(() => {
@@ -3534,7 +3558,7 @@ const HK_HOLIDAYS_2025_2026 = [
                 isPremiumFinancing, pfLoanAmount, pfLoanRate, pfLoanTenor, pfRepaymentAmount]);
 
             return (
-                <div className="flex flex-col h-full bg-slate-50 overflow-hidden">
+                <div ref={affordabilityPrintRef} className="affordability-print-page flex flex-col h-full bg-slate-50 overflow-hidden">
                     {/* Top Inputs */}
                     <div className="p-4 bg-white border-b border-slate-200 shadow-sm">
                         <div className="mb-4 flex justify-between items-center">
