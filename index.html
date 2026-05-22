@@ -2490,8 +2490,8 @@ const HK_HOLIDAYS_2025_2026 = [
             { name: "LionTycoon Beyond 2", type: "GIO", q1: "A (Optional), C (Optional), D (Optional), E, E(iii)", q2: "A", q3: "F - G", q6: "A - F (2 Pay / 5 Pay); B - F (8 Pay / 10 Pay)", ruleType: "GIO" },
             { name: "Lion Achiever", type: "GIO", q1: "Must: E === Optional: A, C, D", q2: "A, F, G", q6: "Must be equal or greater than payment term", ruleType: "GIO" },
             { name: "LionPrima", type: "GIO", q1: "A (Optional), C (Optional), D (Optional), E, E(iii)", q2: "A", q3: "E - G", q6: "A - F (2 Pay / 5 Pay); B - F (8 Pay)", ruleType: "GIO" },
-            { name: "Emerald (Launch date TBC)", type: "GIO", q1: "A (Optional), C (Optional), D (Optional), E, E(iii)", q2: "A", q3: "D - G", q6: "G", ruleType: "GIO" },
-            { name: "Pearl (Launch date TBC)", type: "GIO", q1: "A (Optional), C (Optional), D (Optional), E, E(iii)", q2: "A", q3: "D - G", q6: "A - F", ruleType: "GIO" },
+            { name: "Emerald", type: "GIO", q1: "A (Optional), C (Optional), D (Optional), E, E(iii)", q2: "A", q3: "D - G", q6: "G", ruleType: "GIO" },
+            { name: "Pearl", type: "GIO", q1: "A (Optional), C (Optional), D (Optional), E, E(iii)", q2: "A", q3: "D - G", q6: "A - F", ruleType: "GIO" },
             { name: "LionTycoon Beyond Savings Insurance Plan 3 (Launch date TBC)", type: "GIO", q1: "A (Optional), C (Optional), D (Optional), E, E(iii)", q2: "A", q3: "F - G", q6: "A - F (3 Pay); B - F (8 Pay); Single payment", ruleType: "GIO" },
 
             { name: "LionAchiever Elite", type: "GIO", q1: "A (Optional), C (Optional), D (Optional), E, E(iii)", q2: "A", q3: "E - G", q6: "A - F", ruleType: "GIO" },
@@ -5170,7 +5170,7 @@ ${hnwFinancially || ''}`;
                 setPfBank('');
             };
 
-            const renderFnaQ6Highlighted = (text) => {
+            const renderFnaHighlighted = (text) => {
                 if (!text) return null;
                 const highlightRegex = /(\b\d+\s*Pay\b|To age \d+|age\s*\d+\s*-\s*\d+)/gi;
                 const renderWithHighlight = (value, keyPrefix) => {
@@ -5201,11 +5201,11 @@ ${hnwFinancially || ''}`;
                 ));
             };
 
-            const renderFnaQ6Cell = (text) => {
+            const renderFnaHighlightedCell = (text) => {
                 if (!text) return null;
                 return (
                     <div className="bg-white border border-blue-100 rounded-md px-2 py-1.5 space-y-1">
-                        {renderFnaQ6Highlighted(text)}
+                        {renderFnaHighlighted(text)}
                     </div>
                 );
             };
@@ -5998,10 +5998,10 @@ ${hnwFinancially || ''}`;
                                             <div className="text-xs font-bold text-slate-600 mb-2 border-b border-slate-200 pb-1">適當性檢查參考</div>
                                             {selectedProductData ? (
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-                                                    <div className="flex gap-2"><span className="font-bold text-blue-600 min-w-[72px]">Part 2 Q1:</span><span className="text-slate-700">{selectedProductData.q1}</span></div>
+                                                    <div className="flex gap-2"><span className="font-bold text-blue-600 min-w-[72px]">Part 2 Q1:</span><span className="text-slate-700">{renderFnaHighlightedCell(selectedProductData.q1)}</span></div>
                                                     <div className="flex gap-2"><span className="font-bold text-blue-600 min-w-[72px]">Part 2 Q2:</span><span className="text-slate-700">{selectedProductData.q2}</span></div>
-                                                    <div className="flex gap-2"><span className="font-bold text-blue-600 min-w-[72px]">Part 2 Q3:</span><span className="text-slate-700">{selectedProductData.q3}</span></div>
-                                                    <div className="flex gap-2 items-start"><span className="font-bold text-blue-600 min-w-[72px] pt-1">Part 3 Q6:</span><span className="text-slate-700 flex-1">{renderFnaQ6Cell(selectedProductData.q6)}</span></div>
+                                                    <div className="flex gap-2"><span className="font-bold text-blue-600 min-w-[72px]">Part 2 Q3:</span><span className="text-slate-700">{renderFnaHighlightedCell(selectedProductData.q3)}</span></div>
+                                                    <div className="flex gap-2 items-start"><span className="font-bold text-blue-600 min-w-[72px] pt-1">Part 3 Q6:</span><span className="text-slate-700 flex-1">{renderFnaHighlightedCell(selectedProductData.q6)}</span></div>
                                                 </div>
                                             ) : <div className="text-xs text-slate-400 italic py-2 text-center">請選擇計劃名稱</div>}
                                         </div>
