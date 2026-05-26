@@ -3978,6 +3978,7 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
             const [fnaRetireAge, setFnaRetireAge] = useState("");
             const [fnaDisposableIncome, setFnaDisposableIncome] = useState("");
             const [fnaSavingRate, setFnaSavingRate] = useState("");
+            const [fnaCurrentSavingRate, setFnaCurrentSavingRate] = useState(false);
             const [fnaAnnualInterestRate, setFnaAnnualInterestRate] = useState("");
             const [fnaRateCurrentValue, setFnaRateCurrentValue] = useState("");
             const [fnaRatePastValue, setFnaRatePastValue] = useState("");
@@ -4169,6 +4170,7 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                         if (s.fnaRetireAge !== undefined) setFnaRetireAge(s.fnaRetireAge);
                         if (s.fnaDisposableIncome !== undefined) setFnaDisposableIncome(s.fnaDisposableIncome);
                         if (s.fnaSavingRate !== undefined) setFnaSavingRate(s.fnaSavingRate);
+                        if (s.fnaCurrentSavingRate !== undefined) setFnaCurrentSavingRate(!!s.fnaCurrentSavingRate);
                         if (s.fnaAnnualInterestRate !== undefined) setFnaAnnualInterestRate(s.fnaAnnualInterestRate);
                         if (s.fnaRateCurrentValue !== undefined) setFnaRateCurrentValue(s.fnaRateCurrentValue);
                         if (s.fnaRatePastValue !== undefined) setFnaRatePastValue(s.fnaRatePastValue);
@@ -4279,6 +4281,7 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                         fnaRetireAge,
                         fnaDisposableIncome,
                         fnaSavingRate,
+                        fnaCurrentSavingRate,
                         fnaAnnualInterestRate,
                         fnaRateCurrentValue,
                         fnaRatePastValue,
@@ -4353,7 +4356,7 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                 planName, prodType, sumAssured, curr, payMode, premAmount,
                 occupationStatus, employer, location, lifeCiEmployerToggle, bizNature, position, monthlyIncome, sofWealthSupplementType,
                 targetSavingHKD, targetYear, surrenderValueUSD, yearTerm,
-                fnaRetireAge, fnaDisposableIncome, fnaSavingRate, fnaAnnualInterestRate, fnaRateCurrentValue, fnaRatePastValue, fnaIncomePercent, fnaLiquidAssets, fnaAssetPercent, fnaSof, fnaSow, noFna,
+                fnaRetireAge, fnaDisposableIncome, fnaSavingRate, fnaCurrentSavingRate, fnaAnnualInterestRate, fnaRateCurrentValue, fnaRatePastValue, fnaIncomePercent, fnaLiquidAssets, fnaAssetPercent, fnaSof, fnaSow, noFna,
                 showFinancialQuestionnaire, fqPurposeOfInsurance, fqSourceOfPremium, fqEarnedIncome, fqUnearnedIncome, fqAssets, fqLiabilities,
                 paymentDate, paymentCurrency, paymentAmount, paymentPayor, paymentMethod, pdfAmount,
                 commissionSpreading, piInvestorType, piScenarioKey,
@@ -4669,6 +4672,12 @@ ${hnwFinancially || ''}`;
                     TH: 21.2
                 };
 
+                if (fnaCurrentSavingRate) {
+                    setFnaSavingRate('100');
+                    setFnaAnnualInterestRate('0');
+                    return;
+                }
+
                 let nextSavingRate = 100;
                 if (phResidency && grossSavingRateByResidency[phResidency] !== undefined) {
                     nextSavingRate = grossSavingRateByResidency[phResidency];
@@ -4681,7 +4690,7 @@ ${hnwFinancially || ''}`;
 
                 setFnaSavingRate(String(nextSavingRate));
                 setFnaAnnualInterestRate('0');
-            }, [phResidency, phOtherCountry]);
+            }, [phResidency, phOtherCountry, fnaCurrentSavingRate]);
 
             const riskLevel = useMemo(() => {
                 const lookupRisk = (countryName) => {
@@ -5244,7 +5253,7 @@ ${hnwFinancially || ''}`;
                 setPlanName(""); setProdType(""); setSumAssured(""); setCurr("USD"); setPayMode("Annual"); setPremAmount("");
                 setOccupationStatus("Employed"); setEmployer(""); setLocation(""); setLifeCiEmployerToggle(false); setBizNature(""); setPosition(""); setMonthlyIncome(""); setSofWealthSupplementType("");
                 setTargetSavingHKD(""); setTargetYear(""); setSurrenderValueUSD(""); setYearTerm("");
-                setFnaRetireAge(""); setFnaDisposableIncome(""); setFnaIncomePercent(100); setFnaLiquidAssets(""); setFnaAssetPercent(100); setFnaSof([]); setFnaSow([]);
+                setFnaRetireAge(""); setFnaDisposableIncome(""); setFnaCurrentSavingRate(false); setFnaIncomePercent(100); setFnaLiquidAssets(""); setFnaAssetPercent(100); setFnaSof([]); setFnaSow([]);
                 setShowFinancialQuestionnaire(false); setFqPurposeOfInsurance([]); setFqSourceOfPremium([]);
                 setFqEarnedIncome({ salary: "", bonusesDividends: "", fringeBenefit: "", others: "" });
                 setFqUnearnedIncome({ rentalIncome: "", bankInterest: "", investmentEarnings: "", others: "" });
@@ -6146,7 +6155,25 @@ ${hnwFinancially || ''}`;
                                                 <div className="text-xs font-bold text-slate-600">退休與負擔能力</div>
                                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                                     <div><label className="text-xs font-bold text-slate-500">預期退休年齡</label><input type="number" value={fnaRetireAge} onChange={(e) =>setFnaRetireAge(e.target.value)} className="w-full border rounded p-1.5 text-sm bg-amber-50 border-amber-200" /></div>
-                                                    <div><label className="text-xs font-bold text-slate-500">儲蓄比率 (%)</label><input type="number" value={fnaSavingRate} onChange={(e) =>setFnaSavingRate(e.target.value)} className="w-full border rounded p-1.5 text-sm bg-amber-50 border-amber-200" /></div>
+                                                    <div>
+                                                        <div className="flex items-center justify-between gap-2 mb-1">
+                                                            <label className="text-xs font-bold text-slate-500">儲蓄比率 (%)</label>
+                                                            <label className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={fnaCurrentSavingRate}
+                                                                    onChange={(e) => {
+                                                                        const checked = e.target.checked;
+                                                                        setFnaCurrentSavingRate(checked);
+                                                                        if (checked) setFnaSavingRate("100");
+                                                                    }}
+                                                                    className="h-3.5 w-3.5"
+                                                                />
+                                                                現行
+                                                            </label>
+                                                        </div>
+                                                        <input type="number" value={fnaSavingRate} onChange={(e) =>setFnaSavingRate(e.target.value)} disabled={fnaCurrentSavingRate} className={`w-full border rounded p-1.5 text-sm bg-amber-50 border-amber-200 ${fnaCurrentSavingRate ? 'opacity-70 cursor-not-allowed' : ''}`} />
+                                                    </div>
                                                     <div><label className="text-xs font-bold text-slate-500">年化利率 (%)</label><input type="number" value={fnaAnnualInterestRate} onChange={(e) =>setFnaAnnualInterestRate(e.target.value)} className="w-full border rounded p-1.5 text-sm bg-amber-50 border-amber-200" /></div>
                                                 </div>
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
