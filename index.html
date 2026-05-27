@@ -6623,23 +6623,22 @@ const showMed = (isPHNotSame && !isLifeOrCI)
                     }
                     // AML/SoF details for certain plans or Trust
                     const planNameLower = (policyData.planName || '').toLowerCase();
+                    const isSofSowRequiredSummaryPlan = ['lionachiever elite', 'lionprima', 'pearl', 'emerald'].includes(planNameLower);
                     if (
                         policyData.appType === 'Trust' ||
                         policyData.requiredSendToAFC ||
                         policyData.lifeCiEmployerToggle ||
-                        planNameLower === 'lionachiever elite'.toLowerCase() ||
-                        planNameLower === 'lionprima'.toLowerCase() ||
+                        isSofSowRequiredSummaryPlan ||
                         (
                             planNameLower &&
-                            planNameLower !== 'lionachiever elite'.toLowerCase() &&
-                            planNameLower !== 'lionprima'.toLowerCase() &&
+                            !isSofSowRequiredSummaryPlan &&
                             (policyData.occupationStatus !== 'Employed' && policyData.occupationStatus !== 'SelfEmployed') &&
                             !!policyData.sofWealthSupplementType
                         )
                     ) {
                         const holderLabel = policyData.appType === 'Trust' ? 'Settlor' : 'Policyholder';
                         const isSpecialNonEmployedCase = (
-                            (planNameLower === 'lionachiever elite'.toLowerCase() || planNameLower === 'lionprima'.toLowerCase()) &&
+                            isSofSowRequiredSummaryPlan &&
                             ((policyData.occupationStatus || '') !== 'Employed' && (policyData.occupationStatus || '') !== 'SelfEmployed')
                         );
                         const occEng = ((policyData.occupationStatus || '') === 'SelfEmployed') ? 'Self-Employed' : (policyData.occupationStatus || '');
@@ -6651,8 +6650,7 @@ const showMed = (isPHNotSame && !isLifeOrCI)
                             lines.push(`   ${occEng} - Source of Fund / Wealth (${ctxLabel})`);
                         } else if (
                             planNameLower &&
-                            planNameLower !== 'lionachiever elite'.toLowerCase() &&
-                            planNameLower !== 'lionprima'.toLowerCase() &&
+                            !isSofSowRequiredSummaryPlan &&
                             ((policyData.occupationStatus || '') !== 'Employed' && (policyData.occupationStatus || '') !== 'SelfEmployed') &&
                             sofCtx
                         ) {
@@ -7380,14 +7378,10 @@ const shouldShowMed = () => {
                                     (policyData.appType === 'Trust') ||
                                     policyData.requiredSendToAFC ||
                                     policyData.lifeCiEmployerToggle ||
-                                    (policyData.planName && (
-                                        policyData.planName.toLowerCase() === 'lionachiever elite'.toLowerCase() ||
-                                        policyData.planName.toLowerCase() === 'lionprima'.toLowerCase()
-                                    )) ||
+                                    (policyData.planName && ['lionachiever elite', 'lionprima', 'pearl', 'emerald'].includes(policyData.planName.toLowerCase())) ||
                                     (
                                         policyData.planName &&
-                                        policyData.planName.toLowerCase() !== 'lionachiever elite'.toLowerCase() &&
-                                        policyData.planName.toLowerCase() !== 'lionprima'.toLowerCase() &&
+                                        !['lionachiever elite', 'lionprima', 'pearl', 'emerald'].includes(policyData.planName.toLowerCase()) &&
                                         (policyData.occupationStatus !== 'Employed' && policyData.occupationStatus !== 'SelfEmployed') &&
                                         !!policyData.sofWealthSupplementType
                                     )
@@ -7413,19 +7407,19 @@ const shouldShowMed = () => {
                                             <div>{(() => {
                                                 const holder = (policyData.isSamePerson ? "Policyholder" : "Insured");
                                                 const planLower = (policyData.planName || '').toLowerCase();
-                                                const isElitePrima = (planLower === 'lionachiever elite'.toLowerCase() || planLower === 'lionprima'.toLowerCase());
+                                                const isSofSowRequiredPlan = ['lionachiever elite', 'lionprima', 'pearl', 'emerald'].includes(planLower);
                                                 const nonEmp = ((policyData.occupationStatus || '') !== 'Employed' && (policyData.occupationStatus || '') !== 'SelfEmployed');
                                                 const occEng = ((policyData.occupationStatus || '') === 'SelfEmployed') ? 'Self-Employed' : (policyData.occupationStatus || '');
                                                 const ctx = policyData.sofWealthSupplementType || '';
 
-                                                if (isElitePrima && nonEmp && ctx) {
+                                                if (isSofSowRequiredPlan && nonEmp && ctx) {
                                                     const ctxLabel = (ctx === 'FinancialSupporter')
                                                         ? "Policyholder's Financial Supporter"
                                                         : "Policyholder's previous occupation";
                                                     return `${occEng} - Source of Fund / Wealth (${ctxLabel})`;
                                                 }
 
-                                                if (!isElitePrima && nonEmp && ctx) {
+                                                if (!isSofSowRequiredPlan && nonEmp && ctx) {
                                                     if (ctx === 'FinancialSupporter') return `${occEng} - household income from Financial Supporter`;
                                                     return `${occEng} - income from previous occupation`;
                                                 }
