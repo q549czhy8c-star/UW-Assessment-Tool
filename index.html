@@ -7818,6 +7818,7 @@ const shouldShowMed = () => {
                 gender: '',
                 resident: '',
                 occupation: '',
+                position: '',
                 monthlyIncome: '',
                 plan: '',
                 tsaMed: '',
@@ -7832,6 +7833,7 @@ const shouldShowMed = () => {
                 reinstatementHeight: '',
                 reinstatementWeight: '',
                 reinstatementOccupation: '',
+                reinstatementPosition: '',
                 reinstatementMonthlyIncome: ''
             };
 
@@ -7902,7 +7904,7 @@ const shouldShowMed = () => {
                     `Age/Gender/Resident: ${form.age || '-'}/${form.gender || '-'}/${form.resident || '-'}`,
                     '',
                     'NB Stage Information',
-                    `Occupation: ${form.occupation || '-'}`,
+                    `Occupation: ${form.position || '-'}`,
                     `Monthly income: HKD ${form.monthlyIncome ? Number(form.monthlyIncome).toLocaleString() : '-'}`,
                     `Health condition: ${form.healthCondition || '-'}`,
                     `Build: ${form.height || '-'}cm / ${form.weight || '-'}kg, BMI: ${nbBmi ? nbBmi.toFixed(1) : '-'}`,
@@ -7918,7 +7920,7 @@ const shouldShowMed = () => {
                     `Any NB submission as of today: ${form.hasNbSubmission === 'yes' ? 'Yes' : form.hasNbSubmission === 'no' ? 'No' : '-'}`,
                     `Health condition: ${form.reinstatementHealthCondition || '-'}`,
                     `Build: ${form.reinstatementHeight || '-'}cm / ${form.reinstatementWeight || '-'}kg, BMI: ${reinstatementBmi ? reinstatementBmi.toFixed(1) : '-'}`,
-                    `Occupation: ${form.reinstatementOccupation || '-'}`,
+                    `Occupation: ${form.reinstatementPosition || '-'}`,
                     `Monthly income: HKD ${form.reinstatementMonthlyIncome ? Number(form.reinstatementMonthlyIncome).toLocaleString() : '-'}`
                 ].join('\n');
             }, [form, nbBmi, reinstatementBmi, psMedicalReq, psFinancialReq]);
@@ -7972,6 +7974,7 @@ const shouldShowMed = () => {
                             <section className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
                                 <div className="text-xs font-bold text-slate-700 uppercase tracking-wide border-l-4 border-emerald-500 pl-2">NB Stage Information</div>
                                 {renderSelectInput("Occupation", "occupation", form.occupation, occupationOptions)}
+                                {renderTextInput("Position", "position", form.position)}
                                 {renderTextInput("Monthly income (HKD)", "monthlyIncome", form.monthlyIncome, "number")}
                                 {renderTextInput("Health Condition", "healthCondition", form.healthCondition)}
                                 <div className="grid grid-cols-[1fr_1fr_auto] gap-2 items-end">
@@ -8013,6 +8016,7 @@ const shouldShowMed = () => {
                                     {renderBmiBadge(reinstatementBmi)}
                                 </div>
                                 {renderSelectInput("Occupation", "reinstatementOccupation", form.reinstatementOccupation, occupationOptions)}
+                                {renderTextInput("Position", "reinstatementPosition", form.reinstatementPosition)}
                                 {renderTextInput("Monthly income (HKD)", "reinstatementMonthlyIncome", form.reinstatementMonthlyIncome, "number")}
                             </section>
                         </div>
