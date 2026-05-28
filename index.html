@@ -7813,7 +7813,7 @@ const shouldShowMed = () => {
         };
 
         const PsReinstatementTab = () => {
-            const [form, setForm] = useState({
+            const initialForm = {
                 age: '',
                 gender: '',
                 resident: '',
@@ -7827,8 +7827,15 @@ const shouldShowMed = () => {
                 weight: '',
                 lapsedPeriod: '',
                 hasNbSubmission: '',
-                nbOffer: ''
-            });
+                nbOffer: '',
+                reinstatementHealthCondition: '',
+                reinstatementHeight: '',
+                reinstatementWeight: '',
+                reinstatementOccupation: '',
+                reinstatementMonthlyIncome: ''
+            };
+
+            const [form, setForm] = useState(initialForm);
 
             useEffect(() => {
                 try {
@@ -7843,52 +7850,106 @@ const shouldShowMed = () => {
 
             const onFieldChange = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
             const resetForm = () => {
-                const initialForm = {
-                    age: '',
-                    gender: '',
-                    resident: '',
-                    occupation: '',
-                    monthlyIncome: '',
-                    plan: '',
-                    tsaMed: '',
-                    tsaFin: '',
-                    healthCondition: '',
-                    height: '',
-                    weight: '',
-                    lapsedPeriod: '',
-                    hasNbSubmission: '',
-                    nbOffer: ''
-                };
                 setForm(initialForm);
                 localStorage.removeItem('psReinstatementState');
             };
 
-            const bmi = useMemo(() => {
-                const h = Number(form.height);
-                const w = Number(form.weight);
+            const productGroups = useMemo(() => {
+                const groups = { 'GIO': [], 'Life': [], 'CI': [], 'Annuity': [], 'HNW': [] };
+                PRODUCT_DB.forEach(p => { if (groups[p.type]) groups[p.type].push(p); });
+                return groups;
+            }, []);
+
+            const calcBmi = (height, weight) => {
+                const h = Number(height);
+                const w = Number(weight);
                 if (!h || !w) return null;
                 const hm = h / 100;
                 if (!hm) return null;
                 return w / (hm * hm);
-            }, [form.height, form.weight]);
+            };
+
+            const nbBmi = useMemo(() => calcBmi(form.height, form.weight), [form.height, form.weight]);
+            const reinstatementBmi = useMemo(() => calcBmi(form.reinstatementHeight, form.reinstatementWeight), [form.reinstatementHeight, form.reinstatementWeight]);
+
+            const psMedicalReq = useMemo(() => {
+                const age = Number(form.age);
+                const tsa = Number(form.tsaMed);
+                if (!form.plan || !Number.isFinite(age) || age < 0 || !Number.isFinite(tsa) || tsa <= 0) return null;
+                return getMedicalReq(form.plan, age, tsa, 'USD', false);
+            }, [form.plan, form.age, form.tsaMed]);
+
+            const psFinancialReq = useMemo(() => {
+                const age = Number(form.age);
+                const tsa = Number(form.tsaFin);
+                const monthlyIncome = Number(form.reinstatementMonthlyIncome || form.monthlyIncome || 0);
+                if (!form.plan || !Number.isFinite(age) || age < 0 || !Number.isFinite(tsa) || tsa <= 0) return null;
+                return getFinancialReq(form.plan, form.reinstatementOccupation || form.occupation, age, tsa, 'USD', monthlyIncome * 12);
+            }, [form.plan, form.age, form.tsaFin, form.reinstatementOccupation, form.occupation, form.reinstatementMonthlyIncome, form.monthlyIncome]);
+
+            const occupationOptions = ['Employed', 'SelfEmployed', 'Housewife', 'Retiree', 'Unemployed', 'Student', 'Juvenile'];
+            const residentOptions = ['HK', 'CN', 'MO', 'TW', 'KR', 'TH', 'Other'];
+            const genderOptions = ['M', 'F'];
+            const yesNoOptions = [{ value: 'yes', label: 'Yes' }, { value: 'no', label: 'No' }];
+            const formatTsa = (value) => value ? Number(value).toLocaleString() : '-';
 
             const summaryText = useMemo(() => {
+                const finReqs = [];
+                if (psFinancialReq?.maxCapMsg) finReqs.push(psFinancialReq.maxCapMsg);
+                if (psFinancialReq?.reqs?.length) finReqs.push(...psFinancialReq.reqs);
                 return [
-                    `${form.age || '-'}/${form.gender || '-'}/${form.resident || '-'}`,
-                    `Occ declared at NB: ${form.occupation || '-'}, MI: HKD ${form.monthlyIncome || '-'}`,
-                    ``,
-                    `${form.plan || '-'}`,
-                    `Med: TSA USD ${form.tsaMed || '-'}`,
-                    `Fin: TSA USD ${form.tsaFin || '-'}`,
-                    ``,
-                    `${form.hasNbSubmission === 'yes' ? 'Any NB submission as of today: Yes' : form.hasNbSubmission === 'no' ? 'Any NB submission as of today: No' : 'Any NB submission as of today: -'}`,
-                    `NB Stage: ${form.healthCondition || '-'}, build: ${form.height || '-'}cm/${form.weight || '-'}kg. BMI:${bmi ? bmi.toFixed(1) : '-'} and accepted at ${form.nbOffer || '-'}`,
-                    ``,
-                    `Lapsed ${form.lapsedPeriod || '-'} from last PTD`
+                    'Basic Information',
+                    `Age/Gender/Resident: ${form.age || '-'}/${form.gender || '-'}/${form.resident || '-'}`,
+                    '',
+                    'NB Stage Information',
+                    `Occupation: ${form.occupation || '-'}`,
+                    `Monthly income: HKD ${form.monthlyIncome ? Number(form.monthlyIncome).toLocaleString() : '-'}`,
+                    `Health condition: ${form.healthCondition || '-'}`,
+                    `Build: ${form.height || '-'}cm / ${form.weight || '-'}kg, BMI: ${nbBmi ? nbBmi.toFixed(1) : '-'}`,
+                    `NB Offer: ${form.nbOffer || '-'}`,
+                    '',
+                    'Reinstatement Information',
+                    `Plan: ${form.plan || '-'}`,
+                    `TSA (Med): USD ${formatTsa(form.tsaMed)}`,
+                    `Medical requirement: ${psMedicalReq?.req || '-'}`,
+                    `TSA (Fin): USD ${formatTsa(form.tsaFin)}`,
+                    `Financial requirement: ${finReqs.length ? finReqs.join('; ') : '-'}`,
+                    `Lapsed date from last PTD: ${form.lapsedPeriod || '-'}`,
+                    `Any NB submission as of today: ${form.hasNbSubmission === 'yes' ? 'Yes' : form.hasNbSubmission === 'no' ? 'No' : '-'}`,
+                    `Health condition: ${form.reinstatementHealthCondition || '-'}`,
+                    `Build: ${form.reinstatementHeight || '-'}cm / ${form.reinstatementWeight || '-'}kg, BMI: ${reinstatementBmi ? reinstatementBmi.toFixed(1) : '-'}`,
+                    `Occupation: ${form.reinstatementOccupation || '-'}`,
+                    `Monthly income: HKD ${form.reinstatementMonthlyIncome ? Number(form.reinstatementMonthlyIncome).toLocaleString() : '-'}`
                 ].join('\n');
-            }, [form, bmi]);
+            }, [form, nbBmi, reinstatementBmi, psMedicalReq, psFinancialReq]);
 
             const copySummary = () => navigator.clipboard.writeText(summaryText);
+
+            const renderTextInput = (label, field, value, type = 'text') => (
+                <div>
+                    <label className="text-xs text-slate-500 font-bold">{label}</label>
+                    <input type={type} value={value} onChange={(e)=>onFieldChange(field, e.target.value)} className="w-full border rounded p-1.5 text-sm"/>
+                </div>
+            );
+
+            const renderSelectInput = (label, field, value, options, placeholder = '請選擇...') => (
+                <div>
+                    <label className="text-xs text-slate-500 font-bold">{label}</label>
+                    <select value={value} onChange={(e)=>onFieldChange(field, e.target.value)} className="w-full border rounded p-1.5 text-sm">
+                        <option value="">{placeholder}</option>
+                        {options.map(opt => typeof opt === 'string'
+                            ? <option key={opt} value={opt}>{opt}</option>
+                            : <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        )}
+                    </select>
+                </div>
+            );
+
+            const renderBmiBadge = (value) => (
+                <div className="rounded border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs text-slate-600">
+                    BMI <span className="font-bold text-slate-800">{value ? value.toFixed(1) : '-'}</span>
+                </div>
+            );
 
             return (
                 <div className="h-full flex flex-col bg-slate-50 overflow-y-auto custom-scrollbar p-6 tab-content">
@@ -7899,27 +7960,67 @@ const shouldShowMed = () => {
                             <button onClick={copySummary} className="text-xs bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700 flex items-center gap-1"><Copy size={12}/> Copy Summary</button>
                         </div>
                     </div>
-                    <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div><label className="text-xs text-slate-500 font-bold">Age</label><input type="number" value={form.age} onChange={(e)=>onFieldChange('age', e.target.value)} className="w-full border rounded p-2 text-sm"/></div>
-                        <div><label className="text-xs text-slate-500 font-bold">Gender</label><input value={form.gender} onChange={(e)=>onFieldChange('gender', e.target.value)} className="w-full border rounded p-2 text-sm"/></div>
-                        <div><label className="text-xs text-slate-500 font-bold">Resident</label><input value={form.resident} onChange={(e)=>onFieldChange('resident', e.target.value)} className="w-full border rounded p-2 text-sm"/></div>
-                        <div><label className="text-xs text-slate-500 font-bold">Occupation</label><input value={form.occupation} onChange={(e)=>onFieldChange('occupation', e.target.value)} className="w-full border rounded p-2 text-sm"/></div>
-                        <div><label className="text-xs text-slate-500 font-bold">Monthly Income (HKD)</label><input type="number" value={form.monthlyIncome} onChange={(e)=>onFieldChange('monthlyIncome', e.target.value)} className="w-full border rounded p-2 text-sm"/></div>
-                        <div><label className="text-xs text-slate-500 font-bold">Plan</label><input value={form.plan} onChange={(e)=>onFieldChange('plan', e.target.value)} className="w-full border rounded p-2 text-sm"/></div>
-                        <div><label className="text-xs text-slate-500 font-bold">TSA (Med) USD</label><input type="number" value={form.tsaMed} onChange={(e)=>onFieldChange('tsaMed', e.target.value)} className="w-full border rounded p-2 text-sm"/></div>
-                        <div><label className="text-xs text-slate-500 font-bold">TSA (Fin) USD</label><input type="number" value={form.tsaFin} onChange={(e)=>onFieldChange('tsaFin', e.target.value)} className="w-full border rounded p-2 text-sm"/></div>
-                        <div><label className="text-xs text-slate-500 font-bold">Health condition</label><input value={form.healthCondition} onChange={(e)=>onFieldChange('healthCondition', e.target.value)} className="w-full border rounded p-2 text-sm"/></div>
-                        <div className="grid grid-cols-2 gap-2">
-                            <div><label className="text-xs text-slate-500 font-bold">Height (cm)</label><input type="number" value={form.height} onChange={(e)=>onFieldChange('height', e.target.value)} className="w-full border rounded p-2 text-sm"/></div>
-                            <div><label className="text-xs text-slate-500 font-bold">Weight (kg)</label><input type="number" value={form.weight} onChange={(e)=>onFieldChange('weight', e.target.value)} className="w-full border rounded p-2 text-sm"/></div>
+                    <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_380px] gap-4">
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                            <section className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                                <div className="text-xs font-bold text-slate-700 uppercase tracking-wide border-l-4 border-blue-500 pl-2">Basic Information</div>
+                                {renderTextInput("Age", "age", form.age, "number")}
+                                {renderSelectInput("Gender", "gender", form.gender, genderOptions)}
+                                {renderSelectInput("Resident", "resident", form.resident, residentOptions)}
+                            </section>
+
+                            <section className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                                <div className="text-xs font-bold text-slate-700 uppercase tracking-wide border-l-4 border-emerald-500 pl-2">NB Stage Information</div>
+                                {renderSelectInput("Occupation", "occupation", form.occupation, occupationOptions)}
+                                {renderTextInput("Monthly income (HKD)", "monthlyIncome", form.monthlyIncome, "number")}
+                                {renderTextInput("Health Condition", "healthCondition", form.healthCondition)}
+                                <div className="grid grid-cols-[1fr_1fr_auto] gap-2 items-end">
+                                    {renderTextInput("Height (cm)", "height", form.height, "number")}
+                                    {renderTextInput("Weight (kg)", "weight", form.weight, "number")}
+                                    {renderBmiBadge(nbBmi)}
+                                </div>
+                                <div>
+                                    <label className="text-xs text-slate-500 font-bold">NB Offer</label>
+                                    <textarea value={form.nbOffer} onChange={(e)=>onFieldChange('nbOffer', e.target.value)} rows={3} className="w-full border rounded p-1.5 text-sm"/>
+                                </div>
+                            </section>
+
+                            <section className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                                <div className="text-xs font-bold text-slate-700 uppercase tracking-wide border-l-4 border-purple-500 pl-2">Reinstatement Information</div>
+                                <div>
+                                    <label className="text-xs text-slate-500 font-bold">Plan</label>
+                                    <select value={form.plan} onChange={(e)=>onFieldChange('plan', e.target.value)} className="w-full border rounded p-1.5 text-sm">
+                                        <option value="">請選擇...</option>
+                                        {['GIO', 'Life', 'CI', 'Annuity', 'HNW'].map(type => (
+                                            <optgroup key={type} label={type}>{productGroups[type]?.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}</optgroup>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {renderTextInput("TSA (Med) USD", "tsaMed", form.tsaMed, "number")}
+                                    {renderTextInput("TSA (Fin) USD", "tsaFin", form.tsaFin, "number")}
+                                </div>
+                                <div className="rounded border border-slate-200 bg-slate-50 p-2 text-xs space-y-1">
+                                    <div><span className="font-bold">Medical:</span> {psMedicalReq?.req || '-'}</div>
+                                    <div><span className="font-bold">Financial:</span> {psFinancialReq?.maxCapMsg || ''}{psFinancialReq?.maxCapMsg && psFinancialReq?.reqs?.length ? ' / ' : ''}{psFinancialReq?.reqs?.length ? psFinancialReq.reqs.join('; ') : (!psFinancialReq?.maxCapMsg ? '-' : '')}</div>
+                                </div>
+                                {renderSelectInput("Lapsed date from last PTD", "lapsedPeriod", form.lapsedPeriod, ['between 3 to 6 months', 'over 6 months'])}
+                                {renderSelectInput("Any NB submission as of today", "hasNbSubmission", form.hasNbSubmission, yesNoOptions)}
+                                {renderTextInput("Health Condition", "reinstatementHealthCondition", form.reinstatementHealthCondition)}
+                                <div className="grid grid-cols-[1fr_1fr_auto] gap-2 items-end">
+                                    {renderTextInput("Height (cm)", "reinstatementHeight", form.reinstatementHeight, "number")}
+                                    {renderTextInput("Weight (kg)", "reinstatementWeight", form.reinstatementWeight, "number")}
+                                    {renderBmiBadge(reinstatementBmi)}
+                                </div>
+                                {renderSelectInput("Occupation", "reinstatementOccupation", form.reinstatementOccupation, occupationOptions)}
+                                {renderTextInput("Monthly income (HKD)", "reinstatementMonthlyIncome", form.reinstatementMonthlyIncome, "number")}
+                            </section>
                         </div>
-                        <div><label className="text-xs text-slate-500 font-bold">Lapsed date from last PTD</label><select value={form.lapsedPeriod} onChange={(e)=>onFieldChange('lapsedPeriod', e.target.value)} className="w-full border rounded p-2 text-sm"><option value="">請選擇...</option><option value="between 3 to 6 months">between 3 to 6 months</option><option value="over 6 months">over 6 months</option></select></div>
-                        <div><label className="text-xs text-slate-500 font-bold">Any NB submission as of today</label><select value={form.hasNbSubmission} onChange={(e)=>onFieldChange('hasNbSubmission', e.target.value)} className="w-full border rounded p-2 text-sm"><option value="">請選擇...</option><option value="yes">Yes</option><option value="no">No</option></select></div>
-                        <div className="md:col-span-2"><label className="text-xs text-slate-500 font-bold">NB offer (free format)</label><textarea value={form.nbOffer} onChange={(e)=>onFieldChange('nbOffer', e.target.value)} rows={3} className="w-full border rounded p-2 text-sm"/></div>
-                    </div>
-                    <div className="mt-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                        <div className="text-xs text-slate-500 font-bold mb-2">Preview</div>
-                        <pre className="text-sm whitespace-pre-wrap">{summaryText}</pre>
+
+                        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm xl:sticky xl:top-2 self-start">
+                            <div className="text-xs text-slate-500 font-bold mb-2">Preview</div>
+                            <pre className="text-sm whitespace-pre-wrap max-h-[68vh] overflow-y-auto custom-scrollbar">{summaryText}</pre>
+                        </div>
                     </div>
                 </div>
             );
