@@ -4218,8 +4218,9 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
             }, []);
 
             useEffect(() => {
-                if (businessInsuranceEnabled) setBusinessInsuranceEnabled(false);
-            }, [businessInsuranceEnabled]);
+                const hasBusinessPurpose = Array.isArray(fqPurposeOfInsurance) && fqPurposeOfInsurance.some((purpose) => purpose.startsWith('Business -'));
+                setBusinessInsuranceEnabled(hasBusinessPurpose);
+            }, [fqPurposeOfInsurance]);
 
             // Save full Policy Input state for Export
             useEffect(() => {
@@ -8110,16 +8111,64 @@ const shouldShowMed = () => {
         };
 
 
+        const BUSINESS_PROTECTION_PLANS = new Set(["Generali Supreme Gold", "LionPainter Flexi", "LionPatron", "LionPromise Pro"]);
+        const BUSINESS_CI_PLANS = new Set(["LionGuardian PlusOne", "LionGuardian Beyond", "LionAlong"]);
+        const BUSINESS_PURPOSE_MATRIX = {
+            keyPerson: {
+                label: "Key person Insurance 要員保險",
+                policyholder: "Company (i.e. employer) 公司（即指僱主）",
+                insured: "Key person / Business owner / Director or shareholder (not nominee) / Executive director",
+                beneficiary: "Company (i.e. employer) 公司（即指僱主）"
+            },
+            employeeBenefit: {
+                label: "Employee Benefit 僱員福利",
+                policyholder: "Company (i.e. employer) 公司（即指僱主）",
+                insured: "Staff in the company 公司僱員",
+                beneficiary: "Family member of staff 員工的家屬"
+            },
+            partnership: {
+                label: "Partnership 合夥企業",
+                policyholder: "Business Partner A or Company 其中一名合夥人或公司",
+                insured: "Business Partner B 其他合夥人",
+                beneficiary: "Business Partner A or Company 其中一名合夥人或公司"
+            },
+            loanProtection: {
+                label: "Loan Protection 借貸保障",
+                policyholder: "Creditor 債權人",
+                insured: "Debtor 債務人",
+                beneficiary: "Creditor 債權人"
+            }
+        };
+
         const BusinessInsuranceTab = () => {
             const [policyData, setPolicyData] = useState(null);
-            const [biqCompleted, setBiqCompleted] = useState(false);
-            const [loanAgreementProvided, setLoanAgreementProvided] = useState(false);
-            const [ownershipPercent, setOwnershipPercent] = useState("");
-            const [companyMarketValue, setCompanyMarketValue] = useState("");
-            const [annualRemuneration, setAnnualRemuneration] = useState("");
-            const [companyGrossProfit3Y, setCompanyGrossProfit3Y] = useState("");
-            const [companyNetProfit3Y, setCompanyNetProfit3Y] = useState("");
-            const [loanAmount, setLoanAmount] = useState("");
+            const [draftCopied, setDraftCopied] = useState(false);
+            const [form, setForm] = useState({
+                policyholderRegisteredInChina: false,
+                ngoOrCharity: false,
+                biqCompleted: false,
+                fqCompleted: false,
+                loanAgreementProvided: false,
+                incomeProofProvided: false,
+                companyAuditReportProvided: false,
+                insuranceAdvisorReportProvided: false,
+                ownershipPercent: "",
+                companyMarketValue: "",
+                annualRemuneration: "",
+                companyGrossProfit3Y: "",
+                companyNetProfit3Y: "",
+                companyNetLiquidAssets: "",
+                companyAffordableAmount: "",
+                loanAmount: ""
+            });
+
+            const setField = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
+            const toNum = (value) => {
+                const n = Number(String(value || '').replace(/,/g, ''));
+                return Number.isFinite(n) ? n : 0;
+            };
+            const money = (value) => value ? `USD ${Math.round(value).toLocaleString('en-US')}` : "-";
+            const passClass = (ok) => ok ? "bg-emerald-50 border-emerald-200 text-emerald-800" : "bg-rose-50 border-rose-200 text-rose-800";
 
             useEffect(() => {
                 const hydrate = () => {
@@ -8131,121 +8180,307 @@ const shouldShowMed = () => {
                     }
                     try {
                         const s = JSON.parse(localStorage.getItem('businessInsuranceState') || '{}');
-                        setBiqCompleted(!!s.biqCompleted);
-                        setLoanAgreementProvided(!!s.loanAgreementProvided);
-                        setOwnershipPercent(s.ownershipPercent || '');
-                        setCompanyMarketValue(s.companyMarketValue || '');
-                        setAnnualRemuneration(s.annualRemuneration || '');
-                        setCompanyGrossProfit3Y(s.companyGrossProfit3Y || '');
-                        setCompanyNetProfit3Y(s.companyNetProfit3Y || '');
-                        setLoanAmount(s.loanAmount || '');
+                        setForm(prev => ({ ...prev, ...s }));
                     } catch (e) {}
                 };
                 hydrate();
                 window.addEventListener('caseSummaryUpdate', hydrate);
-                return () => window.removeEventListener('caseSummaryUpdate', hydrate);
+                window.addEventListener('storage', hydrate);
+                return () => {
+                    window.removeEventListener('caseSummaryUpdate', hydrate);
+                    window.removeEventListener('storage', hydrate);
+                };
             }, []);
 
             useEffect(() => {
-                const payload = { biqCompleted, loanAgreementProvided, ownershipPercent, companyMarketValue, annualRemuneration, companyGrossProfit3Y, companyNetProfit3Y, loanAmount };
-                localStorage.setItem('businessInsuranceState', JSON.stringify(payload));
-            }, [biqCompleted, loanAgreementProvided, ownershipPercent, companyMarketValue, annualRemuneration, companyGrossProfit3Y, companyNetProfit3Y, loanAmount]);
+                localStorage.setItem('businessInsuranceState', JSON.stringify(form));
+            }, [form]);
 
+            const product = useMemo(() => PRODUCT_DB.find(p => p.name === policyData?.planName), [policyData?.planName]);
             const purposes = policyData?.fqPurposeOfInsurance || [];
             const hasPurpose = (txt) => purposes.some(p => p.includes(txt));
-            const isKeyPerson = hasPurpose('Key Person');
-            const isEmployeeBenefit = hasPurpose('Employee Benefit');
-            const isPartnership = hasPurpose('Partnership');
-            const isLoanProtection = hasPurpose('Business Loan');
-            const sumAssuredUSD = (() => {
-                const sa = Number(policyData?.sumAssured || 0);
+            const selectedPurposeKeys = [
+                hasPurpose('Key Person') && 'keyPerson',
+                hasPurpose('Employee Benefit') && 'employeeBenefit',
+                hasPurpose('Partnership') && 'partnership',
+                hasPurpose('Business Loan') && 'loanProtection'
+            ].filter(Boolean);
+            const hasFqPurpose = selectedPurposeKeys.length > 0;
+
+            const baseSumAssuredUSD = useMemo(() => {
+                const sa = toNum(policyData?.sumAssured);
                 if (!sa) return 0;
                 return policyData?.curr === 'HKD' ? sa / FIN_USD_RATE : sa;
-            })();
+            }, [policyData?.sumAssured, policyData?.curr]);
 
-            const isLionGuardianSeries = ['LionGuardian PlusOne', 'LionGuardian Beyond', 'LionAlong'].includes(policyData?.planName || '');
-            const requirementRows = [];
-            requirementRows.push({
-                label: 'Business Insurance Questionnaire (BIQ)',
-                ok: biqCompleted,
-                note: 'Business Insurance application必須提供 BIQ'
-            });
-            if (isLoanProtection) {
-                requirementRows.push({
-                    label: 'Loan protection agreement',
-                    ok: loanAgreementProvided,
-                    note: '申請 Loan protection 必須提供借貸合約'
-                });
-            }
-            if (isPartnership) {
-                const hasOwnership = Number(ownershipPercent) > 0 && Number(companyMarketValue) > 0;
-                requirementRows.push({
-                    label: '% of ownership × current market value',
-                    ok: hasOwnership,
-                    note: 'Partnership 需要填寫擁有權百分比及公司市值'
-                });
-            }
-            if (isKeyPerson) {
-                const hasKeyPersonSupport = Number(annualRemuneration) > 0 || Number(companyGrossProfit3Y) > 0 || Number(companyNetProfit3Y) > 0;
-                requirementRows.push({
-                    label: 'Key person financial basis',
-                    ok: hasKeyPersonSupport,
-                    note: '需填年薪、過去3年公司毛利、或過去3年公司淨利其中之一'
-                });
-            }
-            if (isLoanProtection) {
-                requirementRows.push({
-                    label: 'Loan amount',
-                    ok: Number(loanAmount) > 0,
-                    note: 'Loan protection 最高保障為貸款額 100%'
-                });
-            }
+            const routineFinancialTsaUSD = useMemo(() => {
+                let total = baseSumAssuredUSD;
+                if (Array.isArray(policyData?.otherInsurances)) {
+                    policyData.otherInsurances.forEach((item) => {
+                        const val = toNum(item.amount);
+                        if (!val) return;
+                        let usd = item.currency === 'HKD' ? val / FIN_USD_RATE : val;
+                        if (item.planTag === 'LionPatron') usd *= 1.5;
+                        total += usd;
+                    });
+                }
+                return policyData?.planName === 'LionPatron' ? total * 1.5 : total;
+            }, [baseSumAssuredUSD, policyData?.otherInsurances, policyData?.planName]);
 
-            const hasFqPurpose = Array.isArray(purposes) && purposes.some((p) => p.startsWith('Business -'));
+            const productTrack = useMemo(() => {
+                if (BUSINESS_PROTECTION_PLANS.has(policyData?.planName || '')) return 'protection';
+                if (BUSINESS_CI_PLANS.has(policyData?.planName || '')) return 'ci';
+                if (product?.type === 'GIO' || product?.type === 'Annuity') return 'saving';
+                if (product?.type === 'Life' || product?.type === 'HNW') return 'protection';
+                if (product?.type === 'CI') return 'ci';
+                return 'unknown';
+            }, [policyData?.planName, product?.type]);
+
+            const ageMultiple = useMemo(() => {
+                const age = toNum(policyData?.insAge || policyData?.phAge);
+                if (!age) return 0;
+                if (age <= 40) return 15;
+                if (age <= 55) return 12;
+                if (age <= 60) return 8;
+                if (age <= 65) return 5;
+                return 0;
+            }, [policyData?.insAge, policyData?.phAge]);
+
+            const coverageRows = useMemo(() => {
+                const annual = toNum(form.annualRemuneration);
+                const gross = toNum(form.companyGrossProfit3Y);
+                const net = toNum(form.companyNetProfit3Y);
+                const netLiquidAssets = toNum(form.companyNetLiquidAssets);
+                const affordable = toNum(form.companyAffordableAmount);
+                const savingAffordable = affordable ? Math.min(affordable, netLiquidAssets ? netLiquidAssets * 0.5 : affordable) : (netLiquidAssets ? netLiquidAssets * 0.5 : 0);
+                return selectedPurposeKeys.map((key) => {
+                    let bases = [];
+                    if (key === 'keyPerson' || key === 'employeeBenefit') {
+                        if (productTrack === 'saving') {
+                            bases = [
+                                { label: "Regular income approach - employee annual remuneration package", value: annual },
+                                { label: "Company affordable amount - not greater than 50% of net liquid assets", value: savingAffordable }
+                            ];
+                        } else {
+                            bases = [
+                                { label: ageMultiple ? `Annual remuneration package x ${ageMultiple}` : "Annual remuneration package multiple (age missing or outside table)", value: ageMultiple ? annual * ageMultiple : 0 },
+                                { label: "3 x average company gross profit for past 3 years", value: gross * 3 },
+                                { label: "6 x average company net profit for past 3 years", value: net * 6 }
+                            ];
+                        }
+                    } else if (key === 'partnership') {
+                        bases = [{ label: "% of ownership x current market value of the company", value: (toNum(form.ownershipPercent) / 100) * toNum(form.companyMarketValue) }];
+                    } else if (key === 'loanProtection') {
+                        bases = [{ label: "Up to 100% of the loan", value: toNum(form.loanAmount) }];
+                    }
+                    const max = Math.max(0, ...bases.map(b => b.value || 0));
+                    return { key, label: BUSINESS_PURPOSE_MATRIX[key].label, bases, max, ok: max > 0 && baseSumAssuredUSD <= max };
+                });
+            }, [selectedPurposeKeys.join('|'), productTrack, ageMultiple, form, baseSumAssuredUSD]);
+
+            const financialRequirement = useMemo(() => {
+                const tsa = routineFinancialTsaUSD;
+                if (!tsa) return { label: "Pending", questionnaire: ["BIQ"], evidence: ["Please input plan and sum assured in Policy Info."], needs: {} };
+                if (productTrack === 'ci') {
+                    if (tsa <= 500000) return { label: "<= USD 500,000", questionnaire: ["BIQ"], evidence: ["No income proof / financial evidence under basic table."], needs: {} };
+                    if (tsa <= 1000000) return { label: "USD 500,001 - 1,000,000", questionnaire: ["BIQ", "FQ"], evidence: ["Insurance Advisor's Report"], needs: { fq: true, advisor: true } };
+                    if (tsa <= 1500000) return { label: "USD 1,000,001 - 1,500,000", questionnaire: ["BIQ", "FQ"], evidence: ["Last 2 years proof of employee's income", "Company's last 2 years Audit Report", "Insurance Advisor's Report"], needs: { fq: true, income: true, audit: true, advisor: true } };
+                    return { label: "> USD 1,500,000", questionnaire: ["BIQ", "FQ"], evidence: ["Above table exceeded - refer UW / IC for further financial evidence."], needs: { fq: true, income: true, audit: true, advisor: true } };
+                }
+                if (productTrack === 'protection') {
+                    if (tsa <= 1000000) return { label: "<= USD 1,000,000", questionnaire: ["BIQ"], evidence: ["No income proof / financial evidence under basic table."], needs: {} };
+                    if (tsa <= 1500000) return { label: "USD 1,000,001 - 1,500,000", questionnaire: ["BIQ", "FQ"], evidence: ["Either last 2 years proof of employee's income OR company's last 2 years Audit Report"], needs: { fq: true, incomeOrAudit: true } };
+                    if (tsa <= 2000000) return { label: "USD 1,500,001 - 2,000,000", questionnaire: ["BIQ", "FQ"], evidence: ["Either last 2 years proof of employee's income OR company's last 2 years Audit Report", "Insurance Advisor's Report"], needs: { fq: true, incomeOrAudit: true, advisor: true } };
+                    return { label: "> USD 2,000,000", questionnaire: ["BIQ", "FQ"], evidence: ["Last 2 years proof of employee's income", "Company's last 2 years Audit Report", "Insurance Advisor's Report"], needs: { fq: true, income: true, audit: true, advisor: true } };
+                }
+                return { label: "Saving / other product", questionnaire: ["BIQ"], evidence: ["For large premium requirements, refer Section 10.", "Use maximum coverage / affordability basis from the acceptable application table."], needs: {} };
+            }, [routineFinancialTsaUSD, productTrack]);
+
+            const requirementRows = useMemo(() => {
+                const needs = financialRequirement.needs || {};
+                const incomeOrAuditOk = !!form.incomeProofProvided || !!form.companyAuditReportProvided;
+                const rows = [
+                    { label: "Acceptable policyholder", ok: !form.policyholderRegisteredInChina && !form.ngoOrCharity, note: "Not accept NGO/charity organizations/associations, and not accept companies registered in China as Policyholder." },
+                    { label: "Business Insurance Questionnaire (BIQ)", ok: !!form.biqCompleted, note: "A must requirement for business insurance application." }
+                ];
+                if (needs.fq) rows.push({ label: "Financial Questionnaire (FQ)", ok: !!form.fqCompleted, note: financialRequirement.questionnaire.join(" + ") });
+                if (hasPurpose('Business Loan')) rows.push({ label: "Loan agreement", ok: !!form.loanAgreementProvided, note: "Must be provided when applying for Loan Protection." });
+                if (needs.incomeOrAudit) rows.push({ label: "Income proof OR company audit report", ok: incomeOrAuditOk, note: "Either last 2 years employee income proof OR company's last 2 years audit report." });
+                if (needs.income) rows.push({ label: "Last 2 years employee income proof", ok: !!form.incomeProofProvided, note: "Required by the basic financial UW table." });
+                if (needs.audit) rows.push({ label: "Company's last 2 years Audit Report", ok: !!form.companyAuditReportProvided, note: "Required by the basic financial UW table." });
+                if (needs.advisor) rows.push({ label: "Insurance Advisor's Report", ok: !!form.insuranceAdvisorReportProvided, note: "Required by the basic financial UW table." });
+                coverageRows.forEach(row => rows.push({ label: `${row.label} maximum coverage`, ok: row.ok, note: row.max ? `Calculated limit ${money(row.max)} vs applying ${money(baseSumAssuredUSD)}` : "Please input the relevant financial basis." }));
+                return rows;
+            }, [form, financialRequirement, coverageRows, baseSumAssuredUSD, purposes.join('|')]);
+
+            const summaryText = useMemo(() => {
+                const lines = [
+                    "Business Insurance Draft Review",
+                    `Plan: ${policyData?.planName || '-'} (${product?.type || '-'})`,
+                    `Applying SA: ${policyData?.curr || ''} ${policyData?.sumAssured || '-'} / ${money(baseSumAssuredUSD)}`,
+                    `Routine Financial TSA: ${money(routineFinancialTsaUSD)}`,
+                    `Purpose: ${selectedPurposeKeys.map(k => BUSINESS_PURPOSE_MATRIX[k].label).join(', ') || '-'}`,
+                    `Product track applied: ${productTrack}`,
+                    "",
+                    "Acceptable parties:"
+                ];
+                selectedPurposeKeys.forEach((key) => {
+                    const row = BUSINESS_PURPOSE_MATRIX[key];
+                    lines.push(`- ${row.label}: PH ${row.policyholder}; Insured ${row.insured}; Beneficiary ${row.beneficiary}`);
+                });
+                lines.push("", "Maximum coverage:");
+                coverageRows.forEach(row => {
+                    lines.push(`- ${row.label}: ${money(row.max)} (${row.ok ? 'within limit' : 'not confirmed / over limit'})`);
+                });
+                lines.push("", `Basic financial UW requirement: ${financialRequirement.label}`);
+                lines.push(`Questionnaire: ${financialRequirement.questionnaire.join(' + ')}`);
+                lines.push(`Evidence: ${financialRequirement.evidence.join('; ')}`);
+                lines.push("", "Checklist:");
+                requirementRows.forEach(row => lines.push(`- ${row.ok ? 'PASS' : 'MISSING'} ${row.label}`));
+                lines.push("", "Source: Business Insurance.pdf, Underwriting Manual (Retail Life Business), May 2026, section 12 Business Insurance.");
+                return lines.join("\n");
+            }, [policyData, product, baseSumAssuredUSD, routineFinancialTsaUSD, selectedPurposeKeys.join('|'), productTrack, coverageRows, financialRequirement, requirementRows]);
+
+            const copySummary = () => {
+                navigator.clipboard.writeText(summaryText).then(() => {
+                    setDraftCopied(true);
+                    setTimeout(() => setDraftCopied(false), 1800);
+                }).catch(() => {});
+            };
+
+            const renderNumberInput = (label, field, helper) => (
+                <div>
+                    <label className="text-[11px] text-slate-500 font-bold">{label}</label>
+                    <input type="number" value={form[field]} onChange={(e) => setField(field, e.target.value)} className="w-full border border-slate-300 rounded p-2 text-sm bg-white" />
+                    {helper && <div className="text-[10px] text-slate-400 mt-1">{helper}</div>}
+                </div>
+            );
 
             return (
-                <div className="h-full flex flex-col bg-slate-50 overflow-y-auto custom-scrollbar p-6 tab-content">
-                    <h2 className="text-lg font-bold text-slate-700 mb-4">Business Insurance Requirement Checking</h2>
-                    {!hasFqPurpose ? (
-                        <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded p-3 text-sm">請先於「保單資料輸入 > Financial Questionnaire > Purpose of Insurance」選擇 Business 類別用途，才可進行對應檢查。</div>
-                    ) : (
-                        <>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                                <div className="bg-white border border-slate-200 rounded p-3 text-sm"><span className="font-bold">Plan:</span> {policyData?.planName || '-'}</div>
-                                <div className="bg-white border border-slate-200 rounded p-3 text-sm"><span className="font-bold">Total Sum Assured (USD):</span> {sumAssuredUSD ? sumAssuredUSD.toLocaleString('en-US', { maximumFractionDigits: 0 }) : '-'}</div>
+                <div className="h-full bg-slate-50 overflow-y-auto custom-scrollbar p-4 md:p-6 tab-content">
+                    <div className="max-w-7xl mx-auto space-y-4">
+                        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+                            <div>
+                                <h2 className="text-lg font-bold text-slate-800">Business Insurance Requirement Checking</h2>
+                                <p className="text-xs text-slate-500">Draft based on Business Insurance.pdf, UW Manual May 2026 section 12.</p>
                             </div>
-                            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
-                                <label className="flex items-center gap-2 text-sm font-medium"><input type="checkbox" checked={biqCompleted} onChange={(e) => setBiqCompleted(e.target.checked)} />BIQ 已完成</label>
-                                {isLoanProtection && <label className="flex items-center gap-2 text-sm font-medium"><input type="checkbox" checked={loanAgreementProvided} onChange={(e) => setLoanAgreementProvided(e.target.checked)} />借貸合約已提供</label>}
-                                {isPartnership && (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                        <div><label className="text-xs text-slate-500 font-bold">% of ownership</label><input type="number" value={ownershipPercent} onChange={(e)=>setOwnershipPercent(e.target.value)} className="w-full border rounded p-2 text-sm" /></div>
-                                        <div><label className="text-xs text-slate-500 font-bold">Current market value of company</label><input type="number" value={companyMarketValue} onChange={(e)=>setCompanyMarketValue(e.target.value)} className="w-full border rounded p-2 text-sm" /></div>
+                            <button type="button" onClick={copySummary} className="self-start lg:self-auto inline-flex items-center gap-2 px-3 py-2 bg-slate-800 text-white rounded text-sm hover:bg-slate-700">
+                                <Copy size={15} /> {draftCopied ? "Copied" : "Copy draft summary"}
+                            </button>
+                        </div>
+
+                        {!hasFqPurpose ? (
+                            <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded p-3 text-sm">請先於「保單資料輸入 > Financial Questionnaire > Purpose of Insurance」選擇 Business 類別用途，才可進行對應檢查。</div>
+                        ) : (
+                            <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
+                                <div className="xl:col-span-8 space-y-4">
+                                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                                        <div className="bg-white border border-slate-200 rounded p-3 text-sm"><div className="text-[11px] text-slate-500 font-bold">Plan</div><div className="font-semibold">{policyData?.planName || '-'}</div></div>
+                                        <div className="bg-white border border-slate-200 rounded p-3 text-sm"><div className="text-[11px] text-slate-500 font-bold">Product Type</div><div className="font-semibold">{product?.type || '-'} / {productTrack}</div></div>
+                                        <div className="bg-white border border-slate-200 rounded p-3 text-sm"><div className="text-[11px] text-slate-500 font-bold">Applying SA</div><div className="font-semibold">{money(baseSumAssuredUSD)}</div></div>
+                                        <div className="bg-white border border-slate-200 rounded p-3 text-sm"><div className="text-[11px] text-slate-500 font-bold">Routine Fin TSA</div><div className="font-semibold">{money(routineFinancialTsaUSD)}</div></div>
                                     </div>
-                                )}
-                                {isKeyPerson && (
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                        <div><label className="text-xs text-slate-500 font-bold">Annual remuneration package</label><input type="number" value={annualRemuneration} onChange={(e)=>setAnnualRemuneration(e.target.value)} className="w-full border rounded p-2 text-sm" /></div>
-                                        <div><label className="text-xs text-slate-500 font-bold">Avg company gross profit (3y)</label><input type="number" value={companyGrossProfit3Y} onChange={(e)=>setCompanyGrossProfit3Y(e.target.value)} className="w-full border rounded p-2 text-sm" /></div>
-                                        <div><label className="text-xs text-slate-500 font-bold">Avg company net profit (3y)</label><input type="number" value={companyNetProfit3Y} onChange={(e)=>setCompanyNetProfit3Y(e.target.value)} className="w-full border rounded p-2 text-sm" /></div>
-                                    </div>
-                                )}
-                                {isLoanProtection && <div><label className="text-xs text-slate-500 font-bold">Loan amount</label><input type="number" value={loanAmount} onChange={(e)=>setLoanAmount(e.target.value)} className="w-full md:w-1/2 border rounded p-2 text-sm" /></div>}
-                            </div>
-                            <div className="mt-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                                <div className="text-sm font-bold mb-2">Requirement checking result</div>
-                                <div className="space-y-2">
-                                    {requirementRows.map((row, idx) => (
-                                        <div key={idx} className={`p-2 rounded border text-sm ${row.ok ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
-                                            <div className="font-semibold">{row.ok ? 'PASS' : 'MISSING'} - {row.label}</div>
-                                            <div className="text-xs mt-1">{row.note}</div>
+
+                                    <div className="bg-white border border-slate-200 rounded p-4">
+                                        <div className="font-bold text-sm mb-3">1. Acceptable application 可接受申請</div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                                            <label className="flex items-start gap-2 text-sm bg-slate-50 border border-slate-200 rounded p-3">
+                                                <input type="checkbox" checked={form.ngoOrCharity} onChange={(e) => setField('ngoOrCharity', e.target.checked)} className="mt-1" />
+                                                <span>Policyholder is NGO / charity organization / association</span>
+                                            </label>
+                                            <label className="flex items-start gap-2 text-sm bg-slate-50 border border-slate-200 rounded p-3">
+                                                <input type="checkbox" checked={form.policyholderRegisteredInChina} onChange={(e) => setField('policyholderRegisteredInChina', e.target.checked)} className="mt-1" />
+                                                <span>Policyholder is a company registered in China</span>
+                                            </label>
                                         </div>
-                                    ))}
+                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                                            {selectedPurposeKeys.map((key) => {
+                                                const row = BUSINESS_PURPOSE_MATRIX[key];
+                                                return (
+                                                    <div key={key} className="border border-slate-200 rounded p-3 bg-white text-xs">
+                                                        <div className="font-bold text-slate-800 mb-2">{row.label}</div>
+                                                        <div className="grid grid-cols-[120px_1fr] gap-y-1">
+                                                            <div className="font-semibold text-slate-500">Policyholder</div>
+                                                            <div>{row.policyholder}</div>
+                                                            <div className="font-semibold text-slate-500">Insured</div>
+                                                            <div>{row.insured}</div>
+                                                            <div className="font-semibold text-slate-500">Beneficiary</div>
+                                                            <div>{row.beneficiary}</div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-white border border-slate-200 rounded p-4">
+                                        <div className="font-bold text-sm mb-3">2. Maximum coverage 最高投保額</div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+                                            {renderNumberInput("Annual remuneration package (USD)", "annualRemuneration", "Key person / Employee benefit basis")}
+                                            {renderNumberInput("Avg company gross profit, past 3 years (USD)", "companyGrossProfit3Y", "Protection product: x 3")}
+                                            {renderNumberInput("Avg company net profit, past 3 years (USD)", "companyNetProfit3Y", "Protection product: x 6")}
+                                            {renderNumberInput("Company net liquid assets (USD)", "companyNetLiquidAssets", "Saving product: 50% cap")}
+                                            {renderNumberInput("Company affordable amount (USD)", "companyAffordableAmount", "Saving product affordability basis")}
+                                            {renderNumberInput("% of ownership", "ownershipPercent", "Partnership only")}
+                                            {renderNumberInput("Current market value of company (USD)", "companyMarketValue", "Partnership only")}
+                                            {renderNumberInput("Loan amount (USD)", "loanAmount", "Loan protection only")}
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                            {coverageRows.map((row) => (
+                                                <div key={row.key} className={`border rounded p-3 text-sm ${row.ok ? 'border-emerald-200 bg-emerald-50' : 'border-amber-200 bg-amber-50'}`}>
+                                                    <div className="font-bold text-slate-800">{row.label}</div>
+                                                    <div className="text-xs text-slate-600 mt-1">Calculated max: <span className="font-semibold">{money(row.max)}</span></div>
+                                                    <div className="text-xs text-slate-500 mt-2 space-y-1">
+                                                        {row.bases.map((basis, idx) => <div key={idx}>{basis.label}: {money(basis.value)}</div>)}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="text-[11px] text-slate-500 mt-3">If company has several key persons or shareholders with substantial company shares, maximum coverage may be adjusted.</div>
+                                    </div>
+
+                                    <div className="bg-white border border-slate-200 rounded p-4">
+                                        <div className="font-bold text-sm mb-3">3. Financial requirements 財務狀況要求</div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                            <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.biqCompleted} onChange={(e) => setField('biqCompleted', e.target.checked)} />BIQ completed</label>
+                                            <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.fqCompleted} onChange={(e) => setField('fqCompleted', e.target.checked)} />FQ completed</label>
+                                            <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.loanAgreementProvided} onChange={(e) => setField('loanAgreementProvided', e.target.checked)} />Loan agreement provided</label>
+                                            <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.incomeProofProvided} onChange={(e) => setField('incomeProofProvided', e.target.checked)} />Last 2 years employee income proof</label>
+                                            <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.companyAuditReportProvided} onChange={(e) => setField('companyAuditReportProvided', e.target.checked)} />Company last 2 years audit report</label>
+                                            <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.insuranceAdvisorReportProvided} onChange={(e) => setField('insuranceAdvisorReportProvided', e.target.checked)} />Insurance Advisor's Report</label>
+                                        </div>
+                                        <div className="mt-4 border border-slate-200 rounded overflow-hidden">
+                                            <div className="grid grid-cols-1 md:grid-cols-3 text-sm">
+                                                <div className="p-3 bg-slate-100 font-bold">TSA Band</div>
+                                                <div className="p-3 bg-slate-100 font-bold">Questionnaire</div>
+                                                <div className="p-3 bg-slate-100 font-bold">Income proof / financial evidence</div>
+                                                <div className="p-3 border-t border-slate-200">{financialRequirement.label}</div>
+                                                <div className="p-3 border-t border-slate-200">{financialRequirement.questionnaire.join(" + ")}</div>
+                                                <div className="p-3 border-t border-slate-200">{financialRequirement.evidence.join("; ")}</div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="text-xs text-slate-500 mt-3">{isLionGuardianSeries ? '已套用 LionGuardian 系列財務門檻提示。' : '已套用一般商業保險財務門檻提示。'}</div>
+
+                                <div className="xl:col-span-4 space-y-4">
+                                    <div className="bg-white border border-slate-200 rounded p-4 xl:sticky xl:top-4">
+                                        <div className="font-bold text-sm mb-3">Requirement checking result</div>
+                                        <div className="space-y-2">
+                                            {requirementRows.map((row, idx) => (
+                                                <div key={idx} className={`p-2 rounded border text-sm ${passClass(row.ok)}`}>
+                                                    <div className="font-semibold">{row.ok ? 'PASS' : 'MISSING'} - {row.label}</div>
+                                                    <div className="text-xs mt-1">{row.note}</div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded text-xs text-blue-800">
+                                            Underwriting department reserves the right to ask for further financial evidence notwithstanding the above rules.
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                        </>
-                    )}
+                        )}
+                    </div>
                 </div>
             );
         };
