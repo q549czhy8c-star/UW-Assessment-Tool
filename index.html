@@ -4090,7 +4090,7 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                         if (s.weight !== undefined) setWeight(s.weight);
                         if (s.isDateBack !== undefined) setIsDateBack(!!s.isDateBack);
                         if (s.isSamePerson !== undefined) setIsSamePerson(!!s.isSamePerson);
-                        setBusinessInsuranceEnabled(false);
+                        if (s.businessInsuranceEnabled !== undefined) setBusinessInsuranceEnabled(!!s.businessInsuranceEnabled);
 
                         // Dates
                         if (s.proposalDate !== undefined) setProposalDate(s.proposalDate);
@@ -4216,11 +4216,6 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                     setPolicyHydrated(true);
                 }
             }, []);
-
-            useEffect(() => {
-                const hasBusinessPurpose = Array.isArray(fqPurposeOfInsurance) && fqPurposeOfInsurance.some((purpose) => purpose.startsWith('Business -'));
-                setBusinessInsuranceEnabled(hasBusinessPurpose);
-            }, [fqPurposeOfInsurance]);
 
             // Save full Policy Input state for Export
             useEffect(() => {
@@ -5247,6 +5242,7 @@ ${hnwFinancially || ''}`;
                 isPremiumFinancing, pfLoanAmount, pfLoanRate, pfLoanTenor, pfRepaymentAmount, pfIfsProvided, pfCustomerAuthorizationProvided, pfBank]);
 
             const handleResetPolicyInfo = () => {
+                localStorage.removeItem('businessInsuranceState');
                 setAppType('Individual'); setIsEverestBroker(false); setRequiredSendToAFC(false); setTrustDeclaration('No'); setBusinessInsuranceEnabled(false); setNiceActimize(''); setAddressProofType(''); setHeight(''); setWeight(''); setIsSamePerson(true); setIsDateBack(false);
                 setProposalDate(""); setSigningDate(""); setApplicationSigningDate(""); setFnaSigningDate("");
                 setPhDob(""); setPhGender("M"); setPhSmoker("N"); setPhResidency("HK"); setPhOtherCountry(""); setPhArrivalDate(""); setPhExpiryDate(""); setPhIfsDate("");
@@ -5431,7 +5427,7 @@ ${hnwFinancially || ''}`;
                                         <span className="text-sm font-bold text-blue-800">受保人與持有人為同一人</span>
                                     </div>
                                     <div className="flex items-center gap-2 mb-4 p-2 bg-amber-50 rounded border border-amber-200">
-                                        <input type="checkbox" checked={false} disabled className="rounded text-amber-600 opacity-60 cursor-not-allowed"/>
+                                        <input type="checkbox" checked={businessInsuranceEnabled} onChange={(e) => setBusinessInsuranceEnabled(e.target.checked)} className="rounded text-amber-600"/>
                                         <span className="text-sm font-bold text-amber-800">Business Insurance 商業保險</span>
                                     </div>
                                     <div className="space-y-3 border-t pt-3">
@@ -8144,6 +8140,7 @@ const shouldShowMed = () => {
             const [policyData, setPolicyData] = useState(null);
             const [draftCopied, setDraftCopied] = useState(false);
             const [form, setForm] = useState({
+                businessPurposeKeys: [],
                 policyholderRegisteredInChina: false,
                 ngoOrCharity: false,
                 biqCompleted: false,
@@ -8159,10 +8156,46 @@ const shouldShowMed = () => {
                 companyNetProfit3Y: "",
                 companyNetLiquidAssets: "",
                 companyAffordableAmount: "",
-                loanAmount: ""
+                loanAmount: "",
+                loanCreditorName: "",
+                loanCommencementDate: "",
+                loanPurpose: "",
+                loanRepaymentInterest: "",
+                loanRepaymentPeriod: "",
+                pledgedCollateral: "No",
+                pledgedCollateralDetails: "",
+                otherKeyPersonsInsured: "",
+                otherKeyPersonsDetails: "",
+                majorFinancialProblems: "No",
+                majorFinancialProblemsDetails: "",
+                businessNature: "",
+                businessAddress: "",
+                proposedInsuredOccupation: "",
+                proposedInsuredExactDuty: "",
+                numberOfKeyPersons: "",
+                numberOfOwnersShareholders: "",
+                familyShareholdingPercent: "",
+                familyShareholdingRelationship: "",
+                yearsServicePresent: "",
+                yearsServiceIndustry: "",
+                profitContributionPercent: "",
+                sumAssuredJustification: "",
+                lawsuitsPending: "No",
+                lawsuitsDetails: "",
+                supportDetails: "",
+                sourceOfFunds: "",
+                ownershipLayers: "",
+                complexStructureReason: ""
             });
 
             const setField = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
+            const toggleBusinessPurpose = (key) => {
+                setForm(prev => {
+                    const current = Array.isArray(prev.businessPurposeKeys) ? prev.businessPurposeKeys : [];
+                    const next = current.includes(key) ? current.filter(item => item !== key) : [...current, key];
+                    return { ...prev, businessPurposeKeys: next };
+                });
+            };
             const toNum = (value) => {
                 const n = Number(String(value || '').replace(/,/g, ''));
                 return Number.isFinite(n) ? n : 0;
@@ -8197,35 +8230,14 @@ const shouldShowMed = () => {
             }, [form]);
 
             const product = useMemo(() => PRODUCT_DB.find(p => p.name === policyData?.planName), [policyData?.planName]);
-            const purposes = policyData?.fqPurposeOfInsurance || [];
-            const hasPurpose = (txt) => purposes.some(p => p.includes(txt));
-            const selectedPurposeKeys = [
-                hasPurpose('Key Person') && 'keyPerson',
-                hasPurpose('Employee Benefit') && 'employeeBenefit',
-                hasPurpose('Partnership') && 'partnership',
-                hasPurpose('Business Loan') && 'loanProtection'
-            ].filter(Boolean);
-            const hasFqPurpose = selectedPurposeKeys.length > 0;
+            const selectedPurposeKeys = Array.isArray(form.businessPurposeKeys) ? form.businessPurposeKeys : [];
+            const hasBusinessPurpose = selectedPurposeKeys.length > 0;
 
             const baseSumAssuredUSD = useMemo(() => {
                 const sa = toNum(policyData?.sumAssured);
                 if (!sa) return 0;
                 return policyData?.curr === 'HKD' ? sa / FIN_USD_RATE : sa;
             }, [policyData?.sumAssured, policyData?.curr]);
-
-            const routineFinancialTsaUSD = useMemo(() => {
-                let total = baseSumAssuredUSD;
-                if (Array.isArray(policyData?.otherInsurances)) {
-                    policyData.otherInsurances.forEach((item) => {
-                        const val = toNum(item.amount);
-                        if (!val) return;
-                        let usd = item.currency === 'HKD' ? val / FIN_USD_RATE : val;
-                        if (item.planTag === 'LionPatron') usd *= 1.5;
-                        total += usd;
-                    });
-                }
-                return policyData?.planName === 'LionPatron' ? total * 1.5 : total;
-            }, [baseSumAssuredUSD, policyData?.otherInsurances, policyData?.planName]);
 
             const productTrack = useMemo(() => {
                 if (BUSINESS_PROTECTION_PLANS.has(policyData?.planName || '')) return 'protection';
@@ -8235,6 +8247,21 @@ const shouldShowMed = () => {
                 if (product?.type === 'CI') return 'ci';
                 return 'unknown';
             }, [policyData?.planName, product?.type]);
+
+            const routineFinancialTsaUSD = useMemo(() => {
+                const baseMultiplier = productTrack === 'protection' && policyData?.planName === 'LionPatron' ? 1.5 : 1;
+                let total = baseSumAssuredUSD * baseMultiplier;
+                if (Array.isArray(policyData?.otherInsurances)) {
+                    policyData.otherInsurances.forEach((item) => {
+                        const val = toNum(item.amount);
+                        if (!val) return;
+                        let usd = item.currency === 'HKD' ? val / FIN_USD_RATE : val;
+                        if (productTrack === 'protection' && item.planTag === 'LionPatron') usd *= 1.5;
+                        total += usd;
+                    });
+                }
+                return total;
+            }, [baseSumAssuredUSD, policyData?.otherInsurances, policyData?.planName, productTrack]);
 
             const ageMultiple = useMemo(() => {
                 const age = toNum(policyData?.insAge || policyData?.phAge);
@@ -8304,14 +8331,18 @@ const shouldShowMed = () => {
                     { label: "Business Insurance Questionnaire (BIQ)", ok: !!form.biqCompleted, note: "A must requirement for business insurance application." }
                 ];
                 if (needs.fq) rows.push({ label: "Financial Questionnaire (FQ)", ok: !!form.fqCompleted, note: financialRequirement.questionnaire.join(" + ") });
-                if (hasPurpose('Business Loan')) rows.push({ label: "Loan agreement", ok: !!form.loanAgreementProvided, note: "Must be provided when applying for Loan Protection." });
+                if (selectedPurposeKeys.includes('loanProtection')) rows.push({ label: "Loan agreement", ok: !!form.loanAgreementProvided, note: "Must be provided when applying for Loan Protection." });
+                if (!selectedPurposeKeys.length) rows.push({ label: "Purpose of insurance", ok: false, note: "Select at least one BIQ purpose in this page." });
+                if (form.majorFinancialProblems === 'Yes') rows.push({ label: "Major financial problem disclosure", ok: !!form.majorFinancialProblemsDetails, note: "BIQ asks for details if the corporate / insured / business had major financial problems in the last 5 years." });
+                if (form.lawsuitsPending === 'Yes') rows.push({ label: "Pending lawsuits / judgments disclosure", ok: !!form.lawsuitsDetails, note: "BIQ asks for details if the business has pending lawsuits or judgments." });
+                if (form.pledgedCollateral === 'Yes') rows.push({ label: "Pledged collateral details", ok: !!form.pledgedCollateralDetails, note: "BIQ asks for type and amount when there is other pledged collateral." });
                 if (needs.incomeOrAudit) rows.push({ label: "Income proof OR company audit report", ok: incomeOrAuditOk, note: "Either last 2 years employee income proof OR company's last 2 years audit report." });
                 if (needs.income) rows.push({ label: "Last 2 years employee income proof", ok: !!form.incomeProofProvided, note: "Required by the basic financial UW table." });
                 if (needs.audit) rows.push({ label: "Company's last 2 years Audit Report", ok: !!form.companyAuditReportProvided, note: "Required by the basic financial UW table." });
                 if (needs.advisor) rows.push({ label: "Insurance Advisor's Report", ok: !!form.insuranceAdvisorReportProvided, note: "Required by the basic financial UW table." });
                 coverageRows.forEach(row => rows.push({ label: `${row.label} maximum coverage`, ok: row.ok, note: row.max ? `Calculated limit ${money(row.max)} vs applying ${money(baseSumAssuredUSD)}` : "Please input the relevant financial basis." }));
                 return rows;
-            }, [form, financialRequirement, coverageRows, baseSumAssuredUSD, purposes.join('|')]);
+            }, [form, financialRequirement, coverageRows, baseSumAssuredUSD, selectedPurposeKeys.join('|')]);
 
             const summaryText = useMemo(() => {
                 const lines = [
@@ -8335,11 +8366,30 @@ const shouldShowMed = () => {
                 lines.push("", `Basic financial UW requirement: ${financialRequirement.label}`);
                 lines.push(`Questionnaire: ${financialRequirement.questionnaire.join(' + ')}`);
                 lines.push(`Evidence: ${financialRequirement.evidence.join('; ')}`);
+                lines.push("", "BIQ assessment fields:");
+                lines.push(`Business nature / industry: ${form.businessNature || '-'}`);
+                lines.push(`Business address: ${form.businessAddress || '-'}`);
+                lines.push(`Proposed insured occupation / exact duty: ${form.proposedInsuredOccupation || '-'} / ${form.proposedInsuredExactDuty || '-'}`);
+                lines.push(`Key persons / owners-shareholders: ${form.numberOfKeyPersons || '-'} / ${form.numberOfOwnersShareholders || '-'}`);
+                lines.push(`Proposed insured shareholding: ${form.ownershipPercent || '-'}%`);
+                lines.push(`Family shareholding: ${form.familyShareholdingPercent || '-'}% (${form.familyShareholdingRelationship || '-'})`);
+                lines.push(`Years of service: present ${form.yearsServicePresent || '-'}, related industry ${form.yearsServiceIndustry || '-'}`);
+                lines.push(`Profit contribution: ${form.profitContributionPercent || '-'}%`);
+                lines.push(`SA justification: ${form.sumAssuredJustification || '-'}`);
+                lines.push(`Other key persons/shareholders/partners/officers insured: ${form.otherKeyPersonsInsured || '-'} ${form.otherKeyPersonsDetails || ''}`.trim());
+                lines.push(`Major financial problems last 5 years: ${form.majorFinancialProblems || '-'} ${form.majorFinancialProblemsDetails || ''}`.trim());
+                lines.push(`Pending lawsuits/judgments: ${form.lawsuitsPending || '-'} ${form.lawsuitsDetails || ''}`.trim());
+                if (selectedPurposeKeys.includes('loanProtection')) {
+                    lines.push(`Loan creditor / amount: ${form.loanCreditorName || '-'} / ${form.loanAmount ? money(toNum(form.loanAmount)) : '-'}`);
+                    lines.push(`Loan commencement / purpose: ${form.loanCommencementDate || '-'} / ${form.loanPurpose || '-'}`);
+                    lines.push(`Repayment interest / period: ${form.loanRepaymentInterest || '-'} / ${form.loanRepaymentPeriod || '-'}`);
+                    lines.push(`Other pledged collateral: ${form.pledgedCollateral || '-'} ${form.pledgedCollateralDetails || ''}`.trim());
+                }
                 lines.push("", "Checklist:");
                 requirementRows.forEach(row => lines.push(`- ${row.ok ? 'PASS' : 'MISSING'} ${row.label}`));
-                lines.push("", "Source: Business Insurance.pdf, Underwriting Manual (Retail Life Business), May 2026, section 12 Business Insurance.");
+                lines.push("", "Source: Business Insurance.pdf, Underwriting Manual (Retail Life Business), May 2026, section 12 Business Insurance; Business Insurance Questionnaire UW/GLHKBIQ/JAN2026.");
                 return lines.join("\n");
-            }, [policyData, product, baseSumAssuredUSD, routineFinancialTsaUSD, selectedPurposeKeys.join('|'), productTrack, coverageRows, financialRequirement, requirementRows]);
+            }, [policyData, product, baseSumAssuredUSD, routineFinancialTsaUSD, selectedPurposeKeys.join('|'), productTrack, coverageRows, financialRequirement, requirementRows, form]);
 
             const copySummary = () => {
                 navigator.clipboard.writeText(summaryText).then(() => {
@@ -8353,6 +8403,27 @@ const shouldShowMed = () => {
                     <label className="text-[11px] text-slate-500 font-bold">{label}</label>
                     <input type="number" value={form[field]} onChange={(e) => setField(field, e.target.value)} className="w-full border border-slate-300 rounded p-2 text-sm bg-white" />
                     {helper && <div className="text-[10px] text-slate-400 mt-1">{helper}</div>}
+                </div>
+            );
+            const renderTextInput = (label, field, helper) => (
+                <div>
+                    <label className="text-[11px] text-slate-500 font-bold">{label}</label>
+                    <input type="text" value={form[field]} onChange={(e) => setField(field, e.target.value)} className="w-full border border-slate-300 rounded p-2 text-sm bg-white" />
+                    {helper && <div className="text-[10px] text-slate-400 mt-1">{helper}</div>}
+                </div>
+            );
+            const renderSelect = (label, field, options) => (
+                <div>
+                    <label className="text-[11px] text-slate-500 font-bold">{label}</label>
+                    <select value={form[field]} onChange={(e) => setField(field, e.target.value)} className="w-full border border-slate-300 rounded p-2 text-sm bg-white">
+                        {options.map(opt => <option key={opt} value={opt}>{opt || '-'}</option>)}
+                    </select>
+                </div>
+            );
+            const renderTextarea = (label, field) => (
+                <div>
+                    <label className="text-[11px] text-slate-500 font-bold">{label}</label>
+                    <textarea value={form[field]} onChange={(e) => setField(field, e.target.value)} rows="3" className="w-full border border-slate-300 rounded p-2 text-sm bg-white resize-y" />
                 </div>
             );
 
@@ -8369,9 +8440,6 @@ const shouldShowMed = () => {
                             </button>
                         </div>
 
-                        {!hasFqPurpose ? (
-                            <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded p-3 text-sm">請先於「保單資料輸入 > Financial Questionnaire > Purpose of Insurance」選擇 Business 類別用途，才可進行對應檢查。</div>
-                        ) : (
                             <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
                                 <div className="xl:col-span-8 space-y-4">
                                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
@@ -8382,7 +8450,24 @@ const shouldShowMed = () => {
                                     </div>
 
                                     <div className="bg-white border border-slate-200 rounded p-4">
-                                        <div className="font-bold text-sm mb-3">1. Acceptable application 可接受申請</div>
+                                        <div className="font-bold text-sm mb-3">1. BIQ purpose and acceptable application 投保目的及可接受申請</div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
+                                            {Object.entries(BUSINESS_PURPOSE_MATRIX).map(([key, row]) => (
+                                                <label key={key} className="flex items-center gap-2 text-sm bg-slate-50 border border-slate-200 rounded p-3">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedPurposeKeys.includes(key)}
+                                                        onChange={() => toggleBusinessPurpose(key)}
+                                                    />
+                                                    <span>{row.label}</span>
+                                                </label>
+                                            ))}
+                                        </div>
+                                        {!hasBusinessPurpose && (
+                                            <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded p-3 text-sm mb-3">
+                                                請按 Business Insurance Questionnaire 選擇投保目的。此頁選項會用作商業保險核保檢查，不再依賴 FQ purpose 觸發。
+                                            </div>
+                                        )}
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
                                             <label className="flex items-start gap-2 text-sm bg-slate-50 border border-slate-200 rounded p-3">
                                                 <input type="checkbox" checked={form.ngoOrCharity} onChange={(e) => setField('ngoOrCharity', e.target.checked)} className="mt-1" />
@@ -8393,7 +8478,7 @@ const shouldShowMed = () => {
                                                 <span>Policyholder is a company registered in China</span>
                                             </label>
                                         </div>
-                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                                        {hasBusinessPurpose && <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                                             {selectedPurposeKeys.map((key) => {
                                                 const row = BUSINESS_PURPOSE_MATRIX[key];
                                                 return (
@@ -8410,11 +8495,56 @@ const shouldShowMed = () => {
                                                     </div>
                                                 );
                                             })}
-                                        </div>
+                                        </div>}
                                     </div>
 
                                     <div className="bg-white border border-slate-200 rounded p-4">
-                                        <div className="font-bold text-sm mb-3">2. Maximum coverage 最高投保額</div>
+                                        <div className="font-bold text-sm mb-3">2. BIQ assessment fields 商業保險問卷資料</div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                            {renderTextInput("Business nature / Industry", "businessNature")}
+                                            {renderTextInput("Business address", "businessAddress")}
+                                            {renderTextInput("Proposed insured occupation", "proposedInsuredOccupation")}
+                                            {renderTextInput("Exact duty", "proposedInsuredExactDuty")}
+                                            {renderNumberInput("Number of key persons", "numberOfKeyPersons")}
+                                            {renderNumberInput("Number of owners / shareholders", "numberOfOwnersShareholders")}
+                                            {renderNumberInput("Family shareholding %", "familyShareholdingPercent")}
+                                            {renderTextInput("Family shareholding relationship", "familyShareholdingRelationship")}
+                                            {renderTextInput("Years of service - present employment", "yearsServicePresent")}
+                                            {renderTextInput("Years of service - related industry", "yearsServiceIndustry")}
+                                            {renderNumberInput("Turnover / GP / NP contribution %", "profitContributionPercent")}
+                                            {renderSelect("Other key persons insured / intended?", "otherKeyPersonsInsured", ["", "No", "Yes"])}
+                                            {renderSelect("Major financial problems in last 5 years?", "majorFinancialProblems", ["No", "Yes"])}
+                                            {renderSelect("Pending lawsuits or judgments?", "lawsuitsPending", ["No", "Yes"])}
+                                            {renderTextInput("Source of funds for premiums", "sourceOfFunds")}
+                                            {renderTextInput("Ownership layers / organization chart", "ownershipLayers", "BIQ asks for organization chart and intermediate layers")}
+                                            {renderTextInput("Complex structure reason", "complexStructureReason", "Required if 5 layers or above")}
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+                                            {renderTextarea("Sum assured justification / financial impact", "sumAssuredJustification")}
+                                            {renderTextarea("Other key persons details / explanation", "otherKeyPersonsDetails")}
+                                            {form.majorFinancialProblems === "Yes" && renderTextarea("Major financial problems details", "majorFinancialProblemsDetails")}
+                                            {form.lawsuitsPending === "Yes" && renderTextarea("Pending lawsuits / judgments details", "lawsuitsDetails")}
+                                            {renderTextarea("Other support details (succession planning, business development, background)", "supportDetails")}
+                                        </div>
+                                        {selectedPurposeKeys.includes('loanProtection') && (
+                                            <div className="mt-4 border border-amber-200 bg-amber-50 rounded p-3">
+                                                <div className="font-bold text-sm text-amber-900 mb-3">Business Loan details 商業貸款詳情</div>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                                    {renderTextInput("Name of creditor", "loanCreditorName")}
+                                                    {renderNumberInput("Loan amount (USD)", "loanAmount")}
+                                                    {renderTextInput("Commencement date of loan", "loanCommencementDate")}
+                                                    {renderTextInput("Purpose of loan", "loanPurpose")}
+                                                    {renderTextInput("Repayment interest", "loanRepaymentInterest")}
+                                                    {renderTextInput("Repayment period", "loanRepaymentPeriod")}
+                                                    {renderSelect("Any other pledged collateral?", "pledgedCollateral", ["No", "Yes"])}
+                                                </div>
+                                                {form.pledgedCollateral === "Yes" && <div className="mt-3">{renderTextarea("Pledged collateral details including type and amount", "pledgedCollateralDetails")}</div>}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="bg-white border border-slate-200 rounded p-4">
+                                        <div className="font-bold text-sm mb-3">3. Maximum coverage 最高投保額</div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
                                             {renderNumberInput("Annual remuneration package (USD)", "annualRemuneration", "Key person / Employee benefit basis")}
                                             {renderNumberInput("Avg company gross profit, past 3 years (USD)", "companyGrossProfit3Y", "Protection product: x 3")}
@@ -8440,7 +8570,7 @@ const shouldShowMed = () => {
                                     </div>
 
                                     <div className="bg-white border border-slate-200 rounded p-4">
-                                        <div className="font-bold text-sm mb-3">3. Financial requirements 財務狀況要求</div>
+                                        <div className="font-bold text-sm mb-3">4. Financial requirements 財務狀況要求</div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                             <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.biqCompleted} onChange={(e) => setField('biqCompleted', e.target.checked)} />BIQ completed</label>
                                             <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.fqCompleted} onChange={(e) => setField('fqCompleted', e.target.checked)} />FQ completed</label>
@@ -8479,7 +8609,6 @@ const shouldShowMed = () => {
                                     </div>
                                 </div>
                             </div>
-                        )}
                     </div>
                 </div>
             );
