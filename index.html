@@ -4433,10 +4433,11 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
             const investmentPeriodDisplay = useMemo(() => {
                 const phAgeNum = Number(phAge);
                 if (phAge !== "" && phAge !== null && phAge !== undefined && Number.isFinite(phAgeNum)) {
-                    return `${Math.max(phAgeNum - 25, 0)} years`;
+                    const startAge = fnaCurrentSavingRate ? 18 : 25;
+                    return `${Math.max(phAgeNum - startAge, 0)} years`;
                 }
                 return "N/A";
-            }, [phAge]);
+            }, [phAge, fnaCurrentSavingRate]);
 
             const investmentPeriodYears = useMemo(() => {
                 const yearsText = String(investmentPeriodDisplay || "");
@@ -5196,6 +5197,7 @@ ${hnwFinancially || ''}`;
                         requiredSendToAFC: isSendToAFCChecked,
                         fnaDisposableIncome: fnaDisposableIncome || null,
                         fnaSavingRate: fnaSavingRate || null,
+                        fnaCurrentSavingRate,
                         fnaAnnualInterestRate: fnaAnnualInterestRate || null,
                         fnaRateCurrentValue: fnaRateCurrentValue || null,
                         fnaRatePastValue: fnaRatePastValue || null,
@@ -5236,7 +5238,7 @@ ${hnwFinancially || ''}`;
             }, [policyHydrated, phArrivalDate, fnaSigningDate, proposalDate, applicationSigningDate, signingDate, addressProofType, isSamePerson, phAge, phGender, phSmoker, phDob, insAge, insGender, insSmoker, insDob, planName, sumAssured, curr, prodType, otherInsurances, height, weight, medicalReq, financialReq, returnCheck, monthlyIncome, occupationStatus, position, employer, location, lifeCiEmployerToggle, bizNature, sofWealthSupplementType, premAmount, payMode, yearTerm, paymentDate, paymentCurrency, paymentAmount, paymentPayor, paymentMethod,
                 // Commission Spreading (Professional Investor - PI)
                 commissionSpreading, piInvestorType, piScenarioKey,
-                isDateBack, birthdayAlert, appType, businessInsuranceEnabled, trustDeclaration, niceActimize, pdfAmount, phResidency, phOtherCountry, reasonPurchaseHK, unpaidPremium, trustBeneficiaries, noFna, isSendToAFCChecked,
+                isDateBack, birthdayAlert, appType, businessInsuranceEnabled, trustDeclaration, niceActimize, pdfAmount, phResidency, phOtherCountry, reasonPurchaseHK, unpaidPremium, trustBeneficiaries, noFna, isSendToAFCChecked, fnaCurrentSavingRate,
                 showFinancialQuestionnaire, fqPurposeOfInsurance, fqSourceOfPremium, fqEarnedIncome, fqUnearnedIncome, fqAssets, fqLiabilities,
                 // Premium Financing dependencies
                 isPremiumFinancing, pfLoanAmount, pfLoanRate, pfLoanTenor, pfRepaymentAmount, pfIfsProvided, pfCustomerAuthorizationProvided, pfBank]);
@@ -6675,7 +6677,8 @@ const showMed = (isPHNotSame && !isLifeOrCI)
                         const monthlySavings = disposableMonthly * savingRate;
                         const monthlyRate = annualRate / 12;
                         const ageNum = Number(policyData.phAge || 0);
-                        const investmentMonths = Math.max(0, (ageNum - 25) * 12);
+                        const investmentStartAge = policyData.fnaCurrentSavingRate ? 18 : 25;
+                        const investmentMonths = Math.max(0, (ageNum - investmentStartAge) * 12);
                         let estimatedAssetAccumulation = 0;
                         if (monthlySavings > 0 && investmentMonths > 0) {
                             estimatedAssetAccumulation = monthlyRate > 0
@@ -7390,7 +7393,8 @@ const shouldShowMed = () => {
                                     const monthlySavings = disposableMonthly * savingRate;
                                     const monthlyRate = annualRate / 12;
                                     const ageNum = Number(policyData.phAge || 0);
-                                    const investmentMonths = Math.max(0, (ageNum - 25) * 12);
+                                    const investmentStartAge = policyData.fnaCurrentSavingRate ? 18 : 25;
+                                    const investmentMonths = Math.max(0, (ageNum - investmentStartAge) * 12);
                                     const estimatedAssetAccumulation = (monthlySavings > 0 && investmentMonths > 0)
                                         ? (monthlyRate > 0
                                             ? monthlySavings * ((Math.pow(1 + monthlyRate, investmentMonths) - 1) / monthlyRate)
