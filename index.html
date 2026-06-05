@@ -4359,6 +4359,7 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                     hnwAnnualIncome
                     };
                     localStorage.setItem('policyInputFullState', JSON.stringify(full));
+                    window.dispatchEvent(new CustomEvent('policyInputFullStateUpdate', { detail: full }));
                 } catch (err) {
                     console.error('Failed to persist Policy Input full state', err);
                 }
@@ -9123,12 +9124,12 @@ const shouldShowMed = () => {
             />
         );
 
-        const getFnaProductMapping = (productName) => {
+        const getFnaProductMapping = (productName, fallbackToFirst = false) => {
             const normalized = String(productName || '').trim().toLowerCase();
             return FNA_MAPPING_PRODUCTS.find((item) =>
                 item.name.toLowerCase() === normalized ||
                 (item.aliases || []).some((alias) => alias.toLowerCase() === normalized)
-            ) || FNA_MAPPING_PRODUCTS[0];
+            ) || (fallbackToFirst ? FNA_MAPPING_PRODUCTS[0] : null);
         };
 
         const makeFnaGroup = (id, title, mode, options, note = '') => ({ id, title, mode, options, note });
@@ -9186,11 +9187,11 @@ const shouldShowMed = () => {
             }
             if (broker === 'OnePlatform') {
                 return [
-                    makeFnaGroup('one-q5', 'Q5', na ? 'any' : 'atLeastOne', [
+                    makeFnaGroup('one-q5', 'Q5', na ? 'any' : 'all', [
                         { id: 'q5-1', label: 'Q5 condition / option 1', correct: true },
                         { id: 'q5-2', label: 'Q5 condition / option 2', correct: true },
                         { id: 'q5-3', label: 'Q5 condition / option 3', correct: true }
-                    ], na ? 'Excel mapping says either Yes or No is acceptable.' : 'Must satisfy Q5 mapping condition.'),
+                    ], na ? 'Excel mapping says either Yes or No is acceptable.' : 'Excel mapping shows Q5 requires multiple mapped selections.'),
                     makeFnaGroup('one-q6', 'Q6', na ? 'atLeastOne' : (annuityOrPromise ? 'atLeastOne' : 'all'), [
                         { id: 'q6-1', label: 'Q6 option 1', correct: true },
                         { id: 'q6-2', label: 'Q6 option 2', correct: na || annuityOrPromise },
@@ -9245,26 +9246,29 @@ const shouldShowMed = () => {
         };
 
         const FnaMappingValidationTab = () => {
+            const readPolicyProductName = () => {
+                try {
+                    const policyInput = JSON.parse(localStorage.getItem('policyInputFullState') || '{}');
+                    const summary = JSON.parse(localStorage.getItem('caseSummaryPolicyInfo') || '{}');
+                    return policyInput.planName || summary.planName || '';
+                } catch (err) {
+                    return '';
+                }
+            };
             const [broker, setBroker] = useState(FNA_MAPPING_BROKERS[0]);
-            const [productName, setProductName] = useState(FNA_MAPPING_PRODUCTS[0].name);
-            const [allocation, setAllocation] = useState('');
+            const [productName, setProductName] = useState(readPolicyProductName);
             const [answers, setAnswers] = useState({});
 
             const selectedProduct = useMemo(() => getFnaProductMapping(productName), [productName]);
-            const groups = useMemo(() => getFnaMappingGroups(broker, selectedProduct.category), [broker, selectedProduct.category]);
-            const targetRange = useMemo(() => parseFnaTargetRange(selectedProduct.target), [selectedProduct.target]);
-            const allocationNum = Number(allocation);
-            const allocationStatus = !targetRange
-                ? { status: 'na', ok: true, message: 'Target asset allocation is N/A for this product.' }
-                : (!allocation && allocation !== 0)
-                    ? { status: 'pending', ok: false, message: `Input the client's target asset allocation / non-fixed income %. Required range: ${selectedProduct.target}.` }
-                    : (Number.isFinite(allocationNum) && allocationNum >= targetRange.min && allocationNum <= targetRange.max)
-                        ? { status: 'pass', ok: true, message: `Within required range ${selectedProduct.target}.` }
-                        : { status: 'fail', ok: false, message: `Outside required range ${selectedProduct.target}.` };
-
+            const groups = useMemo(() => selectedProduct ? getFnaMappingGroups(broker, selectedProduct.category) : [], [broker, selectedProduct?.category]);
             const groupResults = groups.map((group) => ({ group, result: evaluateFnaGroup(group, answers[group.id] || []) }));
             const answeredGroups = groupResults.filter(({ group }) => group.mode === 'any' || (answers[group.id] || []).length > 0).length;
-            const overallOk = allocationStatus.ok && groupResults.every(({ result }) => result.ok);
+            const overallOk = !!selectedProduct && groupResults.length > 0 && groupResults.every(({ result }) => result.ok);
+            const productStatus = !productName
+                ? { status: 'pending', message: '請先在「保單資料輸入」頁面選擇計劃名稱。' }
+                : selectedProduct
+                    ? { status: 'pass', message: `Auto-filled from 保單資料輸入. Target allocation reference: ${selectedProduct.target}.` }
+                    : { status: 'fail', message: '此產品未有在 Product mapping for broker version FNA_May 2026 內找到對應 mapping。' };
             const toggleAnswer = (groupId, optionId) => {
                 setAnswers((prev) => {
                     const current = new Set(prev[groupId] || []);
@@ -9274,11 +9278,24 @@ const shouldShowMed = () => {
             };
             const resetAnswers = () => {
                 setAnswers({});
-                setAllocation('');
             };
             useEffect(() => {
                 resetAnswers();
             }, [broker, productName]);
+            useEffect(() => {
+                const refreshPolicyProduct = () => setProductName(readPolicyProductName());
+                window.addEventListener('policyInputFullStateUpdate', refreshPolicyProduct);
+                window.addEventListener('caseSummaryUpdate', refreshPolicyProduct);
+                window.addEventListener('storage', refreshPolicyProduct);
+                window.addEventListener('focus', refreshPolicyProduct);
+                refreshPolicyProduct();
+                return () => {
+                    window.removeEventListener('policyInputFullStateUpdate', refreshPolicyProduct);
+                    window.removeEventListener('caseSummaryUpdate', refreshPolicyProduct);
+                    window.removeEventListener('storage', refreshPolicyProduct);
+                    window.removeEventListener('focus', refreshPolicyProduct);
+                };
+            }, []);
 
             const badgeClass = (status) => {
                 if (status === 'pass' || status === 'na') return 'bg-emerald-50 border-emerald-200 text-emerald-800';
@@ -9303,24 +9320,25 @@ const shouldShowMed = () => {
                                                 {FNA_MAPPING_BROKERS.map((item) => <option key={item} value={item}>{item}</option>)}
                                             </select>
                                         </div>
-                                        <div>
+                                        <div className="md:col-span-2">
                                             <label className="text-[11px] font-bold text-slate-500">Product</label>
-                                            <select value={productName} onChange={(e) => setProductName(e.target.value)} className="w-full border border-slate-300 rounded p-2 text-sm">
-                                                {FNA_MAPPING_PRODUCTS.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label className="text-[11px] font-bold text-slate-500">Target Asset Allocation / non-fixed income %</label>
-                                            <input type="number" value={allocation} onChange={(e) => setAllocation(e.target.value)} disabled={!targetRange} className={`w-full border border-slate-300 rounded p-2 text-sm ${!targetRange ? 'bg-slate-100 text-slate-400' : 'bg-white'}`} />
+                                            <div className="w-full border border-slate-300 rounded p-2 text-sm bg-slate-100 text-slate-800 min-h-[38px]">
+                                                {productName || 'No product selected in 保單資料輸入'}
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className={`mt-3 border rounded p-3 text-sm ${badgeClass(allocationStatus.status)}`}>
-                                        <div className="font-bold">Target allocation mapping: {selectedProduct.target}</div>
-                                        <div className="text-xs mt-1">{allocationStatus.message}</div>
+                                    <div className={`mt-3 border rounded p-3 text-sm ${badgeClass(productStatus.status)}`}>
+                                        <div className="font-bold">Product mapping status</div>
+                                        <div className="text-xs mt-1">{productStatus.message}</div>
                                     </div>
                                 </div>
 
                                 <div className="space-y-3">
+                                    {!selectedProduct && (
+                                        <div className="bg-white border border-amber-200 rounded p-4 text-sm text-amber-800">
+                                            選擇一個已列於 Excel mapping 的產品後，系統會自動顯示該 broker 的所有 mapping question / option 供驗證。
+                                        </div>
+                                    )}
                                     {groupResults.map(({ group, result }) => (
                                         <div key={group.id} className="bg-white border border-slate-200 rounded p-4">
                                             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-2">
@@ -9352,8 +9370,9 @@ const shouldShowMed = () => {
                                     </div>
                                     <div className="mt-3 space-y-2 text-xs">
                                         <div><span className="font-bold">Broker:</span> {broker}</div>
-                                        <div><span className="font-bold">Product:</span> {selectedProduct.name}</div>
-                                        <div><span className="font-bold">Target:</span> {selectedProduct.target}</div>
+                                        <div><span className="font-bold">Product:</span> {productName || '-'}</div>
+                                        <div><span className="font-bold">Mapped product:</span> {selectedProduct?.name || '-'}</div>
+                                        <div><span className="font-bold">Target:</span> {selectedProduct?.target || '-'}</div>
                                         <div><span className="font-bold">Rule source:</span> Product mapping for broker's version FNA_May 2026</div>
                                     </div>
                                     <button type="button" onClick={resetAnswers} className="mt-4 w-full px-3 py-2 rounded border border-slate-300 text-slate-700 text-sm hover:bg-slate-50">Reset answers</button>
