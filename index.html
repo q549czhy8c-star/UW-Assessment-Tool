@@ -9132,7 +9132,7 @@ const shouldShowMed = () => {
             ) || (fallbackToFirst ? FNA_MAPPING_PRODUCTS[0] : null);
         };
 
-        const makeFnaGroup = (id, title, mode, options, note = '') => ({ id, title, mode, options, note });
+        const makeFnaGroup = (id, title, mode, options, note = '', requirements = []) => ({ id, title, mode, options, note, requirements });
         const isFnaNaCategory = (category) => category === 'naProtection';
         const isFnaAnnuityOrPromise = (category) => category === 'annuity20' || category === 'promise40';
 
@@ -9187,11 +9187,27 @@ const shouldShowMed = () => {
             }
             if (broker === 'OnePlatform') {
                 return [
-                    makeFnaGroup('one-q5', 'Q5', na ? 'any' : 'all', [
-                        { id: 'q5-1', label: 'Q5 condition / option 1', correct: true },
-                        { id: 'q5-2', label: 'Q5 condition / option 2', correct: true },
-                        { id: 'q5-3', label: 'Q5 condition / option 3', correct: true }
-                    ], na ? 'Excel mapping says either Yes or No is acceptable.' : 'Excel mapping shows Q5 requires multiple mapped selections.'),
+                    makeFnaGroup('one-q5', 'Q5 - knowledge / experience in financial products', na ? 'onePlatformQ5Na' : 'grouped', [
+                        { id: 'q5-yes', group: 'yesNo', label: 'Yes. I have the knowledge and/or experience in the following financial products', correct: true },
+                        { id: 'q5-no', group: 'yesNo', label: 'No. I have no knowledge and/or experience in financial products', correct: na },
+                        { id: 'q5-life', group: 'product', label: 'Life insurance 人壽保險', correct: true },
+                        { id: 'q5-bond', group: 'product', label: 'Bond 債券', correct: true },
+                        { id: 'q5-mutual', group: 'product', label: 'Mutual Fund / Unit Trust 互惠基金 / 單位信託', correct: true },
+                        { id: 'q5-stock', group: 'product', label: 'Stock 股票', correct: true },
+                        { id: 'q5-derivatives', group: 'product', label: 'Derivatives / Structured investment tool 衍生工具 / 結構性投資工具', correct: true },
+                        { id: 'q5-forex', group: 'product', label: 'Forex 外匯', correct: true },
+                        { id: 'q5-crypto', group: 'product', label: 'Crypto 加密貨幣', correct: true },
+                        { id: 'q5-others', group: 'product', label: 'Others 其他', correct: true },
+                        { id: 'q5-holding', group: 'experience', label: 'I am currently holding or previously held the financial product(s) chosen above', correct: true },
+                        { id: 'q5-qualification', group: 'experience', label: 'I have the relevant academic or professional qualifications on the financial product(s) chosen above', correct: true },
+                        { id: 'q5-introduced', group: 'experience', label: 'The relevant professional introduced the financial product(s) chosen above to me before', correct: true },
+                        { id: 'q5-work', group: 'experience', label: 'I used to work previously or am currently working in financial institutions', correct: true },
+                        { id: 'q5-self-learn', group: 'experience', label: 'I learn by myself and/or receive the relevant information through seminars, research from internet and financial news', correct: true }
+                    ], na ? 'Select either Yes or No. If Yes is selected, product / experience details may also be selected.' : 'Based on the coloured ticks: select Yes, at least one financial product type, and at least one experience source. Do not select No.', na ? [] : [
+                        { group: 'yesNo', label: 'Yes', min: 1, requiredIds: ['q5-yes'] },
+                        { group: 'product', label: 'Financial product type', min: 1 },
+                        { group: 'experience', label: 'Knowledge / experience source', min: 1 }
+                    ]),
                     makeFnaGroup('one-q6', 'Q6', na ? 'atLeastOne' : (annuityOrPromise ? 'atLeastOne' : 'all'), [
                         { id: 'q6-1', label: 'Q6 option 1', correct: true },
                         { id: 'q6-2', label: 'Q6 option 2', correct: na || annuityOrPromise },
@@ -9223,6 +9239,33 @@ const shouldShowMed = () => {
             const selectedOptions = group.options.filter((option) => selected.has(option.id));
             if (group.mode === 'any') {
                 return { ok: true, status: 'pass', message: 'Any selection / no selection is acceptable for this mapping.' };
+            }
+            if (group.mode === 'onePlatformQ5Na') {
+                const yesNoSelected = selectedOptions.filter((option) => option.group === 'yesNo');
+                const ok = yesNoSelected.length === 1;
+                return {
+                    ok,
+                    status: ok ? 'pass' : 'fail',
+                    message: ok ? 'Correct: either Yes or No selected.' : 'Incorrect: select either Yes or No for Q5.'
+                };
+            }
+            if (group.mode === 'grouped') {
+                const incorrectSelected = selectedOptions.filter((option) => !option.correct);
+                const missing = (group.requirements || []).filter((req) => {
+                    const selectedInGroup = selectedOptions.filter((option) => option.group === req.group);
+                    if (req.requiredIds && req.requiredIds.length) {
+                        return !req.requiredIds.every((id) => selected.has(id));
+                    }
+                    return selectedInGroup.length < (req.min || 1);
+                });
+                const ok = missing.length === 0 && incorrectSelected.length === 0;
+                return {
+                    ok,
+                    status: ok ? 'pass' : 'fail',
+                    message: ok
+                        ? 'Correct: all required coloured-tick groups are covered.'
+                        : `Incorrect${missing.length ? `, missing: ${missing.map(req => req.label).join(', ')}` : ''}${incorrectSelected.length ? `, should not tick: ${incorrectSelected.map(o => o.label).join(', ')}` : ''}.`
+                };
             }
             if (group.mode === 'exactOne') {
                 const ok = selectedOptions.length === 1;
@@ -9302,6 +9345,49 @@ const shouldShowMed = () => {
                 if (status === 'pending') return 'bg-amber-50 border-amber-200 text-amber-800';
                 return 'bg-rose-50 border-rose-200 text-rose-800';
             };
+            const fnaOptionGroupLabels = {
+                yesNo: 'Yes / No',
+                product: 'Financial product type',
+                experience: 'Knowledge / experience source'
+            };
+            const renderFnaOptions = (group) => {
+                const groupedOptions = group.options.reduce((acc, option) => {
+                    const key = option.group || 'options';
+                    acc[key] = acc[key] || [];
+                    acc[key].push(option);
+                    return acc;
+                }, {});
+                const keys = Object.keys(groupedOptions);
+                if (keys.length <= 1 && keys[0] === 'options') {
+                    return (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-3">
+                            {group.options.map((option) => (
+                                <label key={option.id} className="flex items-start gap-2 border border-slate-200 rounded p-2 text-sm bg-slate-50">
+                                    <input type="checkbox" checked={(answers[group.id] || []).includes(option.id)} onChange={() => toggleAnswer(group.id, option.id)} className="mt-1" />
+                                    <span>{option.label}</span>
+                                </label>
+                            ))}
+                        </div>
+                    );
+                }
+                return (
+                    <div className="space-y-3 mt-3">
+                        {keys.map((key) => (
+                            <div key={`${group.id}-${key}`} className="border border-slate-200 rounded p-3 bg-slate-50">
+                                <div className="text-[11px] font-bold text-slate-500 mb-2">{fnaOptionGroupLabels[key] || 'Options'}</div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                    {groupedOptions[key].map((option) => (
+                                        <label key={option.id} className="flex items-start gap-2 border border-slate-200 rounded p-2 text-sm bg-white">
+                                            <input type="checkbox" checked={(answers[group.id] || []).includes(option.id)} onChange={() => toggleAnswer(group.id, option.id)} className="mt-1" />
+                                            <span>{option.label}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                );
+            };
 
             return (
                 <div className="h-full bg-slate-50 overflow-y-auto custom-scrollbar p-4 md:p-6 tab-content">
@@ -9348,14 +9434,7 @@ const shouldShowMed = () => {
                                                 </div>
                                                 <div className={`border rounded px-2 py-1 text-xs font-bold ${badgeClass(result.status)}`}>{result.ok ? 'CORRECT' : 'INCORRECT'}</div>
                                             </div>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-3">
-                                                {group.options.map((option) => (
-                                                    <label key={option.id} className="flex items-start gap-2 border border-slate-200 rounded p-2 text-sm bg-slate-50">
-                                                        <input type="checkbox" checked={(answers[group.id] || []).includes(option.id)} onChange={() => toggleAnswer(group.id, option.id)} className="mt-1" />
-                                                        <span>{option.label}</span>
-                                                    </label>
-                                                ))}
-                                            </div>
+                                            {renderFnaOptions(group)}
                                             <div className={`mt-3 border rounded p-2 text-xs ${badgeClass(result.status)}`}>{result.message}</div>
                                         </div>
                                     ))}
