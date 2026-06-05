@@ -231,6 +231,25 @@
         const FQ_SOURCE_OF_PREMIUM_OPTIONS = ["Own income", "Own Wealth", "Premium Financing", "Others"];
         const PF_BANK_OPTIONS = ["DBS", "EleBank", "CMB"];
 
+        const FNA_MAPPING_PRODUCTS = [
+            { name: "LionAchiever Elite", category: "saving80", target: "0-80%" },
+            { name: "LionTycoon Beyond 2", category: "saving80", target: "0-80%" },
+            { name: "LionPrima", category: "saving60", target: "0-60%" },
+            { name: "Pearl Savings Insurance Plan", category: "saving60", target: "0-60%", aliases: ["Pearl"] },
+            { name: "Emerald Savings Insurance Plan", category: "saving60", target: "0-60%", aliases: ["Emerald"] },
+            { name: "LionHarvest Prime Deferred Annuity", category: "annuity20", target: "0-20%", aliases: ["LionHarvest Prime"] },
+            { name: "LionPromise Pro", category: "promise40", target: "0-40%" },
+            { name: "LionPatron", category: "protection50", target: "20-50%" },
+            { name: "LionAlong", category: "protection50", target: "20-50%" },
+            { name: "LionGuardian Beyond", category: "protection50", target: "20-50%" },
+            { name: "LionGuardian PlusOne", category: "naProtection", target: "N/A" },
+            { name: "LionPainter Flexi", category: "naProtection", target: "N/A" },
+            { name: "Generali Supreme Gold Plan", category: "naProtection", target: "N/A", aliases: ["Generali Supreme Gold"] },
+            { name: "LionMaster", category: "naProtection", target: "N/A" }
+        ];
+
+        const FNA_MAPPING_BROKERS = ["CITIC", "Fubon", "OnePlatform", "CMB", "AMG"];
+
 
 
 // ====== FNA Suitability Mapping Options (Part 2 / Part 3) ======
@@ -9104,6 +9123,248 @@ const shouldShowMed = () => {
             />
         );
 
+        const getFnaProductMapping = (productName) => {
+            const normalized = String(productName || '').trim().toLowerCase();
+            return FNA_MAPPING_PRODUCTS.find((item) =>
+                item.name.toLowerCase() === normalized ||
+                (item.aliases || []).some((alias) => alias.toLowerCase() === normalized)
+            ) || FNA_MAPPING_PRODUCTS[0];
+        };
+
+        const makeFnaGroup = (id, title, mode, options, note = '') => ({ id, title, mode, options, note });
+        const isFnaNaCategory = (category) => category === 'naProtection';
+        const isFnaAnnuityOrPromise = (category) => category === 'annuity20' || category === 'promise40';
+
+        const getFnaMappingGroups = (broker, category) => {
+            const na = isFnaNaCategory(category);
+            const annuityOrPromise = isFnaAnnuityOrPromise(category);
+            if (broker === 'CITIC') {
+                return [
+                    makeFnaGroup('citic-12', '1.2', na ? 'exactOne' : 'all', [
+                        { id: 'a', label: '(a) Accept', correct: true },
+                        { id: 'b', label: '(b) do not accept', correct: false }
+                    ], na ? 'Tick one option.' : 'Must tick (a) Accept.'),
+                    makeFnaGroup('citic-13', '1.3', (na || annuityOrPromise) ? 'exactOne' : 'all', [
+                        { id: 'a', label: '(a) Accept', correct: true },
+                        { id: 'b', label: '(b) do not accept', correct: false }
+                    ], (na || annuityOrPromise) ? 'Tick one option.' : 'Must tick (a) Accept.'),
+                    makeFnaGroup('citic-ke', 'Knowledge and experience', na ? 'atLeastOne' : 'all', [
+                        { id: 'a', label: '(a)', correct: true },
+                        { id: 'b', label: '(b)', correct: na }
+                    ], na ? 'Tick one or more.' : 'Must tick (a).')
+                ];
+            }
+            if (broker === 'Fubon') {
+                return [
+                    makeFnaGroup('fubon-1', '1', na ? 'exactOne' : 'all', [
+                        { id: 'a', label: '1(a)', correct: true },
+                        { id: 'b', label: '1(b)', correct: false },
+                        { id: 'c', label: '1(c)', correct: false }
+                    ], na ? 'Tick one option.' : 'Must tick 1(a).'),
+                    makeFnaGroup('fubon-2', '2', na ? 'exactOne' : 'all', [
+                        { id: 'a', label: '2(a)', correct: true },
+                        { id: 'b', label: '2(b)', correct: false }
+                    ], na ? 'Tick one option.' : 'Must tick 2(a).'),
+                    makeFnaGroup('fubon-21', '2.1', (na || annuityOrPromise) ? 'exactOne' : 'all', [
+                        { id: 'a', label: '2.1(a)', correct: true },
+                        { id: 'b', label: '2.1(b)', correct: false }
+                    ], (na || annuityOrPromise) ? 'Tick one option.' : 'Must tick 2.1(a).')
+                ];
+            }
+            if (broker === 'CMB') {
+                return [
+                    makeFnaGroup('cmb-c', '(C)', na ? 'exactOne' : 'all', [
+                        { id: 'yes', label: '(C) - Yes', correct: true },
+                        { id: 'no', label: '(C) - No', correct: false }
+                    ], na ? 'Tick one option.' : 'Must tick Yes.'),
+                    makeFnaGroup('cmb-1b', '(1b)', na ? 'exactOne' : 'all', [
+                        { id: 'a', label: 'option (a)', correct: !annuityOrPromise },
+                        { id: 'b', label: 'option (b)', correct: annuityOrPromise },
+                        { id: 'c', label: 'option (c)', correct: false }
+                    ], na ? 'Tick one option.' : (annuityOrPromise ? 'Must tick option (b).' : 'Must tick option (a).'))
+                ];
+            }
+            if (broker === 'OnePlatform') {
+                return [
+                    makeFnaGroup('one-q5', 'Q5', na ? 'any' : 'atLeastOne', [
+                        { id: 'q5-1', label: 'Q5 condition / option 1', correct: true },
+                        { id: 'q5-2', label: 'Q5 condition / option 2', correct: true },
+                        { id: 'q5-3', label: 'Q5 condition / option 3', correct: true }
+                    ], na ? 'Excel mapping says either Yes or No is acceptable.' : 'Must satisfy Q5 mapping condition.'),
+                    makeFnaGroup('one-q6', 'Q6', na ? 'atLeastOne' : (annuityOrPromise ? 'atLeastOne' : 'all'), [
+                        { id: 'q6-1', label: 'Q6 option 1', correct: true },
+                        { id: 'q6-2', label: 'Q6 option 2', correct: na || annuityOrPromise },
+                        { id: 'q6-3', label: 'Q6 option 3', correct: na }
+                    ], (na || annuityOrPromise) ? 'Tick one or more mapped option(s).' : 'Must tick Q6 mapped option.')
+                ];
+            }
+            return [
+                makeFnaGroup('amg-s2', 'Section 2', na ? 'exactOne' : 'all', [
+                    { id: 's2-1', label: 'Section 2 option 1', correct: true },
+                    { id: 's2-2', label: 'Section 2 option 2', correct: na }
+                ], na ? 'Tick one option in Section 2.' : 'Must tick Section 2.'),
+                makeFnaGroup('amg-s3', 'Section 3', 'all', [
+                    { id: 's3', label: 'Section 3', correct: true }
+                ], 'Must tick Section 3.')
+            ];
+        };
+
+        const parseFnaTargetRange = (target) => {
+            const clean = String(target || '').replace(/\s/g, '');
+            if (!clean || clean.toUpperCase() === 'N/A') return null;
+            const match = clean.match(/^(\d+(?:\.\d+)?)-(\d+(?:\.\d+)?)%?$/);
+            if (!match) return null;
+            return { min: Number(match[1]), max: Number(match[2]) };
+        };
+
+        const evaluateFnaGroup = (group, selections) => {
+            const selected = new Set(selections || []);
+            const selectedOptions = group.options.filter((option) => selected.has(option.id));
+            if (group.mode === 'any') {
+                return { ok: true, status: 'pass', message: 'Any selection / no selection is acceptable for this mapping.' };
+            }
+            if (group.mode === 'exactOne') {
+                const ok = selectedOptions.length === 1;
+                return { ok, status: ok ? 'pass' : 'fail', message: ok ? 'Correct: exactly one mapped option selected.' : 'Incorrect: select exactly one option in this question.' };
+            }
+            if (group.mode === 'atLeastOne') {
+                const correctSelected = selectedOptions.filter((option) => option.correct).length;
+                const incorrectSelected = selectedOptions.filter((option) => !option.correct).length;
+                const ok = correctSelected >= 1 && incorrectSelected === 0;
+                return { ok, status: ok ? 'pass' : 'fail', message: ok ? 'Correct: at least one mapped option selected.' : 'Incorrect: select at least one mapped option and avoid unmapped options.' };
+            }
+            const required = group.options.filter((option) => option.correct);
+            const missing = required.filter((option) => !selected.has(option.id));
+            const extra = group.options.filter((option) => !option.correct && selected.has(option.id));
+            const ok = missing.length === 0 && extra.length === 0;
+            return {
+                ok,
+                status: ok ? 'pass' : 'fail',
+                message: ok ? 'Correct.' : `Incorrect${missing.length ? `, missing: ${missing.map(o => o.label).join(', ')}` : ''}${extra.length ? `, should not tick: ${extra.map(o => o.label).join(', ')}` : ''}.`
+            };
+        };
+
+        const FnaMappingValidationTab = () => {
+            const [broker, setBroker] = useState(FNA_MAPPING_BROKERS[0]);
+            const [productName, setProductName] = useState(FNA_MAPPING_PRODUCTS[0].name);
+            const [allocation, setAllocation] = useState('');
+            const [answers, setAnswers] = useState({});
+
+            const selectedProduct = useMemo(() => getFnaProductMapping(productName), [productName]);
+            const groups = useMemo(() => getFnaMappingGroups(broker, selectedProduct.category), [broker, selectedProduct.category]);
+            const targetRange = useMemo(() => parseFnaTargetRange(selectedProduct.target), [selectedProduct.target]);
+            const allocationNum = Number(allocation);
+            const allocationStatus = !targetRange
+                ? { status: 'na', ok: true, message: 'Target asset allocation is N/A for this product.' }
+                : (!allocation && allocation !== 0)
+                    ? { status: 'pending', ok: false, message: `Input the client's target asset allocation / non-fixed income %. Required range: ${selectedProduct.target}.` }
+                    : (Number.isFinite(allocationNum) && allocationNum >= targetRange.min && allocationNum <= targetRange.max)
+                        ? { status: 'pass', ok: true, message: `Within required range ${selectedProduct.target}.` }
+                        : { status: 'fail', ok: false, message: `Outside required range ${selectedProduct.target}.` };
+
+            const groupResults = groups.map((group) => ({ group, result: evaluateFnaGroup(group, answers[group.id] || []) }));
+            const answeredGroups = groupResults.filter(({ group }) => group.mode === 'any' || (answers[group.id] || []).length > 0).length;
+            const overallOk = allocationStatus.ok && groupResults.every(({ result }) => result.ok);
+            const toggleAnswer = (groupId, optionId) => {
+                setAnswers((prev) => {
+                    const current = new Set(prev[groupId] || []);
+                    current.has(optionId) ? current.delete(optionId) : current.add(optionId);
+                    return { ...prev, [groupId]: [...current] };
+                });
+            };
+            const resetAnswers = () => {
+                setAnswers({});
+                setAllocation('');
+            };
+            useEffect(() => {
+                resetAnswers();
+            }, [broker, productName]);
+
+            const badgeClass = (status) => {
+                if (status === 'pass' || status === 'na') return 'bg-emerald-50 border-emerald-200 text-emerald-800';
+                if (status === 'pending') return 'bg-amber-50 border-amber-200 text-amber-800';
+                return 'bg-rose-50 border-rose-200 text-rose-800';
+            };
+
+            return (
+                <div className="h-full bg-slate-50 overflow-y-auto custom-scrollbar p-4 md:p-6 tab-content">
+                    <div className="max-w-7xl mx-auto space-y-4">
+                        <div>
+                            <h2 className="text-lg font-bold text-slate-800">FNA Mapping Validation</h2>
+                            <p className="text-xs text-slate-500">Validate broker-specific FNA product mapping based on Product mapping for broker's version FNA_May 2026.</p>
+                        </div>
+                        <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
+                            <div className="xl:col-span-8 space-y-4">
+                                <div className="bg-white border border-slate-200 rounded p-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                        <div>
+                                            <label className="text-[11px] font-bold text-slate-500">Broker</label>
+                                            <select value={broker} onChange={(e) => setBroker(e.target.value)} className="w-full border border-slate-300 rounded p-2 text-sm">
+                                                {FNA_MAPPING_BROKERS.map((item) => <option key={item} value={item}>{item}</option>)}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="text-[11px] font-bold text-slate-500">Product</label>
+                                            <select value={productName} onChange={(e) => setProductName(e.target.value)} className="w-full border border-slate-300 rounded p-2 text-sm">
+                                                {FNA_MAPPING_PRODUCTS.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="text-[11px] font-bold text-slate-500">Target Asset Allocation / non-fixed income %</label>
+                                            <input type="number" value={allocation} onChange={(e) => setAllocation(e.target.value)} disabled={!targetRange} className={`w-full border border-slate-300 rounded p-2 text-sm ${!targetRange ? 'bg-slate-100 text-slate-400' : 'bg-white'}`} />
+                                        </div>
+                                    </div>
+                                    <div className={`mt-3 border rounded p-3 text-sm ${badgeClass(allocationStatus.status)}`}>
+                                        <div className="font-bold">Target allocation mapping: {selectedProduct.target}</div>
+                                        <div className="text-xs mt-1">{allocationStatus.message}</div>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-3">
+                                    {groupResults.map(({ group, result }) => (
+                                        <div key={group.id} className="bg-white border border-slate-200 rounded p-4">
+                                            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-2">
+                                                <div>
+                                                    <div className="font-bold text-sm text-slate-800">{group.title}</div>
+                                                    <div className="text-xs text-slate-500">{group.note}</div>
+                                                </div>
+                                                <div className={`border rounded px-2 py-1 text-xs font-bold ${badgeClass(result.status)}`}>{result.ok ? 'CORRECT' : 'INCORRECT'}</div>
+                                            </div>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-3">
+                                                {group.options.map((option) => (
+                                                    <label key={option.id} className="flex items-start gap-2 border border-slate-200 rounded p-2 text-sm bg-slate-50">
+                                                        <input type="checkbox" checked={(answers[group.id] || []).includes(option.id)} onChange={() => toggleAnswer(group.id, option.id)} className="mt-1" />
+                                                        <span>{option.label}</span>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                            <div className={`mt-3 border rounded p-2 text-xs ${badgeClass(result.status)}`}>{result.message}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="xl:col-span-4">
+                                <div className="bg-white border border-slate-200 rounded p-4 xl:sticky xl:top-4">
+                                    <div className="font-bold text-sm mb-3">Validation Result</div>
+                                    <div className={`border rounded p-3 text-sm ${overallOk ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-amber-50 border-amber-200 text-amber-800'}`}>
+                                        <div className="font-bold">{overallOk ? 'PASS - Mapping is correct' : 'Pending / Incorrect mapping'}</div>
+                                        <div className="text-xs mt-1">Answered {answeredGroups} / {groups.length} question group(s).</div>
+                                    </div>
+                                    <div className="mt-3 space-y-2 text-xs">
+                                        <div><span className="font-bold">Broker:</span> {broker}</div>
+                                        <div><span className="font-bold">Product:</span> {selectedProduct.name}</div>
+                                        <div><span className="font-bold">Target:</span> {selectedProduct.target}</div>
+                                        <div><span className="font-bold">Rule source:</span> Product mapping for broker's version FNA_May 2026</div>
+                                    </div>
+                                    <button type="button" onClick={resetAnswers} className="mt-4 w-full px-3 py-2 rounded border border-slate-300 text-slate-700 text-sm hover:bg-slate-50">Reset answers</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
 const App = () => {
             const [activeTab, setActiveTab] = useState('policyInfo');
             const [businessInsuranceEnabled, setBusinessInsuranceEnabled] = useState(false);
@@ -9696,6 +9957,7 @@ const App = () => {
                             <button onClick={() => setActiveTab('exclusion')} className={`pb-3 px-2 flex items-center gap-2 transition-all border-b-2 ${activeTab === 'exclusion' ? 'border-blue-600 text-blue-600 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700'}`}><Info size={18}/> Exclusion Code</button>
                             {/* Occupation-related tabs */}
                             <button onClick={() => setActiveTab('occupation')} className={`pb-3 px-2 flex items-center gap-2 transition-all border-b-2 ${activeTab === 'occupation' ? 'border-blue-600 text-blue-600 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700'}`}><Briefcase size={18}/> Occupation Rating</button>
+                            <button onClick={() => setActiveTab('fnaMapping')} className={`pb-3 px-2 flex items-center gap-2 transition-all border-b-2 ${activeTab === 'fnaMapping' ? 'border-blue-600 text-blue-600 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700'}`}><Check size={18}/> FNA Mapping</button>
                             <button onClick={() => setActiveTab('salaryBenchmark')} className={`pb-3 px-2 flex items-center gap-2 transition-all border-b-2 ${activeTab === 'salaryBenchmark' ? 'border-blue-600 text-blue-600 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700'}`}><Calculator size={18}/> Salary Benchmark</button>
                             {/* New Master Broker List tab */}
                             <button onClick={() => setActiveTab('broker')} className={`pb-3 px-2 flex items-center gap-2 transition-all border-b-2 ${activeTab === 'broker' ? 'border-blue-600 text-blue-600 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>Master Broker List</button>
@@ -9712,6 +9974,7 @@ const App = () => {
                         <div style={{ display: activeTab === 'pending' ? 'block' : 'none', height: '100%' }}><PendingMessageTab /></div>
                         <div style={{ display: activeTab === 'exclusion' ? 'block' : 'none', height: '100%' }}><ExclusionCodeTab /></div>
                         <div style={{ display: activeTab === 'occupation' ? 'block' : 'none', height: '100%' }}><OccupationTab /></div>
+                        <div style={{ display: activeTab === 'fnaMapping' ? 'block' : 'none', height: '100%' }}><FnaMappingValidationTab /></div>
                         <div style={{ display: activeTab === 'salaryBenchmark' ? 'block' : 'none', height: '100%' }}><SalaryBenchmarkTab /></div>
                         <div style={{ display: activeTab === 'broker' ? 'block' : 'none', height: '100%' }}><BrokerListTab /></div>
                     </div>
