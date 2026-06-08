@@ -9215,11 +9215,29 @@ const shouldShowMed = () => {
                         { group: 'product', label: 'Financial product type', min: 1 },
                         { group: 'experience', label: 'I am currently holding or previously held the financial product(s) chosen above', min: 1, requiredIds: ['q5-holding'] }
                     ]),
-                    makeFnaGroup('one-q6', '6. For life insurance product, which one of the following statements describes your risk tolerance the best? (Please select one of the following options) / 就人壽保險產品而言，下列哪一項描述最能反映您的風險承受能力？（請選擇其一）', na ? 'atLeastOne' : (annuityOrPromise ? 'atLeastOne' : 'all'), [
-                        { id: 'q6-1', label: 'I can accept the life insurance product with guaranteed benefits only / 我只能接受僅含有保證收益的人壽保險產品。', correct: true },
-                        { id: 'q6-2', label: 'I can accept the life insurance product with guaranteed benefits and non-guaranteed benefits which can provide a potential higher long-term return on the policy value. However, I understand that the non-guaranteed benefits may be less than the value projected in the illustration or even zero which leads my policy value to fluctuate from the total premium paid. Sub-options shown in the questionnaire: I accept the portion of non-guaranteed benefits which is less than 50%; I accept the portion of non-guaranteed benefits which is equal to or more than 50%; I accept any portion of non-guaranteed benefits. / 我可以接受含有保證及非保證收益成分的人壽保險產品，該非保證收益成分可望帶來更高的長期保單價值回報；但我理解非保證收益可能低於說明書中預測的金額，甚至可能為零，這將導致保單價值可能遠低於已繳總保費。問卷列出的分項選擇：我可以接受非保證收益成分少於50%；我可以接受非保證收益成分等於或多於50%；我可以接受任何成分的非保證收益。', correct: na || annuityOrPromise },
-                        { id: 'q6-3', label: 'I can accept the life insurance product where the policy value is determined by the performance of selected investment choices which may lead the policy value being fluctuated significantly due to investment market situation. As a result, the policy value will be impacted and may much less than the total premium paid. / 我可以接受保單價值取決於所選投資選項表現的人壽保險產品，並理解保單價值或會因投資市場情況大幅波動，甚至可能遠低於已繳總保費。', correct: na }
-                    ], (na || annuityOrPromise) ? 'Tick one or more mapped option(s).' : 'Must tick Q6 mapped option.')
+                    makeFnaGroup('one-q6', '6. For life insurance product, which one of the following statements describes your risk tolerance the best? (Please select one of the following options)\n就人壽保險產品而言，下列哪一項描述最能反映您的風險承受能力？（請選擇其一）', 'onePlatformQ6', [
+                        { id: 'q6-1', group: 'q6Risk', label: '[Purple tick] I can accept the life insurance product with guaranteed benefits only\n[紫色剔] 我只能接受僅含有保證收益的人壽保險產品。', correct: na || annuityOrPromise },
+                        { id: 'q6-2-less', group: 'q6Risk', label: '[Purple tick] I can accept the life insurance product with guaranteed benefits and non-guaranteed benefits which can provide a potential higher long-term return on the policy value. However, I understand that the non-guaranteed benefits may be less than the value projected in the illustration or even zero which leads my policy value to fluctuate from the total premium paid.\nSub-option: I accept the portion of non-guaranteed benefits which is less than 50%.\n[紫色剔] 我可以接受含有保證及非保證收益成分的人壽保險產品，該非保證收益成分可望帶來更高的長期保單價值回報；但我理解非保證收益可能低於說明書中預測的金額，甚至可能為零，這將導致保單價值可能遠低於已繳總保費。\n分項選擇：我可以接受非保證收益成分少於 50%。', correct: na || annuityOrPromise },
+                        { id: 'q6-2-gte50', group: 'q6Risk', label: '[Red tick] I can accept the life insurance product with guaranteed benefits and non-guaranteed benefits which can provide a potential higher long-term return on the policy value. However, I understand that the non-guaranteed benefits may be less than the value projected in the illustration or even zero which leads my policy value to fluctuate from the total premium paid.\nSub-option: I accept the portion of non-guaranteed benefits which is equal to or more than 50%.\n[紅色剔] 我可以接受含有保證及非保證收益成分的人壽保險產品，該非保證收益成分可望帶來更高的長期保單價值回報；但我理解非保證收益可能低於說明書中預測的金額，甚至可能為零，這將導致保單價值可能遠低於已繳總保費。\n分項選擇：我可以接受非保證收益成分等於或多於 50%。', correct: true },
+                        { id: 'q6-2-any', group: 'q6Risk', label: '[Red tick] I can accept the life insurance product with guaranteed benefits and non-guaranteed benefits which can provide a potential higher long-term return on the policy value. However, I understand that the non-guaranteed benefits may be less than the value projected in the illustration or even zero which leads my policy value to fluctuate from the total premium paid.\nSub-option: I accept any portion of non-guaranteed benefits.\n[紅色剔] 我可以接受含有保證及非保證收益成分的人壽保險產品，該非保證收益成分可望帶來更高的長期保單價值回報；但我理解非保證收益可能低於說明書中預測的金額，甚至可能為零，這將導致保單價值可能遠低於已繳總保費。\n分項選擇：我可以接受任何成分的非保證收益。', correct: true },
+                        { id: 'q6-3', group: 'q6Risk', label: '[Green tick] I can accept the life insurance product where the policy value is determined by the performance of selected investment choices which may lead the policy value being fluctuated significantly due to investment market situation. As a result, the policy value will be impacted and may much less than the total premium paid.\n[綠色剔] 我可以接受保單價值取決於所選投資選項表現的人壽保險產品，並理解保單價值或會因投資市場情況大幅波動，甚至可能遠低於已繳總保費。', correct: na }
+                    ], na
+                        ? 'PDF mapping: tick one or more purple / red / green options.'
+                        : annuityOrPromise
+                            ? 'PDF mapping: tick one or more purple / red options.'
+                            : 'PDF mapping: red tick applies to the guaranteed + non-guaranteed benefit option. Either red sub-option is acceptable.',
+                    [{
+                        allowedIds: na
+                            ? ['q6-1', 'q6-2-less', 'q6-2-gte50', 'q6-2-any', 'q6-3']
+                            : annuityOrPromise
+                                ? ['q6-1', 'q6-2-less', 'q6-2-gte50', 'q6-2-any']
+                                : ['q6-2-gte50', 'q6-2-any'],
+                        requiredAnyIds: na
+                            ? ['q6-1', 'q6-2-less', 'q6-2-gte50', 'q6-2-any', 'q6-3']
+                            : annuityOrPromise
+                                ? ['q6-1', 'q6-2-less', 'q6-2-gte50', 'q6-2-any']
+                                : ['q6-2-gte50', 'q6-2-any']
+                    }])
                 ];
             }
             return [
@@ -9281,6 +9299,21 @@ const shouldShowMed = () => {
                     message: ok
                         ? 'Correct: all required coloured-tick groups are covered.'
                         : `Incorrect${missing.length ? `, missing: ${missing.map(req => req.label).join(', ')}` : ''}${incorrectSelected.length ? `, should not tick: ${incorrectSelected.map(o => o.label).join(', ')}` : ''}.`
+                };
+            }
+            if (group.mode === 'onePlatformQ6') {
+                const rule = (group.requirements || [])[0] || {};
+                const allowed = new Set(rule.allowedIds || []);
+                const requiredAny = new Set(rule.requiredAnyIds || []);
+                const invalid = selectedOptions.filter((option) => !allowed.has(option.id));
+                const hasRequired = selectedOptions.some((option) => requiredAny.has(option.id));
+                const ok = hasRequired && invalid.length === 0;
+                return {
+                    ok,
+                    status: ok ? 'pass' : 'fail',
+                    message: ok
+                        ? 'Correct: selected option matches the PDF coloured-tick mapping.'
+                        : `Incorrect${hasRequired ? '' : ': select at least one mapped coloured-tick option'}${invalid.length ? `${hasRequired ? ':' : ';'} should not tick: ${invalid.map(o => o.label.split('\n')[0]).join(', ')}` : ''}.`
                 };
             }
             if (group.mode === 'exactOne') {
@@ -9367,7 +9400,8 @@ const shouldShowMed = () => {
             const fnaOptionGroupLabels = {
                 yesNo: 'Yes / No',
                 product: 'Financial product type',
-                experience: 'Knowledge / experience source'
+                experience: 'Knowledge / experience source',
+                q6Risk: 'Risk tolerance option'
             };
             const renderFnaOptions = (group) => {
                 const groupedOptions = group.options.reduce((acc, option) => {
@@ -9383,7 +9417,7 @@ const shouldShowMed = () => {
                             {group.options.map((option) => (
                                 <label key={option.id} className="flex items-start gap-2 border border-slate-200 rounded p-2 text-sm bg-slate-50">
                                     <input type="checkbox" checked={(answers[group.id] || []).includes(option.id)} onChange={() => toggleAnswer(group.id, option.id)} className="mt-1" />
-                                    <span>{option.label}</span>
+                                    <span className="whitespace-pre-line leading-relaxed">{option.label}</span>
                                 </label>
                             ))}
                         </div>
@@ -9398,7 +9432,7 @@ const shouldShowMed = () => {
                                     {groupedOptions[key].map((option) => (
                                         <label key={option.id} className="flex items-start gap-2 border border-slate-200 rounded p-2 text-sm bg-white">
                                             <input type="checkbox" checked={(answers[group.id] || []).includes(option.id)} onChange={() => toggleAnswer(group.id, option.id)} className="mt-1" />
-                                            <span>{option.label}</span>
+                                            <span className="whitespace-pre-line leading-relaxed">{option.label}</span>
                                         </label>
                                     ))}
                                 </div>
@@ -9460,8 +9494,8 @@ const shouldShowMed = () => {
                                         <div key={group.id} className="bg-white border border-slate-200 rounded p-4">
                                             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-2">
                                                 <div>
-                                                    <div className="font-bold text-sm text-slate-800">{group.title}</div>
-                                                    <div className="text-xs text-slate-500">{group.note}</div>
+                                                    <div className="font-bold text-sm text-slate-800 whitespace-pre-line leading-relaxed">{group.title}</div>
+                                                    <div className="text-xs text-slate-500 whitespace-pre-line leading-relaxed">{group.note}</div>
                                                 </div>
                                                 <div className={`border rounded px-2 py-1 text-xs font-bold ${badgeClass(result.status)}`}>{result.ok ? 'CORRECT' : 'INCORRECT'}</div>
                                             </div>
