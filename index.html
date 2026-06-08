@@ -9210,15 +9210,15 @@ const shouldShowMed = () => {
                         { id: 'q5-introduced', group: 'experience', label: 'The relevant professional introduced the financial product(s) chosen above to me before', correct: true },
                         { id: 'q5-work', group: 'experience', label: 'I used to work previously or am currently working in financial institutions', correct: true },
                         { id: 'q5-self-learn', group: 'experience', label: 'I learn by myself and/or receive the relevant information through seminars, research from internet and financial news', correct: true }
-                    ], na ? 'Select either Yes or No. If Yes is selected, product / experience details may also be selected.' : 'Based on the coloured ticks: select Yes, at least one financial product type, and at least one experience source. Do not select No.', na ? [] : [
+                    ], na ? 'Select either Yes or No. If Yes is selected, product / experience details may also be selected.' : 'Based on the coloured ticks: select Yes, at least one financial product type, and "I am currently holding or previously held..." as the required experience source. Do not select No.', na ? [] : [
                         { group: 'yesNo', label: 'Yes', min: 1, requiredIds: ['q5-yes'] },
                         { group: 'product', label: 'Financial product type', min: 1 },
-                        { group: 'experience', label: 'Knowledge / experience source', min: 1 }
+                        { group: 'experience', label: 'I am currently holding or previously held the financial product(s) chosen above', min: 1, requiredIds: ['q5-holding'] }
                     ]),
-                    makeFnaGroup('one-q6', 'Q6', na ? 'atLeastOne' : (annuityOrPromise ? 'atLeastOne' : 'all'), [
-                        { id: 'q6-1', label: 'Q6 option 1', correct: true },
-                        { id: 'q6-2', label: 'Q6 option 2', correct: na || annuityOrPromise },
-                        { id: 'q6-3', label: 'Q6 option 3', correct: na }
+                    makeFnaGroup('one-q6', 'Q6 - risk tolerance for life insurance product', na ? 'atLeastOne' : (annuityOrPromise ? 'atLeastOne' : 'all'), [
+                        { id: 'q6-1', label: 'I can accept the life insurance product with guaranteed benefits only / 我只能接受僅含有保證收益的人壽保險產品。', correct: true },
+                        { id: 'q6-2', label: 'I can accept the life insurance product with guaranteed benefits and non-guaranteed benefits which can provide a potential higher long-term return on the policy value. However, I understand that the non-guaranteed benefits may be less than the value projected in the illustration or even zero which leads my policy value to fluctuate from the total premium paid. Non-guaranteed portion selection: less than 50% / equal or more than 50% / any portion. / 我可以接受含有保證及非保證收益的人壽保險產品，並理解非保證收益可能少於建議書預期或甚至為零，可接受非保證收益成分少於50%、相等或超過50%、或任何成分。', correct: na || annuityOrPromise },
+                        { id: 'q6-3', label: 'I can accept the life insurance product where the policy value is determined by the performance of selected investment choices which may lead the policy value being fluctuated significantly due to investment market situation. As a result, the policy value will be impacted and may much less than the total premium paid. / 我可以接受保單價值取決於所選投資選項表現的人壽保險產品，並理解保單價值或會因投資市場情況大幅波動，甚至可能遠低於已繳總保費。', correct: na }
                     ], (na || annuityOrPromise) ? 'Tick one or more mapped option(s).' : 'Must tick Q6 mapped option.')
                 ];
             }
