@@ -9143,10 +9143,16 @@ const shouldShowMed = () => {
         const isFnaNaCategory = (category) => category === 'naProtection';
         const isFnaAnnuityOrPromise = (category) => category === 'annuity20' || category === 'promise40';
 
-        const getFnaMappingGroups = (broker, category) => {
+        const getFnaMappingGroups = (broker, category, context = {}) => {
             const na = isFnaNaCategory(category);
             const annuityOrPromise = isFnaAnnuityOrPromise(category);
             if (broker === 'CITIC') {
+                const citicApplicantType = context.citicApplicantType || 'individual';
+                const citicIsCompany = citicApplicantType === 'company';
+                const citicGreenIds = citicIsCompany
+                    ? ['citic-ke-consultant', 'citic-ke-existing-policy', 'citic-ke-others']
+                    : ['citic-ke-consultant', 'citic-ke-current-policy', 'citic-ke-recent-policy', 'citic-ke-other-long-term', 'citic-ke-others'];
+                const citicAllMappedIds = ['citic-ke-investment', 'citic-ke-b'].concat(citicGreenIds);
                 return [
                     makeFnaGroup('citic-12', '1.2 Within your risk appetite, are you willing to accept insurance products with non-guaranteed returns? / 根據閣下的風險偏好，您是否願意接受含有非保證收益的保險產品？', na ? 'exactOneAny' : 'all', [
                         { id: 'a', label: 'Accept 接受 (詢問第 1.3 Please answer 1.3)', correct: true },
@@ -9156,10 +9162,28 @@ const shouldShowMed = () => {
                         { id: 'a', label: 'Accept 接受', correct: true },
                         { id: 'b', label: 'Do not accept 不接受', correct: false }
                     ], (na || annuityOrPromise) ? 'Tick one option.' : 'Must tick Accept.'),
-                    makeFnaGroup('citic-ke', 'Do you have any life insurance / financial knowledge and experience? / 請問閣下是否有壽險和財務知識和經驗？', na ? 'atLeastOne' : 'all', [
-                        { id: 'a', label: 'a) Yes. I have obtained life insurance / financial knowledge and experience from the selected source(s), such as previous explanation by insurance financial consultant, currently/previously owning life insurance policies, professional training, investment product knowledge, or other sources. / 有，從理財顧問說明、持有保單、專業培訓、投資產品或其他途徑取得相關知識和經驗。', correct: true },
-                        { id: 'b', label: 'b) No life insurance / financial knowledge and experience, but I have received the relevant insurance product information from official website of regulatory bodies. / 沒有相關知識及經驗，但已從監管機構官方網站得到相關保險財務產品資訊。', correct: na }
-                    ], na ? 'Tick one or more mapped option(s).' : 'Must tick option a).')
+                    makeFnaGroup('citic-ke', `Do you have any life insurance / financial knowledge and experience? / 請問閣下是否有壽險和財務知識和經驗？\n${citicIsCompany ? 'For Company as the applicant / 由公司作為申請人' : 'For Individual as the applicant / 由個人作為申請人'}`, 'grouped', [
+                        { id: 'citic-ke-consultant', group: 'citicOptionA', label: citicIsCompany ? '(a) Previous explanation by an insurance financial consultant / 曾由保險理財顧問說明' : '(a) Previous explanation by an insurance financial consultant / 曾由保險理財顧問說明', correct: true },
+                        ...(citicIsCompany ? [
+                            { id: 'citic-ke-existing-policy', group: 'citicOptionA', label: '(a) Currently or previously own(ed) insurance policy(ies) / 現在或曾持有保險保單', correct: true },
+                            { id: 'citic-ke-training', group: 'citicOptionA', label: '(a) Professional training on insurance / 保險專業培訓', correct: false }
+                        ] : [
+                            { id: 'citic-ke-current-policy', group: 'citicOptionA', label: '(a) Currently or previously own(ed) annuity insurance product(s) that issued in last five years / 現在或曾持有最近五年內簽發的年金保險產品', correct: true },
+                            { id: 'citic-ke-recent-policy', group: 'citicOptionA', label: '(a) Currently or previously own(ed) other non-linked long term insurance product(s) except annuity insurance product(s) that issued in last five years / 現在或曾持有最近五年內簽發的其他長期保險產品（年金除外）', correct: true },
+                            { id: 'citic-ke-other-long-term', group: 'citicOptionA', label: '(a) Currently or previously own(ed) other non-linked long term insurance product(s) / 現在或曾持有其他非投資相連長期保險產品', correct: true }
+                        ]),
+                        { id: 'citic-ke-investment', group: 'citicOptionA', label: '(a) Currently or previously own(ed) investment products including but not limited to the following: stocks, investment funds, commodities (e.g. gold), structured investment products, bonds, warrants, options, futures, margin / leveraged trading, time / capital guaranteed certificate of deposits / 現在或曾持有投資產品，包括但不限於股票、投資基金、商品（例如黃金）、結構性投資產品、債券、認股權證、期權、期貨、孖展/槓桿交易、定期/保本存款證', correct: true },
+                        { id: 'citic-ke-others', group: 'citicOptionA', label: '(a) Others (such as news / seminars / own research) / 其他（例如新聞、研討會、個人資料搜集）', correct: true },
+                        { id: 'citic-ke-b', group: 'citicOptionB', label: '(b) No life insurance / financial knowledge and experience, but I have received the relevant insurance product information from official website of regulatory bodies. / 沒有相關知識及經驗，但已從監管機構官方網站得到相關保險財務產品資訊。', correct: na }
+                    ], na
+                        ? 'Target asset allocation N/A: tick one or more mapped option(s).'
+                        : 'Products involving target asset allocation: must tick the red investment-products option and at least one green-tick source under option (a).',
+                    na ? [
+                        { group: 'citicOptionA', label: 'At least one mapped CITIC knowledge / experience option', min: 1, anyIds: citicAllMappedIds }
+                    ] : [
+                        { group: 'citicOptionA', label: 'Red tick: investment products experience', min: 1, requiredIds: ['citic-ke-investment'] },
+                        { group: 'citicOptionA', label: 'At least one green-tick CITIC knowledge / experience source', min: 1, anyIds: citicGreenIds }
+                    ])
                 ];
             }
             if (broker === 'Fubon') {
@@ -9371,11 +9395,12 @@ const shouldShowMed = () => {
             const [policyProductName, setPolicyProductName] = useState(readPolicyProductName);
             const [productMode, setProductMode] = useState('auto');
             const [manualProductName, setManualProductName] = useState(FNA_MAPPING_PRODUCTS[0].name);
+            const [citicApplicantType, setCiticApplicantType] = useState('individual');
             const [answers, setAnswers] = useState({});
 
             const productName = productMode === 'manual' ? manualProductName : policyProductName;
             const selectedProduct = useMemo(() => getFnaProductMapping(productName), [productName]);
-            const groups = useMemo(() => selectedProduct ? getFnaMappingGroups(broker, selectedProduct.category) : [], [broker, selectedProduct?.category]);
+            const groups = useMemo(() => selectedProduct ? getFnaMappingGroups(broker, selectedProduct.category, { citicApplicantType }) : [], [broker, selectedProduct?.category, citicApplicantType]);
             const groupResults = groups.map((group) => ({ group, result: evaluateFnaGroup(group, answers[group.id] || []) }));
             const answeredGroups = groupResults.filter(({ group }) => group.mode === 'any' || (answers[group.id] || []).length > 0).length;
             const overallOk = !!selectedProduct && groupResults.length > 0 && groupResults.every(({ result }) => result.ok);
@@ -9396,7 +9421,7 @@ const shouldShowMed = () => {
             };
             useEffect(() => {
                 resetAnswers();
-            }, [broker, productName]);
+            }, [broker, productName, citicApplicantType]);
             useEffect(() => {
                 const refreshPolicyProduct = () => setPolicyProductName(readPolicyProductName());
                 window.addEventListener('policyInputFullStateUpdate', refreshPolicyProduct);
@@ -9421,6 +9446,8 @@ const shouldShowMed = () => {
                 yesNo: 'Yes / No',
                 product: 'Financial product type',
                 experience: 'Knowledge / experience source',
+                citicOptionA: 'Option (a) sources',
+                citicOptionB: 'Option (b)',
                 q6Risk: 'Risk tolerance option'
             };
             const renderFnaOptions = (group) => {
@@ -9472,14 +9499,23 @@ const shouldShowMed = () => {
                         <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
                             <div className="xl:col-span-8 space-y-4">
                                 <div className="bg-white border border-slate-200 rounded p-4">
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                                         <div>
                                             <label className="text-[11px] font-bold text-slate-500">Broker</label>
                                             <select value={broker} onChange={(e) => setBroker(e.target.value)} className="w-full border border-slate-300 rounded p-2 text-sm">
                                                 {FNA_MAPPING_BROKERS.map((item) => <option key={item} value={item}>{item}</option>)}
                                             </select>
                                         </div>
-                                        <div className="md:col-span-2">
+                                        {broker === 'CITIC' && (
+                                            <div>
+                                                <label className="text-[11px] font-bold text-slate-500">CITIC applicant type</label>
+                                                <select value={citicApplicantType} onChange={(e) => setCiticApplicantType(e.target.value)} className="w-full border border-slate-300 rounded p-2 text-sm bg-white">
+                                                    <option value="individual">Individual as applicant</option>
+                                                    <option value="company">Company as applicant</option>
+                                                </select>
+                                            </div>
+                                        )}
+                                        <div className={broker === 'CITIC' ? 'md:col-span-2' : 'md:col-span-3'}>
                                             <label className="text-[11px] font-bold text-slate-500">Product</label>
                                             <div className="grid grid-cols-1 md:grid-cols-[160px_1fr] gap-2">
                                                 <select value={productMode} onChange={(e) => setProductMode(e.target.value)} className="w-full border border-slate-300 rounded p-2 text-sm bg-white">
