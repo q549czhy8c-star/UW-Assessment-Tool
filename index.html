@@ -9148,55 +9148,55 @@ const shouldShowMed = () => {
             const annuityOrPromise = isFnaAnnuityOrPromise(category);
             if (broker === 'CITIC') {
                 return [
-                    makeFnaGroup('citic-12', '1.2', na ? 'exactOne' : 'all', [
-                        { id: 'a', label: '(a) Accept', correct: true },
-                        { id: 'b', label: '(b) do not accept', correct: false }
-                    ], na ? 'Tick one option.' : 'Must tick (a) Accept.'),
-                    makeFnaGroup('citic-13', '1.3', (na || annuityOrPromise) ? 'exactOne' : 'all', [
-                        { id: 'a', label: '(a) Accept', correct: true },
-                        { id: 'b', label: '(b) do not accept', correct: false }
-                    ], (na || annuityOrPromise) ? 'Tick one option.' : 'Must tick (a) Accept.'),
-                    makeFnaGroup('citic-ke', 'Knowledge and experience', na ? 'atLeastOne' : 'all', [
-                        { id: 'a', label: '(a)', correct: true },
-                        { id: 'b', label: '(b)', correct: na }
-                    ], na ? 'Tick one or more.' : 'Must tick (a).')
+                    makeFnaGroup('citic-12', '1.2 Within your risk appetite, are you willing to accept insurance products with non-guaranteed returns? / 根據閣下的風險偏好，您是否願意接受含有非保證收益的保險產品？', na ? 'exactOneAny' : 'all', [
+                        { id: 'a', label: 'Accept 接受 (詢問第 1.3 Please answer 1.3)', correct: true },
+                        { id: 'b', label: 'Do not accept 不接受', correct: false }
+                    ], na ? 'Tick one option.' : 'Must tick Accept.'),
+                    makeFnaGroup('citic-13', '1.3 Regarding your risk tolerance level, are you willing to accept that, for participating insurance product, 50% or more of the underlying investment is allocated to equity-type investment and other investment instruments, e.g. private funds, mutual funds, direct/indirect investment in real assets like properties and infrastructure? / 根據閣下的風險承受能力，您是否願意接受分紅保險產品將 50% 或以上的基礎投資配置於股票類型資產及其他投資工具？', (na || annuityOrPromise) ? 'exactOneAny' : 'all', [
+                        { id: 'a', label: 'Accept 接受', correct: true },
+                        { id: 'b', label: 'Do not accept 不接受', correct: false }
+                    ], (na || annuityOrPromise) ? 'Tick one option.' : 'Must tick Accept.'),
+                    makeFnaGroup('citic-ke', 'Do you have any life insurance / financial knowledge and experience? / 請問閣下是否有壽險和財務知識和經驗？', na ? 'atLeastOne' : 'all', [
+                        { id: 'a', label: 'a) Yes. I have obtained life insurance / financial knowledge and experience from the selected source(s), such as previous explanation by insurance financial consultant, currently/previously owning life insurance policies, professional training, investment product knowledge, or other sources. / 有，從理財顧問說明、持有保單、專業培訓、投資產品或其他途徑取得相關知識和經驗。', correct: true },
+                        { id: 'b', label: 'b) No life insurance / financial knowledge and experience, but I have received the relevant insurance product information from official website of regulatory bodies. / 沒有相關知識及經驗，但已從監管機構官方網站得到相關保險財務產品資訊。', correct: na }
+                    ], na ? 'Tick one or more mapped option(s).' : 'Must tick option a).')
                 ];
             }
             if (broker === 'Fubon') {
                 return [
-                    makeFnaGroup('fubon-1', '1', na ? 'exactOne' : 'all', [
-                        { id: 'a', label: '1(a)', correct: true },
-                        { id: 'b', label: '1(b)', correct: false },
-                        { id: 'c', label: '1(c)', correct: false }
-                    ], na ? 'Tick one option.' : 'Must tick 1(a).'),
-                    makeFnaGroup('fubon-2', '2', na ? 'exactOne' : 'all', [
-                        { id: 'a', label: '2(a)', correct: true },
-                        { id: 'b', label: '2(b)', correct: false }
-                    ], na ? 'Tick one option.' : 'Must tick 2(a).'),
-                    makeFnaGroup('fubon-21', '2.1', (na || annuityOrPromise) ? 'exactOne' : 'all', [
-                        { id: 'a', label: '2.1(a)', correct: true },
-                        { id: 'b', label: '2.1(b)', correct: false }
-                    ], (na || annuityOrPromise) ? 'Tick one option.' : 'Must tick 2.1(a).')
+                    makeFnaGroup('fubon-1', '1. Do you have any financial knowledge and experience, such as mutual funds, securities, foreign exchange, life insurance, financial derivatives, etc.? / 閣下是否有財務知識及經驗？', na ? 'exactOneAny' : 'all', [
+                        { id: 'a', label: '(a) Yes 是', correct: true },
+                        { id: 'b', label: '(b) No, but the Fubon Insurance Brokers Limited representative has introduced insurance-related knowledge to me. / 否，但富邦保險顧問有限公司營業代表已向本人介紹了保險相關知識。', correct: false },
+                        { id: 'c', label: '(c) No, the Fubon Insurance Brokers Limited representative did NOT introduce insurance-related knowledge to me. / 否，富邦保險顧問有限公司營業代表沒有向本人介紹保險相關知識。', correct: false }
+                    ], na ? 'Tick one option.' : 'Must tick 1(a) Yes.'),
+                    makeFnaGroup('fubon-2', '2. Within your risk appetite, are you willing to accept insurance products with non-guaranteed returns? / 根據閣下的風險偏好，您是否願意接受含有非保證收益的保險產品？', na ? 'exactOneAny' : 'all', [
+                        { id: 'a', label: '(a) Accept 接受 (please answer 2.1 請回答 2.1)', correct: true },
+                        { id: 'b', label: '(b) Do not accept 不接受', correct: false }
+                    ], na ? 'Tick one option.' : 'Must tick 2(a) Accept.'),
+                    makeFnaGroup('fubon-21', '2.1 Regarding your risk tolerance level, are you willing to accept that, for participating insurance product, 50% or more of the underlying investment is allocated to non-fixed income assets, e.g. equity-type assets? / 根據閣下的風險承受能力，您是否願意接受分紅保險產品將 50% 或以上的基礎投資配置於非固定收益資產？', (na || annuityOrPromise) ? 'exactOneAny' : 'all', [
+                        { id: 'a', label: '(a) Accept 接受', correct: true },
+                        { id: 'b', label: '(b) Do not accept 不接受', correct: false }
+                    ], (na || annuityOrPromise) ? 'Tick one option.' : 'Must tick 2.1(a) Accept.')
                 ];
             }
             if (broker === 'CMB') {
                 return [
-                    makeFnaGroup('cmb-c', '(C)', na ? 'exactOne' : 'all', [
-                        { id: 'yes', label: '(C) - Yes', correct: true },
-                        { id: 'no', label: '(C) - No', correct: false }
+                    makeFnaGroup('cmb-c', '(C) Knowledge and Experience 知識及經驗: Do you have life insurance and other financial products knowledge or experience? / 閣下是否有人壽保險及其他金融產品知識或經驗？', na ? 'exactOneAny' : 'all', [
+                        { id: 'yes', label: 'Yes 是', correct: true },
+                        { id: 'no', label: 'No 否', correct: false }
                     ], na ? 'Tick one option.' : 'Must tick Yes.'),
-                    makeFnaGroup('cmb-1b', '(1b)', na ? 'exactOne' : 'all', [
-                        { id: 'a', label: 'option (a)', correct: !annuityOrPromise },
-                        { id: 'b', label: 'option (b)', correct: annuityOrPromise },
-                        { id: 'c', label: 'option (c)', correct: false }
-                    ], na ? 'Tick one option.' : (annuityOrPromise ? 'Must tick option (b).' : 'Must tick option (a).'))
+                    makeFnaGroup('cmb-1b', '(1b) Which of the following best describes your risk tolerance level for life insurance products? / 閣下對人壽保險產品的風險承受程度應為以下哪一類？', na ? 'exactOneAny' : 'all', [
+                        { id: 'a', label: 'a) Accept insurance products that offer non-guaranteed benefits, where 50% or more of the investment portfolio is allocated to non-fixed income assets, e.g. equities. / 接受設有非保證收益的保險產品，而該保險產品的投資組合有 50% 或以上配置於非固定收益類別資產，例如股票類別資產。', correct: !annuityOrPromise },
+                        { id: 'b', label: 'b) Accept insurance products that offer non-guaranteed benefits, where less than 50% of the investment portfolio is allocated to non-fixed income assets, e.g. equities. / 接受設有非保證收益的保險產品，而該保險產品的投資組合有 50% 以下配置於非固定收益類別資產，例如股票類別資產。', correct: annuityOrPromise },
+                        { id: 'c', label: 'c) Do not accept insurance products that offer non-guaranteed benefits. / 不接受設有非保證收益的保險產品。', correct: false }
+                    ], na ? 'Tick one option.' : (annuityOrPromise ? 'Must tick option b).' : 'Must tick option a).'))
                 ];
             }
             if (broker === 'OnePlatform') {
                 return [
-                    makeFnaGroup('one-q5', 'Q5 - knowledge / experience in financial products', na ? 'onePlatformQ5Na' : 'grouped', [
-                        { id: 'q5-yes', group: 'yesNo', label: 'Yes. I have the knowledge and/or experience in the following financial products', correct: true },
-                        { id: 'q5-no', group: 'yesNo', label: 'No. I have no knowledge and/or experience in financial products', correct: na },
+                    makeFnaGroup('one-q5', '5. Do you have any knowledge and/or experience in financial products? / 您是否對金融產品有任何相關知識和/或經驗？', na ? 'onePlatformQ5Na' : 'grouped', [
+                        { id: 'q5-yes', group: 'yesNo', label: 'Yes. I have the knowledge and/or experience in the following financial products (You may select more than one) / 是。我具備以下金融產品的知識和/或經驗（可選多於一項）', correct: true },
+                        { id: 'q5-no', group: 'yesNo', label: 'No. I have no knowledge and/or experience in financial products / 否。我對金融產品沒有任何知識及/或經驗', correct: na },
                         { id: 'q5-life', group: 'product', label: 'Life insurance 人壽保險', correct: true },
                         { id: 'q5-bond', group: 'product', label: 'Bond 債券', correct: true },
                         { id: 'q5-mutual', group: 'product', label: 'Mutual Fund / Unit Trust 互惠基金 / 單位信託', correct: true },
@@ -9204,31 +9204,32 @@ const shouldShowMed = () => {
                         { id: 'q5-derivatives', group: 'product', label: 'Derivatives / Structured investment tool 衍生工具 / 結構性投資工具', correct: true },
                         { id: 'q5-forex', group: 'product', label: 'Forex 外匯', correct: true },
                         { id: 'q5-crypto', group: 'product', label: 'Crypto 加密貨幣', correct: true },
-                        { id: 'q5-others', group: 'product', label: 'Others 其他', correct: true },
-                        { id: 'q5-holding', group: 'experience', label: 'I am currently holding or previously held the financial product(s) chosen above', correct: true },
-                        { id: 'q5-qualification', group: 'experience', label: 'I have the relevant academic or professional qualifications on the financial product(s) chosen above', correct: true },
-                        { id: 'q5-introduced', group: 'experience', label: 'The relevant professional introduced the financial product(s) chosen above to me before', correct: true },
-                        { id: 'q5-work', group: 'experience', label: 'I used to work previously or am currently working in financial institutions', correct: true },
-                        { id: 'q5-self-learn', group: 'experience', label: 'I learn by myself and/or receive the relevant information through seminars, research from internet and financial news', correct: true }
+                        { id: 'q5-others', group: 'product', label: 'Others (Please specify) 其他（請註明）', correct: true },
+                        { id: 'q5-holding', group: 'experience', label: 'I am currently holding or previously held the financial product(s) that I chose above / 我目前持有或曾持有以上所選之金融產品', correct: true },
+                        { id: 'q5-qualification', group: 'experience', label: 'I have the relevant academic or professional qualifications on the financial product(s) that I chose above / 我擁有與以上所選金融產品相關的學術或專業資格', correct: true },
+                        { id: 'q5-introduced', group: 'experience', label: 'The relevant professional introduced the financial product(s) that I chose above to me before / 相關專業人士曾向我介紹以上所選之金融產品', correct: true },
+                        { id: 'q5-work', group: 'experience', label: 'I used to work previously or am currently working in financial institutions / 我過去曾任職或目前現職於金融機構', correct: true },
+                        { id: 'q5-self-learn', group: 'experience', label: 'I learn by myself and/or receive the relevant information on the financial product(s) that I chose above through public seminars, research from internet and financial news / 我自學並/或透過公開講座、互聯網及財經新聞進行研究取得以上所選金融產品的相關資訊', correct: true }
                     ], na ? 'Select either Yes or No. If Yes is selected, product / experience details may also be selected.' : 'Based on the coloured ticks: select Yes, at least one financial product type, and "I am currently holding or previously held..." as the required experience source. Do not select No.', na ? [] : [
                         { group: 'yesNo', label: 'Yes', min: 1, requiredIds: ['q5-yes'] },
                         { group: 'product', label: 'Financial product type', min: 1 },
                         { group: 'experience', label: 'I am currently holding or previously held the financial product(s) chosen above', min: 1, requiredIds: ['q5-holding'] }
                     ]),
-                    makeFnaGroup('one-q6', 'Q6 - risk tolerance for life insurance product', na ? 'atLeastOne' : (annuityOrPromise ? 'atLeastOne' : 'all'), [
+                    makeFnaGroup('one-q6', '6. For life insurance product, which one of the following statements describes your risk tolerance the best? (Please select one of the following options) / 就人壽保險產品而言，下列哪一項描述最能反映您的風險承受能力？（請選擇其一）', na ? 'atLeastOne' : (annuityOrPromise ? 'atLeastOne' : 'all'), [
                         { id: 'q6-1', label: 'I can accept the life insurance product with guaranteed benefits only / 我只能接受僅含有保證收益的人壽保險產品。', correct: true },
-                        { id: 'q6-2', label: 'I can accept the life insurance product with guaranteed benefits and non-guaranteed benefits which can provide a potential higher long-term return on the policy value. However, I understand that the non-guaranteed benefits may be less than the value projected in the illustration or even zero which leads my policy value to fluctuate from the total premium paid. Non-guaranteed portion selection: less than 50% / equal or more than 50% / any portion. / 我可以接受含有保證及非保證收益的人壽保險產品，並理解非保證收益可能少於建議書預期或甚至為零，可接受非保證收益成分少於50%、相等或超過50%、或任何成分。', correct: na || annuityOrPromise },
+                        { id: 'q6-2', label: 'I can accept the life insurance product with guaranteed benefits and non-guaranteed benefits which can provide a potential higher long-term return on the policy value. However, I understand that the non-guaranteed benefits may be less than the value projected in the illustration or even zero which leads my policy value to fluctuate from the total premium paid. Sub-options shown in the questionnaire: I accept the portion of non-guaranteed benefits which is less than 50%; I accept the portion of non-guaranteed benefits which is equal to or more than 50%; I accept any portion of non-guaranteed benefits. / 我可以接受含有保證及非保證收益成分的人壽保險產品，該非保證收益成分可望帶來更高的長期保單價值回報；但我理解非保證收益可能低於說明書中預測的金額，甚至可能為零，這將導致保單價值可能遠低於已繳總保費。問卷列出的分項選擇：我可以接受非保證收益成分少於50%；我可以接受非保證收益成分等於或多於50%；我可以接受任何成分的非保證收益。', correct: na || annuityOrPromise },
                         { id: 'q6-3', label: 'I can accept the life insurance product where the policy value is determined by the performance of selected investment choices which may lead the policy value being fluctuated significantly due to investment market situation. As a result, the policy value will be impacted and may much less than the total premium paid. / 我可以接受保單價值取決於所選投資選項表現的人壽保險產品，並理解保單價值或會因投資市場情況大幅波動，甚至可能遠低於已繳總保費。', correct: na }
                     ], (na || annuityOrPromise) ? 'Tick one or more mapped option(s).' : 'Must tick Q6 mapped option.')
                 ];
             }
             return [
-                makeFnaGroup('amg-s2', 'Section 2', na ? 'exactOne' : 'all', [
-                    { id: 's2-1', label: 'Section 2 option 1', correct: true },
-                    { id: 's2-2', label: 'Section 2 option 2', correct: na }
+                makeFnaGroup('amg-s2', 'Section 2: Financial and Insurance Products Knowledge and Experience / 第二部分：金融財務及人壽保險產品的知識及經驗 - Do you have any financial knowledge and experience, such as life insurance and / or other financial products (e.g. stocks, bonds, funds, financial derivatives etc.)? / 您是否具備任何金融知識和經驗，例如人壽保險及/或其他金融產品（如股票、債券、基金、金融衍生品等）？', na ? 'exactOneAny' : 'all', [
+                    { id: 's2-1', label: 'Yes, I have financial knowledge and experience. / 是，本人具備金融知識和經驗。', correct: true },
+                    { id: 's2-2', label: 'No, I did not have any prior financial knowledge and experience but the Financial Adviser (i.e. Technical Representative (Broker) of AMG Wealth Management Limited ("AMG")) has explained to me the insurance concept and knowledge and shared the relevant information from the official regulatory websites or other reliable sources for my reference. Accordingly, I confirmed that I possess the fundamental insurance concept and knowledge now. / 否，本人過往並沒有任何金融知識和經驗，但理財顧問（即安柏環球財富管理有限公司（「安柏」）的業務代表（經紀））已向本人解釋保險的概念和知識，並從監管機構官方網站或其他可信渠道提供相關資料供本人參考。因此，本人現確認已具備基本保險概念和知識。', correct: na }
                 ], na ? 'Tick one option in Section 2.' : 'Must tick Section 2.'),
-                makeFnaGroup('amg-s3', 'Section 3', 'all', [
-                    { id: 's3', label: 'Section 3', correct: true }
+                makeFnaGroup('amg-s3', 'Section 3: Risk Profile / 第三部分：風險狀況 - Which of the following statements best describes your risk tolerance for insurance products with non-guaranteed returns at this time? (tick one) / 以下哪一項陳述最能描述您目前對考慮具有非保證回報的保險產品之風險承受程度？（請選一項）', 'all', [
+                    { id: 's3', label: 'I accept insurance products with guaranteed and/or non-guaranteed returns. / 本人接受具有保證及/或非保證回報的保險產品。', correct: true },
+                    { id: 's3-2', label: 'I only accept insurance products with fully guaranteed returns. / 本人只接受具有完全保證回報的保險產品。', correct: false }
                 ], 'Must tick Section 3.')
             ];
         };
@@ -9254,6 +9255,14 @@ const shouldShowMed = () => {
                     ok,
                     status: ok ? 'pass' : 'fail',
                     message: ok ? 'Correct: either Yes or No selected.' : 'Incorrect: select either Yes or No for Q5.'
+                };
+            }
+            if (group.mode === 'exactOneAny') {
+                const ok = selectedOptions.length === 1;
+                return {
+                    ok,
+                    status: ok ? 'pass' : 'fail',
+                    message: ok ? 'Correct: exactly one option selected.' : 'Incorrect: select exactly one option.'
                 };
             }
             if (group.mode === 'grouped') {
