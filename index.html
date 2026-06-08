@@ -405,20 +405,20 @@ const FNA_P2_SINGLE_OPTIONS = [
             ]
         };
 
-                // Country List updated based on country.txt
+                // Country List updated based on Country_Risk_Rating - 4 June 2026.xlsx (Column A: Country Name, Column F: Country Rating)
         const COUNTRY_LIST = [
             { name: "Afghanistan", risk: "High" }, { name: "Åland Islands", risk: "High" }, { name: "Albania", risk: "Medium" }, { name: "Algeria", risk: "High" },
             { name: "American Samoa", risk: "High" }, { name: "Andorra", risk: "Medium" }, { name: "Angola", risk: "High" }, { name: "Anguilla", risk: "High" },
-            { name: "Antarctica", risk: "High" }, { name: "Antigua and Barbuda", risk: "High" }, { name: "Argentina", risk: "Medium" }, { name: "Armenia", risk: "Low" },
-            { name: "Aruba", risk: "Medium" }, { name: "Australia", risk: "Low" }, { name: "Austria", risk: "Low" }, { name: "Azerbaijan", risk: "Medium" },
-            { name: "Bahamas (the)", risk: "Medium" }, { name: "Bahrain", risk: "Low" }, { name: "Bangladesh", risk: "High" }, { name: "Barbados", risk: "Medium" },
+            { name: "Antarctica", risk: "High" }, { name: "Antigua and Barbuda", risk: "Medium" }, { name: "Argentina", risk: "Medium" }, { name: "Armenia", risk: "Low" },
+            { name: "Aruba", risk: "Medium" }, { name: "Australia", risk: "Medium" }, { name: "Austria", risk: "Low" }, { name: "Azerbaijan", risk: "Low" },
+            { name: "Bahamas (the)", risk: "Medium" }, { name: "Bahrain", risk: "Low" }, { name: "Bangladesh", risk: "Medium" }, { name: "Barbados", risk: "Medium" },
             { name: "Belarus", risk: "High" }, { name: "Belgium", risk: "Low" }, { name: "Belize", risk: "Medium" }, { name: "Benin", risk: "High" },
             { name: "Bermuda", risk: "Medium" }, { name: "Bhutan", risk: "Medium" }, { name: "Bolivia (Plurinational State of)", risk: "High" }, { name: "Bonaire Sint Eustatius and Saba", risk: "High" },
             { name: "Bosnia and Herzegovina", risk: "Medium" }, { name: "Botswana", risk: "Medium" }, { name: "Bouvet Island", risk: "High" }, { name: "Brazil", risk: "Medium" },
             { name: "British Indian Ocean Territory (the)", risk: "High" }, { name: "Brunei Darussalam", risk: "Medium" }, { name: "Bulgaria", risk: "High" }, { name: "Burkina Faso", risk: "High" },
             { name: "Burundi", risk: "High" }, { name: "Cabo Verde", risk: "High" }, { name: "Cambodia", risk: "High" }, { name: "Cameroon", risk: "High" },
             { name: "Canada", risk: "Low" }, { name: "Cayman Islands (the)", risk: "Medium" }, { name: "Central African Republic (the)", risk: "High" }, { name: "Chad", risk: "High" },
-            { name: "Chile", risk: "Medium" }, { name: "China", risk: "Medium" }, { name: "Christmas Island", risk: "High" }, { name: "Cocos (Keeling) Islands (the)", risk: "High" },
+            { name: "Chile", risk: "Medium" }, { name: "China", risk: "High" }, { name: "Christmas Island", risk: "High" }, { name: "Cocos (Keeling) Islands (the)", risk: "High" },
             { name: "Colombia", risk: "High" }, { name: "Comoros (the)", risk: "High" }, { name: "Congo (Republic of)", risk: "High" }, { name: "Congo (the Democratic Republic of the)", risk: "High" },
             { name: "Cook Islands (the)", risk: "Medium" }, { name: "Costa Rica", risk: "Medium" }, { name: "Côte d'Ivoire", risk: "High" }, { name: "Crimea", risk: "High" },
             { name: "Croatia", risk: "Medium" }, { name: "Cuba", risk: "High" }, { name: "Curaçao", risk: "High" }, { name: "Cyprus", risk: "Medium" },
@@ -426,49 +426,49 @@ const FNA_P2_SINGLE_OPTIONS = [
             { name: "Dominican Republic (the)", risk: "Medium" }, { name: "Ecuador", risk: "Medium" }, { name: "Egypt", risk: "Medium" }, { name: "El Salvador", risk: "Medium" },
             { name: "Equatorial Guinea", risk: "High" }, { name: "Eritrea", risk: "High" }, { name: "Estonia", risk: "Low" }, { name: "Eswatini", risk: "High" },
             { name: "Ethiopia", risk: "High" }, { name: "Falkland Islands (the) [Malvinas]", risk: "High" }, { name: "Faroe Islands", risk: "High" }, { name: "Fiji", risk: "High" },
-            { name: "Finland", risk: "Low" }, { name: "France", risk: "Low" }, { name: "French Guiana", risk: "High" }, { name: "French Polynesia", risk: "High" },
-            { name: "French Southern Territories (the)", risk: "High" }, { name: "Gabon", risk: "High" }, { name: "Gambia (the)", risk: "High" }, { name: "Georgia", risk: "Low" },
+            { name: "Finland", risk: "Low" }, { name: "France", risk: "Low" }, { name: "French Guiana", risk: "Medium" }, { name: "French Polynesia", risk: "Medium" },
+            { name: "French Southern Territories (the)", risk: "Medium" }, { name: "Gabon", risk: "High" }, { name: "Gambia (the)", risk: "High" }, { name: "Georgia", risk: "Low" },
             { name: "Germany", risk: "Low" }, { name: "Ghana", risk: "Medium" }, { name: "Gibraltar", risk: "Medium" }, { name: "Greece", risk: "Low" },
-            { name: "Greenland", risk: "Medium" }, { name: "Grenada", risk: "High" }, { name: "Guadeloupe", risk: "High" }, { name: "Guam", risk: "High" },
+            { name: "Greenland", risk: "Medium" }, { name: "Grenada", risk: "High" }, { name: "Guadeloupe", risk: "Medium" }, { name: "Guam", risk: "High" },
             { name: "Guatemala", risk: "High" }, { name: "Guernsey", risk: "Medium" }, { name: "Guinea", risk: "High" }, { name: "Guinea-Bissau", risk: "High" },
             { name: "Guyana", risk: "Low" }, { name: "Haiti", risk: "High" }, { name: "Heard Island and McDonald Islands", risk: "High" }, { name: "Holy See (the)", risk: "Medium" },
-            { name: "Honduras", risk: "Medium" }, { name: "Hong Kong", risk: "Medium" }, { name: "Hungary", risk: "Medium" }, { name: "Iceland", risk: "Low" },
+            { name: "Honduras", risk: "Medium" }, { name: "Hong Kong", risk: "High" }, { name: "Hungary", risk: "Medium" }, { name: "Iceland", risk: "Low" },
             { name: "India", risk: "Medium" }, { name: "Indonesia", risk: "Medium" }, { name: "Iran (Islamic Republic of)", risk: "High" }, { name: "Iraq", risk: "High" },
-            { name: "Ireland", risk: "Low" }, { name: "Isle of Man", risk: "Medium" }, { name: "Israel", risk: "High" }, { name: "Italy", risk: "Low" },
+            { name: "Ireland", risk: "Low" }, { name: "Isle of Man", risk: "Medium" }, { name: "Israel", risk: "Medium" }, { name: "Italy", risk: "Low" },
             { name: "Jamaica", risk: "Medium" }, { name: "Japan", risk: "Low" }, { name: "Jersey", risk: "Low" }, { name: "Jordan", risk: "Medium" },
             { name: "Kazakhstan", risk: "Medium" }, { name: "Kenya", risk: "High" }, { name: "Kiribati", risk: "High" }, { name: "Korea (the Democratic People's Republic of)", risk: "High" },
-            { name: "Korea (the Republic of)", risk: "Low" }, { name: "Kosovo", risk: "Medium" }, { name: "Kuwait", risk: "Medium" }, { name: "Kyrgyzstan", risk: "Medium" },
+            { name: "Korea (the Republic of)", risk: "Low" }, { name: "Kosovo", risk: "Medium" }, { name: "Kuwait", risk: "High" }, { name: "Kyrgyzstan", risk: "Medium" },
             { name: "Lao People's Democratic Republic (the)", risk: "High" }, { name: "Latvia", risk: "Medium" }, { name: "Lebanon", risk: "High" }, { name: "Lesotho", risk: "Medium" },
             { name: "Liberia", risk: "High" }, { name: "Libya", risk: "High" }, { name: "Liechtenstein", risk: "Medium" }, { name: "Lithuania", risk: "Low" },
-            { name: "Luxembourg", risk: "Low" }, { name: "Macao", risk: "Medium" }, { name: "Madagascar", risk: "Medium" }, { name: "Malawi", risk: "Medium" },
+            { name: "Luxembourg", risk: "Low" }, { name: "Macao", risk: "High" }, { name: "Madagascar", risk: "Medium" }, { name: "Malawi", risk: "Medium" },
             { name: "Malaysia", risk: "Medium" }, { name: "Maldives", risk: "High" }, { name: "Mali", risk: "High" }, { name: "Malta", risk: "Medium" },
-            { name: "Marshall Islands (the)", risk: "Medium" }, { name: "Martinique", risk: "High" }, { name: "Mauritania", risk: "Medium" }, { name: "Mauritius", risk: "Medium" },
-            { name: "Mayotte", risk: "High" }, { name: "Mexico", risk: "Medium" }, { name: "Micronesia (Federated States of)", risk: "High" }, { name: "Moldova (the Republic of)", risk: "High" },
+            { name: "Marshall Islands (the)", risk: "Medium" }, { name: "Martinique", risk: "Medium" }, { name: "Mauritania", risk: "Medium" }, { name: "Mauritius", risk: "Medium" },
+            { name: "Mayotte", risk: "Medium" }, { name: "Mexico", risk: "Medium" }, { name: "Micronesia (Federated States of)", risk: "High" }, { name: "Moldova (the Republic of)", risk: "High" },
             { name: "Monaco", risk: "High" }, { name: "Mongolia", risk: "Medium" }, { name: "Montenegro", risk: "Medium" }, { name: "Montserrat", risk: "Medium" },
             { name: "Morocco", risk: "Medium" }, { name: "Mozambique", risk: "High" }, { name: "Myanmar", risk: "High" }, { name: "Namibia", risk: "High" },
             { name: "Nauru", risk: "Medium" }, { name: "Nepal", risk: "High" }, { name: "Netherlands (the)", risk: "Low" }, { name: "Netherlands Antilles", risk: "High" },
-            { name: "New Caledonia", risk: "High" }, { name: "New Zealand", risk: "Low" }, { name: "Nicaragua", risk: "High" }, { name: "Niger (the)", risk: "High" },
-            { name: "Nigeria", risk: "High" }, { name: "Niue", risk: "Medium" }, { name: "Norfolk Island", risk: "High" }, { name: "North Macedonia", risk: "Medium" },
+            { name: "New Caledonia", risk: "Medium" }, { name: "New Zealand", risk: "Low" }, { name: "Nicaragua", risk: "High" }, { name: "Niger (the)", risk: "High" },
+            { name: "Nigeria", risk: "High" }, { name: "Niue", risk: "High" }, { name: "Norfolk Island", risk: "High" }, { name: "North Macedonia", risk: "Medium" },
             { name: "Northern Mariana Islands (the)", risk: "High" }, { name: "Norway", risk: "Low" }, { name: "Oman", risk: "Medium" }, { name: "Pakistan", risk: "High" },
             { name: "Palau", risk: "High" }, { name: "Palestine State of", risk: "High" }, { name: "Panama", risk: "High" }, { name: "Papua New Guinea", risk: "High" },
             { name: "Paraguay", risk: "Medium" }, { name: "Peru", risk: "Medium" }, { name: "Philippines (the)", risk: "High" }, { name: "Pitcairn", risk: "High" },
             { name: "Poland", risk: "Medium" }, { name: "Portugal", risk: "Low" }, { name: "Puerto Rico", risk: "High" }, { name: "Qatar", risk: "Low" },
-            { name: "Réunion", risk: "High" }, { name: "Romania", risk: "Medium" }, { name: "Russian Federation (the)", risk: "High" }, { name: "Rwanda", risk: "High" },
-            { name: "Saint Barthélemy", risk: "High" }, { name: "Saint Helena - Ascension and Tristan da Cunha", risk: "High" }, { name: "Saint Kitts and Nevis", risk: "High" }, { name: "Saint Lucia", risk: "High" },
-            { name: "Saint Martin (French part)", risk: "High" }, { name: "Saint Pierre and Miquelon", risk: "High" }, { name: "Saint Vincent and the Grenadines", risk: "Medium" }, { name: "Samoa", risk: "High" },
+            { name: "Réunion", risk: "Medium" }, { name: "Romania", risk: "Medium" }, { name: "Russian Federation (the)", risk: "High" }, { name: "Rwanda", risk: "High" },
+            { name: "Saint Barthélemy", risk: "Medium" }, { name: "Saint Helena - Ascension and Tristan da Cunha", risk: "High" }, { name: "Saint Kitts and Nevis", risk: "Medium" }, { name: "Saint Lucia", risk: "Medium" },
+            { name: "Saint Martin (French part)", risk: "Medium" }, { name: "Saint Pierre and Miquelon", risk: "Medium" }, { name: "Saint Vincent and the Grenadines", risk: "Medium" }, { name: "Samoa", risk: "Medium" },
             { name: "San Marino", risk: "Low" }, { name: "Sao Tome and Principe", risk: "High" }, { name: "Saudi Arabia", risk: "Medium" }, { name: "Senegal", risk: "Medium" },
             { name: "Serbia", risk: "Medium" }, { name: "Seychelles", risk: "High" }, { name: "Sierra Leone", risk: "Medium" }, { name: "Singapore", risk: "Low" },
             { name: "Sint Maarten (Dutch part)", risk: "High" }, { name: "Slovakia", risk: "Medium" }, { name: "Slovenia", risk: "Low" }, { name: "Solomon Islands", risk: "High" },
-            { name: "Somalia", risk: "High" }, { name: "South Africa", risk: "High" }, { name: "South Georgia and the South Sandwich Islands", risk: "High" }, { name: "South Sudan", risk: "High" },
+            { name: "Somalia", risk: "High" }, { name: "South Africa", risk: "Medium" }, { name: "South Georgia and the South Sandwich Islands", risk: "High" }, { name: "South Sudan", risk: "High" },
             { name: "Spain", risk: "Low" }, { name: "Sri Lanka", risk: "Medium" }, { name: "Sudan (the)", risk: "High" }, { name: "Suriname", risk: "High" },
             { name: "Svalbard and Jan Mayen", risk: "High" }, { name: "Sweden", risk: "Low" }, { name: "Switzerland", risk: "Low" }, { name: "Syrian Arab Republic (the)", risk: "High" },
-            { name: "Taiwan (Province of China)", risk: "Low" }, { name: "Tajikistan", risk: "Medium" }, { name: "Tanzania the United Republic of", risk: "High" }, { name: "Thailand", risk: "Medium" },
+            { name: "Taiwan (Province of China)", risk: "Low" }, { name: "Tajikistan", risk: "Medium" }, { name: "Tanzania the United Republic of", risk: "Medium" }, { name: "Thailand", risk: "High" },
             { name: "Timor-Leste", risk: "Medium" }, { name: "Togo", risk: "High" }, { name: "Tokelau", risk: "High" }, { name: "Tonga", risk: "High" },
             { name: "Trinidad and Tobago", risk: "High" }, { name: "Tunisia", risk: "High" }, { name: "Turkey", risk: "High" }, { name: "Turkmenistan", risk: "Medium" },
             { name: "Turks and Caicos Islands (the)", risk: "High" }, { name: "Tuvalu", risk: "Medium" }, { name: "Uganda", risk: "Medium" }, { name: "Ukraine", risk: "High" },
             { name: "United Arab Emirates (the)", risk: "Medium" }, { name: "United Kingdom of Great Britain and Northern Ireland (the)", risk: "Low" }, { name: "United States Minor Outlying Islands (the)", risk: "High" }, { name: "United States of America (the)", risk: "Medium" },
             { name: "Uruguay", risk: "Low" }, { name: "Uzbekistan", risk: "Medium" }, { name: "Vanuatu", risk: "High" }, { name: "Venezuela (Bolivarian Republic of)", risk: "High" },
-            { name: "Viet Nam", risk: "High" }, { name: "Virgin Islands (British)", risk: "High" }, { name: "Virgin Islands (U.S.)", risk: "High" }, { name: "Wallis and Futuna", risk: "High" },
+            { name: "Viet Nam", risk: "High" }, { name: "Virgin Islands (British)", risk: "High" }, { name: "Virgin Islands (U.S.)", risk: "High" }, { name: "Wallis and Futuna", risk: "Medium" },
             { name: "Western Sahara*", risk: "High" }, { name: "Yemen", risk: "High" }, { name: "Zambia", risk: "Medium" }, { name: "Zimbabwe", risk: "High" }
         ];
 
@@ -2461,7 +2461,11 @@ const HK_HOLIDAYS_2025_2026 = [
             { prefix: '(FYI)', text: 'Extra loading will be imposed due to xxxxxxx' },
             { prefix: '(FYI)', text: 'Application will be accepted with borderline standard due to xxxxx disease' },
             { prefix: '(FYI)', text: 'Payor will be required to submit Source(s) of Funds/Wealth Supplementary Information Questionnaire if premium payment is not fully made by proposed policyholder. Compliance review is also required' },
-            { prefix: '(FYI)', text: 'Anonymous/cash payment is not allowed for high return products' }
+            { prefix: '(FYI)', text: 'Anonymous/cash payment is not allowed for high return products' },
+            { prefix: '(FYI)', text: "This Insured's basic plan LionGuardian Beyond is rated due to the following reason(s) after medical assessment. Due to application is submitted within the promotion period of waiving extra premium, the extra premium applicable to basic plan of this application has been fully waived. Please note that this offer applies to this policy only and we reserve the right to determine whether the program is applicable or not to any reinstatement of, or any subsequent increase in benefits in this policy: [loading reason(s): xxxxxxxxxx]" },
+            { prefix: '(FYI)', text: 'Notice of Approval sent out to DBS Bank. Awaiting arrange premium payment by Bank.' },
+            { prefix: '(FYI)', text: 'The case was financially approved.' },
+            { prefix: '(Pending)', text: 'Await Notice of Assignment issued from Bank.' }
         ];
 
         /* ========== Master Broker List Data ========== */
@@ -8224,7 +8228,9 @@ const shouldShowMed = () => {
                 const n = Number(String(value || '').replace(/,/g, ''));
                 return Number.isFinite(n) ? n : 0;
             };
+            const hkdToUsd = (value) => toNum(value) / FIN_USD_RATE;
             const money = (value) => value ? `USD ${Math.round(value).toLocaleString('en-US')}` : "-";
+            const moneyHKD = (value) => value ? `HKD ${Math.round(value).toLocaleString('en-US')}` : "-";
             const statusClass = (row) => {
                 if (row?.status === 'pending') return "bg-amber-50 border-amber-200 text-amber-800";
                 if (row?.status === 'over') return "bg-rose-50 border-rose-200 text-rose-800";
@@ -8308,11 +8314,11 @@ const shouldShowMed = () => {
             }, [policyData?.insAge, policyData?.phAge]);
 
             const coverageRows = useMemo(() => {
-                const annual = toNum(form.annualRemuneration);
-                const gross = toNum(form.companyGrossProfit3Y);
-                const net = toNum(form.companyNetProfit3Y);
-                const netLiquidAssets = toNum(form.companyNetLiquidAssets);
-                const affordable = toNum(form.companyAffordableAmount);
+                const annual = hkdToUsd(form.annualRemuneration);
+                const gross = hkdToUsd(form.companyGrossProfit3Y);
+                const net = hkdToUsd(form.companyNetProfit3Y);
+                const netLiquidAssets = hkdToUsd(form.companyNetLiquidAssets);
+                const affordable = hkdToUsd(form.companyAffordableAmount);
                 const savingAffordable = affordable ? Math.min(affordable, netLiquidAssets ? netLiquidAssets * 0.5 : affordable) : (netLiquidAssets ? netLiquidAssets * 0.5 : 0);
                 return selectedPurposeKeys.map((key) => {
                     let bases = [];
@@ -8330,9 +8336,9 @@ const shouldShowMed = () => {
                             ];
                         }
                     } else if (key === 'partnership') {
-                        bases = [{ label: "% of ownership x current market value of the company", value: (toNum(form.ownershipPercent) / 100) * toNum(form.companyMarketValue) }];
+                        bases = [{ label: "% of ownership x current market value of the company", value: (toNum(form.ownershipPercent) / 100) * hkdToUsd(form.companyMarketValue) }];
                     } else if (key === 'loanProtection') {
-                        bases = [{ label: "Up to 100% of the loan", value: toNum(form.loanAmount) }];
+                        bases = [{ label: "Up to 100% of the loan", value: hkdToUsd(form.loanAmount) }];
                     }
                     const max = Math.max(0, ...bases.map(b => b.value || 0));
                     const status = max <= 0 ? 'pending' : (baseSumAssuredUSD <= max ? 'within' : 'over');
@@ -8423,7 +8429,7 @@ const shouldShowMed = () => {
                 lines.push(`Major financial problems last 5 years: ${form.majorFinancialProblems || '-'} ${form.majorFinancialProblemsDetails || ''}`.trim());
                 lines.push(`Pending lawsuits/judgments: ${form.lawsuitsPending || '-'} ${form.lawsuitsDetails || ''}`.trim());
                 if (selectedPurposeKeys.includes('loanProtection')) {
-                    lines.push(`Loan creditor / amount: ${form.loanCreditorName || '-'} / ${form.loanAmount ? money(toNum(form.loanAmount)) : '-'}`);
+                    lines.push(`Loan creditor / amount: ${form.loanCreditorName || '-'} / ${form.loanAmount ? `${moneyHKD(toNum(form.loanAmount))} / ${money(hkdToUsd(form.loanAmount))}` : '-'}`);
                     lines.push(`Loan commencement / purpose: ${form.loanCommencementDate || '-'} / ${form.loanPurpose || '-'}`);
                     lines.push(`Repayment interest / period: ${form.loanRepaymentInterest || '-'} / ${form.loanRepaymentPeriod || '-'}`);
                     lines.push(`Other pledged collateral: ${form.pledgedCollateral || '-'} ${form.pledgedCollateralDetails || ''}`.trim());
@@ -8574,7 +8580,7 @@ const shouldShowMed = () => {
                                                 <div className="font-bold text-sm text-amber-900 mb-3">Business Loan details 商業貸款詳情</div>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                                                     {renderTextInput("Name of creditor", "loanCreditorName")}
-                                                    {renderNumberInput("Loan amount (USD)", "loanAmount")}
+                                                    {renderNumberInput("Loan amount (HKD)", "loanAmount", "Converted to USD at 1 USD = HKD 8 for BIQ checking")}
                                                     {renderTextInput("Commencement date of loan", "loanCommencementDate")}
                                                     {renderTextInput("Purpose of loan", "loanPurpose")}
                                                     {renderTextInput("Repayment interest", "loanRepaymentInterest")}
@@ -8588,15 +8594,16 @@ const shouldShowMed = () => {
 
                                     <div className="bg-white border border-slate-200 rounded p-4">
                                         <div className="font-bold text-sm mb-3">3. Maximum coverage 最高投保額</div>
+                                        <div className="text-[11px] text-slate-500 mb-3">All BIQ amount inputs below are HKD. The system converts them to USD at 1 USD = HKD 8 for maximum coverage checking.</div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
-                                            {renderNumberInput("Annual remuneration package (USD)", "annualRemuneration", "Key person / Employee benefit basis")}
-                                            {renderNumberInput("Avg company gross profit, past 3 years (USD)", "companyGrossProfit3Y", "Protection product: x 3")}
-                                            {renderNumberInput("Avg company net profit, past 3 years (USD)", "companyNetProfit3Y", "Protection product: x 6")}
-                                            {renderNumberInput("Company net liquid assets (USD)", "companyNetLiquidAssets", "Saving product: 50% cap")}
-                                            {renderNumberInput("Company affordable amount (USD)", "companyAffordableAmount", "Saving product affordability basis")}
+                                            {renderNumberInput("Annual remuneration package (HKD)", "annualRemuneration", "Key person / Employee benefit basis; converted to USD at 1 USD = HKD 8")}
+                                            {renderNumberInput("Avg company gross profit, past 3 years (HKD)", "companyGrossProfit3Y", "Protection product: x 3; converted to USD at 1 USD = HKD 8")}
+                                            {renderNumberInput("Avg company net profit, past 3 years (HKD)", "companyNetProfit3Y", "Protection product: x 6; converted to USD at 1 USD = HKD 8")}
+                                            {renderNumberInput("Company net liquid assets (HKD)", "companyNetLiquidAssets", "Saving product: 50% cap; converted to USD at 1 USD = HKD 8")}
+                                            {renderNumberInput("Company affordable amount (HKD)", "companyAffordableAmount", "Saving product affordability basis; converted to USD at 1 USD = HKD 8")}
                                             {renderNumberInput("% of ownership", "ownershipPercent", "Partnership only")}
-                                            {renderNumberInput("Current market value of company (USD)", "companyMarketValue", "Partnership only")}
-                                            {renderNumberInput("Loan amount (USD)", "loanAmount", "Loan protection only")}
+                                            {renderNumberInput("Current market value of company (HKD)", "companyMarketValue", "Partnership only; converted to USD at 1 USD = HKD 8")}
+                                            {renderNumberInput("Loan amount (HKD)", "loanAmount", "Loan protection only; converted to USD at 1 USD = HKD 8")}
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                             {coverageRows.map((row) => (
