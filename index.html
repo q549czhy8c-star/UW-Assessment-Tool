@@ -9210,10 +9210,11 @@ const shouldShowMed = () => {
                         { id: 'q5-introduced', group: 'experience', label: 'The relevant professional introduced the financial product(s) that I chose above to me before / 相關專業人士曾向我介紹以上所選之金融產品', correct: true },
                         { id: 'q5-work', group: 'experience', label: 'I used to work previously or am currently working in financial institutions / 我過去曾任職或目前現職於金融機構', correct: true },
                         { id: 'q5-self-learn', group: 'experience', label: 'I learn by myself and/or receive the relevant information on the financial product(s) that I chose above through public seminars, research from internet and financial news / 我自學並/或透過公開講座、互聯網及財經新聞進行研究取得以上所選金融產品的相關資訊', correct: true }
-                    ], na ? 'Select either Yes or No. If Yes is selected, product / experience details may also be selected.' : 'Based on the coloured ticks: select Yes, at least one financial product type, and "I am currently holding or previously held..." as the required experience source. Do not select No.', na ? [] : [
+                    ], na ? 'Select either Yes or No. If Yes is selected, product / experience details may also be selected.' : 'Based on the coloured ticks: select Yes, at least one financial product type, the first experience option (red tick), and at least one other green-tick experience source. Do not select No.', na ? [] : [
                         { group: 'yesNo', label: 'Yes', min: 1, requiredIds: ['q5-yes'] },
                         { group: 'product', label: 'Financial product type', min: 1 },
-                        { group: 'experience', label: 'I am currently holding or previously held the financial product(s) chosen above', min: 1, requiredIds: ['q5-holding'] }
+                        { group: 'experience', label: 'First experience option (red tick): I am currently holding or previously held the financial product(s) chosen above', min: 1, requiredIds: ['q5-holding'] },
+                        { group: 'experience', label: 'At least one green-tick experience source', min: 1, anyIds: ['q5-qualification', 'q5-introduced', 'q5-work', 'q5-self-learn'] }
                     ]),
                     makeFnaGroup('one-q6', '6. For life insurance product, which one of the following statements describes your risk tolerance the best? (Please select one of the following options)\n就人壽保險產品而言，下列哪一項描述最能反映您的風險承受能力？（請選擇其一）', 'onePlatformQ6', [
                         { id: 'q6-1', group: 'q6Risk', label: '1. I can accept the life insurance product with guaranteed benefits only', correct: false },
@@ -9285,6 +9286,9 @@ const shouldShowMed = () => {
                     const selectedInGroup = selectedOptions.filter((option) => option.group === req.group);
                     if (req.requiredIds && req.requiredIds.length) {
                         return !req.requiredIds.every((id) => selected.has(id));
+                    }
+                    if (req.anyIds && req.anyIds.length) {
+                        return !req.anyIds.some((id) => selected.has(id));
                     }
                     return selectedInGroup.length < (req.min || 1);
                 });
