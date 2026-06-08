@@ -9451,6 +9451,7 @@ const shouldShowMed = () => {
                 q6Risk: 'Risk tolerance option'
             };
             const renderFnaOptions = (group) => {
+                const forceSingleColumn = group.id === 'one-q6' || group.id === 'citic-ke';
                 const groupedOptions = group.options.reduce((acc, option) => {
                     const key = option.group || 'options';
                     acc[key] = acc[key] || [];
@@ -9460,7 +9461,7 @@ const shouldShowMed = () => {
                 const keys = Object.keys(groupedOptions);
                 if (keys.length <= 1 && keys[0] === 'options') {
                     return (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-3">
+                        <div className={`grid grid-cols-1 ${forceSingleColumn ? '' : 'md:grid-cols-2'} gap-2 mt-3`}>
                             {group.options.map((option) => (
                                 <label key={option.id} className="flex items-start gap-2 border border-slate-200 rounded p-2 text-sm bg-slate-50">
                                     <input type="checkbox" checked={(answers[group.id] || []).includes(option.id)} onChange={() => toggleAnswer(group.id, option.id)} className="mt-1" />
@@ -9475,7 +9476,7 @@ const shouldShowMed = () => {
                         {keys.map((key) => (
                             <div key={`${group.id}-${key}`} className="border border-slate-200 rounded p-3 bg-slate-50">
                                 <div className="text-[11px] font-bold text-slate-500 mb-2">{fnaOptionGroupLabels[key] || 'Options'}</div>
-                                <div className={`grid grid-cols-1 ${group.id === 'one-q6' ? '' : 'md:grid-cols-2'} gap-2`}>
+                                <div className={`grid grid-cols-1 ${forceSingleColumn ? '' : 'md:grid-cols-2'} gap-2`}>
                                     {groupedOptions[key].map((option) => (
                                         <label key={option.id} className="flex items-start gap-2 border border-slate-200 rounded p-2 text-sm bg-white">
                                             <input type="checkbox" checked={(answers[group.id] || []).includes(option.id)} onChange={() => toggleAnswer(group.id, option.id)} className="mt-1" />
