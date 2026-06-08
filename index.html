@@ -9306,18 +9306,21 @@ const shouldShowMed = () => {
                 }
             };
             const [broker, setBroker] = useState(FNA_MAPPING_BROKERS[0]);
-            const [productName, setProductName] = useState(readPolicyProductName);
+            const [policyProductName, setPolicyProductName] = useState(readPolicyProductName);
+            const [productMode, setProductMode] = useState('auto');
+            const [manualProductName, setManualProductName] = useState(FNA_MAPPING_PRODUCTS[0].name);
             const [answers, setAnswers] = useState({});
 
+            const productName = productMode === 'manual' ? manualProductName : policyProductName;
             const selectedProduct = useMemo(() => getFnaProductMapping(productName), [productName]);
             const groups = useMemo(() => selectedProduct ? getFnaMappingGroups(broker, selectedProduct.category) : [], [broker, selectedProduct?.category]);
             const groupResults = groups.map((group) => ({ group, result: evaluateFnaGroup(group, answers[group.id] || []) }));
             const answeredGroups = groupResults.filter(({ group }) => group.mode === 'any' || (answers[group.id] || []).length > 0).length;
             const overallOk = !!selectedProduct && groupResults.length > 0 && groupResults.every(({ result }) => result.ok);
             const productStatus = !productName
-                ? { status: 'pending', message: '請先在「保單資料輸入」頁面選擇計劃名稱。' }
+                ? { status: 'pending', message: productMode === 'manual' ? '請選擇產品。' : '請先在「保單資料輸入」頁面選擇計劃名稱，或切換至 Manual select 自行選擇。' }
                 : selectedProduct
-                    ? { status: 'pass', message: `Auto-filled from 保單資料輸入. Target allocation reference: ${selectedProduct.target}.` }
+                    ? { status: 'pass', message: `${productMode === 'manual' ? 'Manual product selected' : 'Auto-filled from 保單資料輸入'}. Target allocation reference: ${selectedProduct.target}.` }
                     : { status: 'fail', message: '此產品未有在 Product mapping for broker version FNA_May 2026 內找到對應 mapping。' };
             const toggleAnswer = (groupId, optionId) => {
                 setAnswers((prev) => {
@@ -9333,7 +9336,7 @@ const shouldShowMed = () => {
                 resetAnswers();
             }, [broker, productName]);
             useEffect(() => {
-                const refreshPolicyProduct = () => setProductName(readPolicyProductName());
+                const refreshPolicyProduct = () => setPolicyProductName(readPolicyProductName());
                 window.addEventListener('policyInputFullStateUpdate', refreshPolicyProduct);
                 window.addEventListener('caseSummaryUpdate', refreshPolicyProduct);
                 window.addEventListener('storage', refreshPolicyProduct);
@@ -9415,8 +9418,20 @@ const shouldShowMed = () => {
                                         </div>
                                         <div className="md:col-span-2">
                                             <label className="text-[11px] font-bold text-slate-500">Product</label>
-                                            <div className="w-full border border-slate-300 rounded p-2 text-sm bg-slate-100 text-slate-800 min-h-[38px]">
-                                                {productName || 'No product selected in 保單資料輸入'}
+                                            <div className="grid grid-cols-1 md:grid-cols-[160px_1fr] gap-2">
+                                                <select value={productMode} onChange={(e) => setProductMode(e.target.value)} className="w-full border border-slate-300 rounded p-2 text-sm bg-white">
+                                                    <option value="auto">Use policy input</option>
+                                                    <option value="manual">Manual select</option>
+                                                </select>
+                                                {productMode === 'manual' ? (
+                                                    <select value={manualProductName} onChange={(e) => setManualProductName(e.target.value)} className="w-full border border-slate-300 rounded p-2 text-sm bg-white">
+                                                        {FNA_MAPPING_PRODUCTS.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}
+                                                    </select>
+                                                ) : (
+                                                    <div className="w-full border border-slate-300 rounded p-2 text-sm bg-slate-100 text-slate-800 min-h-[38px]">
+                                                        {policyProductName || 'No product selected in 保單資料輸入'}
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
