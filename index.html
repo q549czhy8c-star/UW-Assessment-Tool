@@ -9216,27 +9216,23 @@ const shouldShowMed = () => {
                         { group: 'experience', label: 'I am currently holding or previously held the financial product(s) chosen above', min: 1, requiredIds: ['q5-holding'] }
                     ]),
                     makeFnaGroup('one-q6', '6. For life insurance product, which one of the following statements describes your risk tolerance the best? (Please select one of the following options)\n就人壽保險產品而言，下列哪一項描述最能反映您的風險承受能力？（請選擇其一）', 'onePlatformQ6', [
-                        { id: 'q6-1', group: 'q6Risk', label: '[Purple tick] I can accept the life insurance product with guaranteed benefits only\n[紫色剔] 我只能接受僅含有保證收益的人壽保險產品。', correct: na || annuityOrPromise },
-                        { id: 'q6-2-less', group: 'q6Risk', label: '[Purple tick] I can accept the life insurance product with guaranteed benefits and non-guaranteed benefits which can provide a potential higher long-term return on the policy value. However, I understand that the non-guaranteed benefits may be less than the value projected in the illustration or even zero which leads my policy value to fluctuate from the total premium paid.\nSub-option: I accept the portion of non-guaranteed benefits which is less than 50%.\n[紫色剔] 我可以接受含有保證及非保證收益成分的人壽保險產品，該非保證收益成分可望帶來更高的長期保單價值回報；但我理解非保證收益可能低於說明書中預測的金額，甚至可能為零，這將導致保單價值可能遠低於已繳總保費。\n分項選擇：我可以接受非保證收益成分少於 50%。', correct: na || annuityOrPromise },
-                        { id: 'q6-2-gte50', group: 'q6Risk', label: '[Red tick] I can accept the life insurance product with guaranteed benefits and non-guaranteed benefits which can provide a potential higher long-term return on the policy value. However, I understand that the non-guaranteed benefits may be less than the value projected in the illustration or even zero which leads my policy value to fluctuate from the total premium paid.\nSub-option: I accept the portion of non-guaranteed benefits which is equal to or more than 50%.\n[紅色剔] 我可以接受含有保證及非保證收益成分的人壽保險產品，該非保證收益成分可望帶來更高的長期保單價值回報；但我理解非保證收益可能低於說明書中預測的金額，甚至可能為零，這將導致保單價值可能遠低於已繳總保費。\n分項選擇：我可以接受非保證收益成分等於或多於 50%。', correct: true },
-                        { id: 'q6-2-any', group: 'q6Risk', label: '[Red tick] I can accept the life insurance product with guaranteed benefits and non-guaranteed benefits which can provide a potential higher long-term return on the policy value. However, I understand that the non-guaranteed benefits may be less than the value projected in the illustration or even zero which leads my policy value to fluctuate from the total premium paid.\nSub-option: I accept any portion of non-guaranteed benefits.\n[紅色剔] 我可以接受含有保證及非保證收益成分的人壽保險產品，該非保證收益成分可望帶來更高的長期保單價值回報；但我理解非保證收益可能低於說明書中預測的金額，甚至可能為零，這將導致保單價值可能遠低於已繳總保費。\n分項選擇：我可以接受任何成分的非保證收益。', correct: true },
-                        { id: 'q6-3', group: 'q6Risk', label: '[Green tick] I can accept the life insurance product where the policy value is determined by the performance of selected investment choices which may lead the policy value being fluctuated significantly due to investment market situation. As a result, the policy value will be impacted and may much less than the total premium paid.\n[綠色剔] 我可以接受保單價值取決於所選投資選項表現的人壽保險產品，並理解保單價值或會因投資市場情況大幅波動，甚至可能遠低於已繳總保費。', correct: na }
+                        { id: 'q6-1', group: 'q6Risk', label: '1. I can accept the life insurance product with guaranteed benefits only', correct: false },
+                        { id: 'q6-2', group: 'q6Risk', label: '2. I can accept the life insurance product with guaranteed benefits and non-guaranteed benefits which can provide a potential higher long-term return on the policy value. However, I understand that the non-guaranteed benefits may be less than the value projected in the illustration or even zero which leads my policy value to fluctuate from the total premium paid.', correct: true },
+                        { id: 'q6-21', group: 'q6Risk', label: '2.1. I accept the portion of non-guaranteed benefits which is less than 50%.', correct: na || annuityOrPromise },
+                        { id: 'q6-22', group: 'q6Risk', label: '2.2. I accept the portion of non-guaranteed benefits which is equal to or more than 50%.', correct: true },
+                        { id: 'q6-23', group: 'q6Risk', label: '2.3. I accept any portion of non-guaranteed benefits.', correct: true },
+                        { id: 'q6-3', group: 'q6Risk', label: '3. I can accept the life insurance product where the policy value is determined by the performance of selected investment choices which may lead the policy value being fluctuated significantly due to investment market situation. As a result, the policy value will be impacted and may much less than the total premium paid.', correct: na }
                     ], na
-                        ? 'PDF mapping: tick one or more purple / red / green options.'
+                        ? 'Plan with target asset allocation N/A: select either option 2 or option 3. If option 2 is selected, also select any one of 2.1 / 2.2 / 2.3.'
                         : annuityOrPromise
-                            ? 'PDF mapping: tick one or more purple / red options.'
-                            : 'PDF mapping: red tick applies to the guaranteed + non-guaranteed benefit option. Either red sub-option is acceptable.',
+                            ? 'LionHarvest Prime Deferred Annuity / LionPromise Pro: option 2 must be selected, plus any one of 2.1 / 2.2 / 2.3.'
+                            : 'Other plans: option 2 must be selected, plus either 2.2 or 2.3.',
                     [{
-                        allowedIds: na
-                            ? ['q6-1', 'q6-2-less', 'q6-2-gte50', 'q6-2-any', 'q6-3']
-                            : annuityOrPromise
-                                ? ['q6-1', 'q6-2-less', 'q6-2-gte50', 'q6-2-any']
-                                : ['q6-2-gte50', 'q6-2-any'],
-                        requiredAnyIds: na
-                            ? ['q6-1', 'q6-2-less', 'q6-2-gte50', 'q6-2-any', 'q6-3']
-                            : annuityOrPromise
-                                ? ['q6-1', 'q6-2-less', 'q6-2-gte50', 'q6-2-any']
-                                : ['q6-2-gte50', 'q6-2-any']
+                        type: na ? 'targetNa' : annuityOrPromise ? 'annuityOrPromise' : 'other',
+                        option2Id: 'q6-2',
+                        option3Id: 'q6-3',
+                        subOptionIds: ['q6-21', 'q6-22', 'q6-23'],
+                        validSubOptionIds: annuityOrPromise || na ? ['q6-21', 'q6-22', 'q6-23'] : ['q6-22', 'q6-23']
                     }])
                 ];
             }
@@ -9303,17 +9299,37 @@ const shouldShowMed = () => {
             }
             if (group.mode === 'onePlatformQ6') {
                 const rule = (group.requirements || [])[0] || {};
-                const allowed = new Set(rule.allowedIds || []);
-                const requiredAny = new Set(rule.requiredAnyIds || []);
-                const invalid = selectedOptions.filter((option) => !allowed.has(option.id));
-                const hasRequired = selectedOptions.some((option) => requiredAny.has(option.id));
-                const ok = hasRequired && invalid.length === 0;
+                const hasOption2 = selected.has(rule.option2Id);
+                const hasOption3 = selected.has(rule.option3Id);
+                const selectedSubOptions = (rule.subOptionIds || []).filter((id) => selected.has(id));
+                const selectedValidSubOptions = (rule.validSubOptionIds || []).filter((id) => selected.has(id));
+                const selectedInvalidSubOptions = selectedSubOptions.filter((id) => !(rule.validSubOptionIds || []).includes(id));
+                let ok = false;
+                let message = '';
+                if (rule.type === 'targetNa') {
+                    const option2PathOk = hasOption2 && !hasOption3 && selectedSubOptions.length >= 1;
+                    const option3PathOk = hasOption3 && !hasOption2 && selectedSubOptions.length === 0;
+                    ok = option2PathOk || option3PathOk;
+                    message = ok
+                        ? 'Correct: selected either option 2 with one sub-option, or option 3 only.'
+                        : 'Incorrect: for N/A target allocation, select either option 2 or option 3. If option 2 is selected, also select any one of 2.1 / 2.2 / 2.3.';
+                } else if (rule.type === 'annuityOrPromise') {
+                    ok = hasOption2 && !hasOption3 && selectedValidSubOptions.length >= 1 && selectedInvalidSubOptions.length === 0;
+                    message = ok
+                        ? 'Correct: option 2 selected with one allowed sub-option.'
+                        : 'Incorrect: LionHarvest Prime Deferred Annuity / LionPromise Pro require option 2 plus any one of 2.1 / 2.2 / 2.3.';
+                } else {
+                    ok = hasOption2 && !hasOption3 && selectedValidSubOptions.length >= 1 && selectedInvalidSubOptions.length === 0;
+                    message = ok
+                        ? 'Correct: option 2 selected with either 2.2 or 2.3.'
+                        : 'Incorrect: other plans require option 2 plus either 2.2 or 2.3. Do not select 2.1 for these plans.';
+                }
+                const extraMain = selectedOptions.filter((option) => option.id === 'q6-1' || (rule.type !== 'targetNa' && option.id === 'q6-3'));
+                const extraText = extraMain.length ? ` Should not tick: ${extraMain.map(o => o.label.split('.')[0] + '.').join(' ')}` : '';
                 return {
                     ok,
                     status: ok ? 'pass' : 'fail',
-                    message: ok
-                        ? 'Correct: selected option matches the PDF coloured-tick mapping.'
-                        : `Incorrect${hasRequired ? '' : ': select at least one mapped coloured-tick option'}${invalid.length ? `${hasRequired ? ':' : ';'} should not tick: ${invalid.map(o => o.label.split('\n')[0]).join(', ')}` : ''}.`
+                    message: `${message}${ok ? '' : extraText}`
                 };
             }
             if (group.mode === 'exactOne') {
@@ -9428,7 +9444,7 @@ const shouldShowMed = () => {
                         {keys.map((key) => (
                             <div key={`${group.id}-${key}`} className="border border-slate-200 rounded p-3 bg-slate-50">
                                 <div className="text-[11px] font-bold text-slate-500 mb-2">{fnaOptionGroupLabels[key] || 'Options'}</div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                <div className={`grid grid-cols-1 ${group.id === 'one-q6' ? '' : 'md:grid-cols-2'} gap-2`}>
                                     {groupedOptions[key].map((option) => (
                                         <label key={option.id} className="flex items-start gap-2 border border-slate-200 rounded p-2 text-sm bg-white">
                                             <input type="checkbox" checked={(answers[group.id] || []).includes(option.id)} onChange={() => toggleAnswer(group.id, option.id)} className="mt-1" />
