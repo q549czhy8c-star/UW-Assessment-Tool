@@ -9327,6 +9327,7 @@ const shouldShowMed = () => {
             }
             if (group.mode === 'onePlatformQ6') {
                 const rule = (group.requirements || [])[0] || {};
+                const hasOption1 = selected.has('q6-1');
                 const hasOption2 = selected.has(rule.option2Id);
                 const hasOption3 = selected.has(rule.option3Id);
                 const selectedSubOptions = (rule.subOptionIds || []).filter((id) => selected.has(id));
@@ -9335,22 +9336,28 @@ const shouldShowMed = () => {
                 let ok = false;
                 let message = '';
                 if (rule.type === 'targetNa') {
-                    const option2PathOk = hasOption2 && !hasOption3 && selectedSubOptions.length >= 1;
-                    const option3PathOk = hasOption3 && !hasOption2 && selectedSubOptions.length === 0;
+                    const option2PathOk = !hasOption1 && hasOption2 && !hasOption3 && selectedSubOptions.length >= 1;
+                    const option3PathOk = !hasOption1 && hasOption3 && !hasOption2 && selectedSubOptions.length === 0;
                     ok = option2PathOk || option3PathOk;
                     message = ok
                         ? 'Correct: selected either option 2 with one sub-option, or option 3 only.'
-                        : 'Incorrect: for N/A target allocation, select either option 2 or option 3. If option 2 is selected, also select any one of 2.1 / 2.2 / 2.3.';
+                        : hasOption1
+                            ? 'Incorrect: option 1 is not acceptable for OnePlatform Q6. Select either option 2 with one sub-option, or option 3 only.'
+                            : 'Incorrect: for N/A target allocation, select either option 2 or option 3. If option 2 is selected, also select any one of 2.1 / 2.2 / 2.3.';
                 } else if (rule.type === 'annuityOrPromise') {
-                    ok = hasOption2 && !hasOption3 && selectedValidSubOptions.length >= 1 && selectedInvalidSubOptions.length === 0;
+                    ok = !hasOption1 && hasOption2 && !hasOption3 && selectedValidSubOptions.length >= 1 && selectedInvalidSubOptions.length === 0;
                     message = ok
                         ? 'Correct: option 2 selected with one allowed sub-option.'
-                        : 'Incorrect: LionHarvest Prime Deferred Annuity / LionPromise Pro require option 2 plus any one of 2.1 / 2.2 / 2.3.';
+                        : hasOption1
+                            ? 'Incorrect: option 1 is not acceptable for OnePlatform Q6. LionHarvest Prime Deferred Annuity / LionPromise Pro require option 2 plus any one of 2.1 / 2.2 / 2.3.'
+                            : 'Incorrect: LionHarvest Prime Deferred Annuity / LionPromise Pro require option 2 plus any one of 2.1 / 2.2 / 2.3.';
                 } else {
-                    ok = hasOption2 && !hasOption3 && selectedValidSubOptions.length >= 1 && selectedInvalidSubOptions.length === 0;
+                    ok = !hasOption1 && hasOption2 && !hasOption3 && selectedValidSubOptions.length >= 1 && selectedInvalidSubOptions.length === 0;
                     message = ok
                         ? 'Correct: option 2 selected with either 2.2 or 2.3.'
-                        : 'Incorrect: other plans require option 2 plus either 2.2 or 2.3. Do not select 2.1 for these plans.';
+                        : hasOption1
+                            ? 'Incorrect: option 1 is not acceptable for OnePlatform Q6. Other plans require option 2 plus either 2.2 or 2.3.'
+                            : 'Incorrect: other plans require option 2 plus either 2.2 or 2.3. Do not select 2.1 for these plans.';
                 }
                 const extraMain = selectedOptions.filter((option) => option.id === 'q6-1' || (rule.type !== 'targetNa' && option.id === 'q6-3'));
                 const extraText = extraMain.length ? ` Should not tick: ${extraMain.map(o => o.label.split('.')[0] + '.').join(' ')}` : '';
