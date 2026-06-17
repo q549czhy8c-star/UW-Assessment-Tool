@@ -5483,7 +5483,6 @@ ${hnwFinancially || ''}`;
                                                             </ul>
                                                         )}
                                                     </div>
-                                                    }
                                                 </div>
                                             )}
 
@@ -7397,7 +7396,7 @@ const shouldShowMed = () => {
                                     }
                                     return lines;
                                 })()}
-                                <div className="pl-4">=> Affordability {affordData.calculationResult.isPass ? 'Pass' : 'Failed'}</div>
+                                <div className="pl-4">{'=>'} Affordability {affordData.calculationResult.isPass ? 'Pass' : 'Failed'}</div>
                                 {policyData && (
                                     (policyData.appType === 'Trust') ||
                                     policyData.requiredSendToAFC ||
@@ -7482,7 +7481,7 @@ const shouldShowMed = () => {
                                             {policyData.fnaSof && policyData.fnaSof.length ? <div>SoF: {policyData.fnaSof.join(', ')}</div> : null}
                                             {policyData.fnaSow && policyData.fnaSow.length ? <div>SoW: {policyData.fnaSow.join(', ')}</div> : null}
                                             {estimatedAssetAccumulation ? <div>Estimated assets accumulation: {formatMoney(estimatedAssetAccumulation)}</div> : null}
-                                            {(assetHKD || policyData.requiredSendToAFC) ? <div>=> SoF and SoW appears to be commensurate with {holder}’s background and no suspicions are found.</div> : null}
+                                            {(assetHKD || policyData.requiredSendToAFC) ? <div>{'=>'} SoF and SoW appears to be commensurate with {holder}’s background and no suspicions are found.</div> : null}
                                             {(assetHKD || policyData.requiredSendToAFC) ? (
                                                 (assetHKD && estimatedAssetAccumulation > 0 && assetHKD > estimatedAssetAccumulation)
                                                     ? <div>{`Considering the ${holder}’s age (${ageStr}) and the occupation, it is NOT reasonable to save the asset of ${formatHKDSign(assetHKD)}.`}</div>
