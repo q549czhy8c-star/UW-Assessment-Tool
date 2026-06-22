@@ -6578,7 +6578,7 @@ const showMed = (isPHNotSame && !isLifeOrCI)
                     if (isSplitScenario) {
                         lines.push(`   Total Annual Premiums before retirement: ${formatMoney(annualTotalHKD, 'HKD')}`);
                         lines.push(`   Income used for each year prior to retirement: ${formatMoney(incomeUsed)}`);
-                        lines.push(`   Total premiums (need to be supported by net asset) after retirement: ${formatMoney(postRetTotalHKD)}`);
+                        lines.push(`   Total premiums is required (need to be supported by net asset) after retirement: ${formatMoney(postRetTotalHKD)}`);
                         // When Premium Financing is used, insert Asset Required above Net assets available for use
                         if (affordData.isPremiumFinancing && res.totalRequiredHKD) {
                             lines.push(`   Asset Required: ${formatMoney(res.totalRequiredHKD, 'HKD')}`);
@@ -6605,7 +6605,7 @@ const showMed = (isPHNotSame && !isLifeOrCI)
                         if (!affordData.isPremiumFinancing && assetSupportRequiredHKD > 0) {
                             lines.push(`   Total premiums (need to be supported by net asset): ${formatMoney(assetSupportRequiredHKD)}`);
                         } else if (!res.isPass && hasOverhang) {
-                            lines.push(`   Total premiums (need to be supported by net asset) after retirement: ${formatMoney(postRetTotalHKD)}`);
+                            lines.push(`   Total premiums is required (need to be supported by net asset) after retirement: ${formatMoney(postRetTotalHKD)}`);
                         }
                         // Insert Asset Required line above Net assets when Premium Financing is enabled
                         if (affordData.isPremiumFinancing && res.totalRequiredHKD) {
@@ -7339,7 +7339,7 @@ const shouldShowMed = () => {
                                     if (isSplitScenario) {
                                         lines.push(<div key="fnaSplit1" className="pl-4">Total Annual Premiums before retirement: {formatMoney(annualTotalHKD, 'HKD')}</div>);
                                         lines.push(<div key="fnaSplit2" className="pl-4">Income used for each year prior to retirement: {formatMoney(incomeUsed)}</div>);
-                                        lines.push(<div key="fnaSplit3" className="pl-4">Total premiums (need to be supported by net asset) after retirement: {formatMoney(postRetTotalHKD)}</div>);
+                                        lines.push(<div key="fnaSplit3" className="pl-4">Total premiums is required (need to be supported by net asset) after retirement: {formatMoney(postRetTotalHKD)}</div>);
                                         // Insert Asset Required row when Premium Financing is active
                                         if (affordData.isPremiumFinancing && res.totalRequiredHKD) {
                                             lines.push(<div key="fnaSplitAsset" className="pl-4">Asset Required: {formatMoney(res.totalRequiredHKD, 'HKD')}</div>);
@@ -7363,7 +7363,7 @@ const shouldShowMed = () => {
                                         if (!affordData.isPremiumFinancing && assetSupportRequiredHKD > 0) {
                                             lines.push(<div key="fna2b" className="pl-4">Total premiums (need to be supported by net asset): {formatMoney(assetSupportRequiredHKD)}</div>);
                                         } else if (!res.isPass && hasOverhang) {
-                                            lines.push(<div key="fna2b" className="pl-4">Total premiums (need to be supported by net asset) after retirement: {formatMoney(postRetTotalHKD)}</div>);
+                                            lines.push(<div key="fna2b" className="pl-4">Total premiums is required (need to be supported by net asset) after retirement: {formatMoney(postRetTotalHKD)}</div>);
                                         }
                                         // Insert Asset Required row above Net assets when Premium Financing is enabled
                                         if (affordData.isPremiumFinancing && res.totalRequiredHKD) {
