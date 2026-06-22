@@ -6574,6 +6574,7 @@ const showMed = (isPHNotSame && !isLifeOrCI)
                     const preIncomeSufficient = preRetireShortfallSum === 0 && incomeUsed >= annualTotalHKD;
                     const assetSupportRequiredHKD = postRetTotalHKD + preRetireShortfallSum;
                     const isRetirementAssetInsufficient = hasOverhang && postRetTotalHKD > 0 && netAssets < postRetTotalHKD;
+                    const isRetirementOnlyAssetSupport = hasOverhang && postRetTotalHKD > 0 && Math.abs(assetSupportRequiredHKD - postRetTotalHKD) < 1;
                     const mode = affordData.calcMode;
                     let totalPremHKD = res.grossTotalDisplay;
                     if (isSplitScenario) {
@@ -6603,10 +6604,10 @@ const showMed = (isPHNotSame && !isLifeOrCI)
                             lines.push(`   Total Premiums: ${formatMoney(totalPremHKD, 'HKD')}`);
                         }
                         lines.push(`   Income used for each year prior to retirement: ${formatMoney(incomeUsed)}`);
-                        if (!affordData.isPremiumFinancing && assetSupportRequiredHKD > 0) {
+                        if (!affordData.isPremiumFinancing && assetSupportRequiredHKD > 0 && !isRetirementOnlyAssetSupport) {
                             lines.push(`   Total premiums (need to be supported by net asset): ${formatMoney(assetSupportRequiredHKD)}`);
                         }
-                        if (isRetirementAssetInsufficient) {
+                        if (isRetirementAssetInsufficient || isRetirementOnlyAssetSupport) {
                             lines.push(`   Total premiums is required (need to be supported by net asset) after retirement: ${formatMoney(postRetTotalHKD)}`);
                         }
                         // Insert Asset Required line above Net assets when Premium Financing is enabled
@@ -7334,6 +7335,7 @@ const shouldShowMed = () => {
                                     const preIncomeSufficient = preRetireShortfallSum === 0 && incomeUsed >= annualTotalHKD;
                                     const assetSupportRequiredHKD = postRetTotalHKD + preRetireShortfallSum;
                                     const isRetirementAssetInsufficient = hasOverhang && postRetTotalHKD > 0 && netAssets < postRetTotalHKD;
+                                    const isRetirementOnlyAssetSupport = hasOverhang && postRetTotalHKD > 0 && Math.abs(assetSupportRequiredHKD - postRetTotalHKD) < 1;
                                     const lines = [];
                                     const pdfSuffix = (policyData.payMode === 'Prepay' && policyData.pdfAmount) ? ` (Total premium includes PDF: ${formatMoney(Number(policyData.pdfAmount), policyData.curr || 'HKD')})` : '';
                                     const policyCount = results.length || 0;
@@ -7363,10 +7365,10 @@ const shouldShowMed = () => {
                                             }
                                         }
                                         lines.push(<div key="fna2" className="pl-4">Income used for each year prior to retirement: {formatMoney(incomeUsed)}</div>);
-                                        if (!affordData.isPremiumFinancing && assetSupportRequiredHKD > 0) {
+                                        if (!affordData.isPremiumFinancing && assetSupportRequiredHKD > 0 && !isRetirementOnlyAssetSupport) {
                                             lines.push(<div key="fna2b" className="pl-4">Total premiums (need to be supported by net asset): {formatMoney(assetSupportRequiredHKD)}</div>);
                                         }
-                                        if (isRetirementAssetInsufficient) {
+                                        if (isRetirementAssetInsufficient || isRetirementOnlyAssetSupport) {
                                             lines.push(<div key="fna2c" className="pl-4">Total premiums is required (need to be supported by net asset) after retirement: {formatMoney(postRetTotalHKD)}</div>);
                                         }
                                         // Insert Asset Required row above Net assets when Premium Financing is enabled
