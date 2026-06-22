@@ -6573,6 +6573,7 @@ const showMed = (isPHNotSame && !isLifeOrCI)
                     const isSplitScenario = hasOverhang && preRetireShortfallSum === 0 && incomeUsed >= annualTotalHKD && netAssets >= postRetTotalHKD;
                     const preIncomeSufficient = preRetireShortfallSum === 0 && incomeUsed >= annualTotalHKD;
                     const assetSupportRequiredHKD = postRetTotalHKD + preRetireShortfallSum;
+                    const isRetirementAssetInsufficient = hasOverhang && postRetTotalHKD > 0 && netAssets < postRetTotalHKD;
                     const mode = affordData.calcMode;
                     let totalPremHKD = res.grossTotalDisplay;
                     if (isSplitScenario) {
@@ -6604,7 +6605,8 @@ const showMed = (isPHNotSame && !isLifeOrCI)
                         lines.push(`   Income used for each year prior to retirement: ${formatMoney(incomeUsed)}`);
                         if (!affordData.isPremiumFinancing && assetSupportRequiredHKD > 0) {
                             lines.push(`   Total premiums (need to be supported by net asset): ${formatMoney(assetSupportRequiredHKD)}`);
-                        } else if (!res.isPass && hasOverhang) {
+                        }
+                        if (isRetirementAssetInsufficient) {
                             lines.push(`   Total premiums is required (need to be supported by net asset) after retirement: ${formatMoney(postRetTotalHKD)}`);
                         }
                         // Insert Asset Required line above Net assets when Premium Financing is enabled
@@ -7331,6 +7333,7 @@ const shouldShowMed = () => {
                                     const isSplitScenario = hasOverhang && preRetireShortfallSum === 0 && incomeUsed >= annualTotalHKD && netAssets >= postRetTotalHKD;
                                     const preIncomeSufficient = preRetireShortfallSum === 0 && incomeUsed >= annualTotalHKD;
                                     const assetSupportRequiredHKD = postRetTotalHKD + preRetireShortfallSum;
+                                    const isRetirementAssetInsufficient = hasOverhang && postRetTotalHKD > 0 && netAssets < postRetTotalHKD;
                                     const lines = [];
                                     const pdfSuffix = (policyData.payMode === 'Prepay' && policyData.pdfAmount) ? ` (Total premium includes PDF: ${formatMoney(Number(policyData.pdfAmount), policyData.curr || 'HKD')})` : '';
                                     const policyCount = results.length || 0;
@@ -7362,8 +7365,9 @@ const shouldShowMed = () => {
                                         lines.push(<div key="fna2" className="pl-4">Income used for each year prior to retirement: {formatMoney(incomeUsed)}</div>);
                                         if (!affordData.isPremiumFinancing && assetSupportRequiredHKD > 0) {
                                             lines.push(<div key="fna2b" className="pl-4">Total premiums (need to be supported by net asset): {formatMoney(assetSupportRequiredHKD)}</div>);
-                                        } else if (!res.isPass && hasOverhang) {
-                                            lines.push(<div key="fna2b" className="pl-4">Total premiums is required (need to be supported by net asset) after retirement: {formatMoney(postRetTotalHKD)}</div>);
+                                        }
+                                        if (isRetirementAssetInsufficient) {
+                                            lines.push(<div key="fna2c" className="pl-4">Total premiums is required (need to be supported by net asset) after retirement: {formatMoney(postRetTotalHKD)}</div>);
                                         }
                                         // Insert Asset Required row above Net assets when Premium Financing is enabled
                                         if (affordData.isPremiumFinancing && res.totalRequiredHKD) {
