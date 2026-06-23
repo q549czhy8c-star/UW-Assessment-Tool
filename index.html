@@ -3250,6 +3250,7 @@ const HK_HOLIDAYS_2025_2026 = [
             const [incomePercent, setIncomePercent] = useState(100);
             const [liquidAsset, setLiquidAsset] = useState(860000);
             const [assetPercent, setAssetPercent] = useState(100);
+            const [allowRetirementIncomeCover, setAllowRetirementIncomeCover] = useState(false);
             const [policies, setPolicies] = useState([
                  // [UPDATE v2.8] add payType property to identify Single vs Regular pay
                  { id: 1, name: '', status: 'Applying', premium: 0, currency: 'HKD', term: 5, payType: 'Regular' },
@@ -3279,6 +3280,7 @@ const HK_HOLIDAYS_2025_2026 = [
                         if (s.incomePercent !== undefined && s.incomePercent !== null) setIncomePercent(Number(s.incomePercent));
                         if (s.liquidAsset !== undefined && s.liquidAsset !== null) setLiquidAsset(Number(s.liquidAsset));
                         if (s.assetPercent !== undefined && s.assetPercent !== null) setAssetPercent(Number(s.assetPercent));
+                        if (s.allowRetirementIncomeCover !== undefined) setAllowRetirementIncomeCover(!!s.allowRetirementIncomeCover);
                         // Hydrate Premium Financing fields
                         if (s.isPremiumFinancing !== undefined) setIsPremiumFinancing(!!s.isPremiumFinancing);
                         if (s.pfLoanAmount !== undefined) setPfLoanAmount(Number(s.pfLoanAmount));
@@ -3314,6 +3316,7 @@ const HK_HOLIDAYS_2025_2026 = [
                         incomePercent,
                         liquidAsset,
                         assetPercent,
+                        allowRetirementIncomeCover,
                         // [UPDATE v2.8] persist policies including payType
                         policies,
                         // persist PF fields for hydration/export
@@ -3328,7 +3331,7 @@ const HK_HOLIDAYS_2025_2026 = [
                 } catch (err) {
                     console.error('Failed to persist Affordability full state', err);
                 }
-            }, [age, retireAge, calcMode, monthlyIncome, incomePercent, liquidAsset, assetPercent, policies, affHydrated,
+            }, [age, retireAge, calcMode, monthlyIncome, incomePercent, liquidAsset, assetPercent, allowRetirementIncomeCover, policies, affHydrated,
                 // dependencies for PF states
                 isPremiumFinancing, pfLoanAmount, pfLoanRate, pfLoanTenor, pfRepaymentAmount]);
 
@@ -3363,9 +3366,12 @@ const HK_HOLIDAYS_2025_2026 = [
                 const sortedPolicies = [...policies].sort((a, b) => b.term - a.term);
 
                 let currentRemainingIncome = effectiveIncome;
+                let currentRemainingRetirementIncome = allowRetirementIncomeCover ? effectiveIncome : 0;
                 let totalRequiredHKD = 0; // total assets needed without interest
                 let grossTotalDisplay = 0;
                 let preRetireShortfallSum = 0;
+                let postRetireAssetRequiredSum = 0;
+                let postRetireAnnualPremiumSum = 0;
 
                 const detailedResults = sortedPolicies.map((p, index) => {
                     const annualPremiumRaw = Number(p.premium);
@@ -3403,21 +3409,35 @@ const HK_HOLIDAYS_2025_2026 = [
                     // Determine annual shortfall when income cannot cover premium
                     const shortfallAnnual = Math.max(0, premiumInHKD - currentRemainingIncome);
                     currentRemainingIncome = Math.max(0, currentRemainingIncome - premiumInHKD);
-                    // Years beyond retirement; cannot use income
-                    const overhangYears = Math.max(0, term - yearsToRetire);
-                    // Years before retirement
-                    const preRetireYears = Math.max(0, term - overhangYears);
-                    // Shortfall across pre-retire years contributes to asset requirement
-                    preRetireShortfallSum += shortfallAnnual * preRetireYears;
-                    // Asset cover includes premiums due after retirement plus shortfall before retirement
-                    const totalAssetCover = (premiumInHKD * overhangYears) + (shortfallAnnual * preRetireYears);
+	                    // Years beyond retirement; cannot use income
+	                    const overhangYears = Math.max(0, term - yearsToRetire);
+	                    // Years before retirement
+	                    const preRetireYears = Math.max(0, term - overhangYears);
+	                    let retirementIncomeUsedAnnual = 0;
+	                    let retirementShortfallAnnual = premiumInHKD;
+	                    if (overhangYears > 0) {
+	                        postRetireAnnualPremiumSum += premiumInHKD;
+	                        if (allowRetirementIncomeCover) {
+	                            retirementIncomeUsedAnnual = Math.min(currentRemainingRetirementIncome, premiumInHKD);
+	                            retirementShortfallAnnual = Math.max(0, premiumInHKD - currentRemainingRetirementIncome);
+	                            currentRemainingRetirementIncome = Math.max(0, currentRemainingRetirementIncome - premiumInHKD);
+	                        }
+	                    }
+	                    // Shortfall across pre-retire years contributes to asset requirement
+	                    preRetireShortfallSum += shortfallAnnual * preRetireYears;
+	                    // Asset cover includes premiums due after retirement plus shortfall before retirement
+	                    const postRetireAssetCover = retirementShortfallAnnual * overhangYears;
+	                    postRetireAssetRequiredSum += postRetireAssetCover;
+	                    const totalAssetCover = postRetireAssetCover + (shortfallAnnual * preRetireYears);
                     totalRequiredHKD += totalAssetCover;
                     return {
                         ...p,
                         calculatedSequence: index + 1,
                         premiumInHKD,
-                        shortfallAnnual,
-                        overhangYears,
+	                        shortfallAnnual,
+	                        retirementIncomeUsedAnnual,
+	                        retirementShortfallAnnual,
+	                        overhangYears,
                         totalAssetCover,
                         preRetireYears
                     };
@@ -3432,7 +3452,7 @@ const HK_HOLIDAYS_2025_2026 = [
                     projectedInterest = loan * (rate / 100) * tenor;
                 }
                 // Test A: asset requirement without interest
-                const assetRequirement = totalRequiredHKD;
+	                const assetRequirement = totalRequiredHKD;
                 // Test B: include projected interest when PF is on
                 const assetRequirementWithInterest = totalRequiredHKD + projectedInterest;
 
@@ -3469,11 +3489,16 @@ const HK_HOLIDAYS_2025_2026 = [
                 const isPass = isPassA;
                 const diff = diffA;
                 // Provide totalRequiredHKD as A requirement (without interest)
-                return {
+	                return {
                     detailedResults,
                     effectiveIncome,
-                    effectiveAssets,
-                    totalRequiredHKD: assetRequirement,
+	                    effectiveAssets,
+	                    allowRetirementIncomeCover,
+	                    hasRetirementPremium: postRetireAnnualPremiumSum > 0,
+	                    postRetireAnnualPremiumSum,
+	                    postRetireAssetRequiredSum,
+	                    retirementIncomeCoverPass: !allowRetirementIncomeCover || postRetireAssetRequiredSum === 0,
+	                    totalRequiredHKD: assetRequirement,
                     grossTotalDisplay,
                     isPass,
                     diff,
@@ -3486,7 +3511,7 @@ const HK_HOLIDAYS_2025_2026 = [
                     isPassB,
                     diffB
                 };
-            }, [policies, monthlyIncome, incomePercent, liquidAsset, assetPercent, yearsToRetire, calcMode, isPremiumFinancing, pfLoanAmount, pfLoanRate, pfLoanTenor]);
+            }, [policies, monthlyIncome, incomePercent, liquidAsset, assetPercent, yearsToRetire, calcMode, allowRetirementIncomeCover, isPremiumFinancing, pfLoanAmount, pfLoanRate, pfLoanTenor]);
 
             const addPolicy = () => {
                 const newId = Math.max(...policies.map(p=>p.id), 0) + 1;
@@ -3581,6 +3606,7 @@ const HK_HOLIDAYS_2025_2026 = [
                 setIncomePercent(100);
                 setLiquidAsset(860000);
                 setAssetPercent(100);
+                setAllowRetirementIncomeCover(false);
                 setPolicies([
                     { id: 1, name: '', status: 'Applying', premium: 0, currency: 'HKD', term: 5, payType: 'Regular' },
                 ]);
@@ -3605,10 +3631,11 @@ const HK_HOLIDAYS_2025_2026 = [
                             calculationResult,
                             calcMode,
                             sofSelections,
-                            monthlyIncome,
-                            incomePercent,
-                            liquidAsset,
-                            assetPercent,
+	                            monthlyIncome,
+	                            incomePercent,
+	                            liquidAsset,
+	                            assetPercent,
+	                            allowRetirementIncomeCover,
                             // Include premium financing information for case summary
                             isPremiumFinancing,
                             projectedInterest: calculationResult.projectedInterest || 0,
@@ -3627,7 +3654,7 @@ const HK_HOLIDAYS_2025_2026 = [
                 } catch (err) {
                     console.error('Failed to save case summary affordability data', err);
                 }
-            }, [policies, calculationResult, calcMode, sofSelections, monthlyIncome, incomePercent, liquidAsset, assetPercent, affHydrated,
+            }, [policies, calculationResult, calcMode, sofSelections, monthlyIncome, incomePercent, liquidAsset, assetPercent, allowRetirementIncomeCover, affHydrated,
                 // premium financing
                 isPremiumFinancing, pfLoanAmount, pfLoanRate, pfLoanTenor, pfRepaymentAmount]);
 
@@ -3698,10 +3725,26 @@ const HK_HOLIDAYS_2025_2026 = [
                                 </div>
                                 <div className="text-[10px] text-slate-400 mt-1">有效資產: <span className="font-bold text-green-700">{formatMoney(calculationResult.effectiveAssets)}</span></div>
                                 {calcMode === 'income' && <div className="text-[9px] text-blue-500 mt-1 font-bold">* 僅用於退休後年期支付</div>}
-                            </div>
-                        </div>
-                        {/* Premium Financing toggle and input fields in Affordability tab */}
-                        <div className="mt-2">
+	                            </div>
+	                        </div>
+	                        {calculationResult.hasRetirementPremium && (
+	                            <div className="mt-2 rounded border border-blue-100 bg-blue-50 px-3 py-2">
+	                                <label className="flex items-start gap-2 text-xs text-blue-900">
+	                                    <input
+	                                        type="checkbox"
+	                                        checked={allowRetirementIncomeCover}
+	                                        onChange={(e) => setAllowRetirementIncomeCover(e.target.checked)}
+	                                        className="mt-0.5"
+	                                    />
+	                                    <span>
+	                                        <span className="font-bold">Allow income to cover premium after retirement</span>
+	                                        <span className="block text-[10px] text-blue-700">For other income such as retirement fund or rental income. Calculation will refresh automatically.</span>
+	                                    </span>
+	                                </label>
+	                            </div>
+	                        )}
+	                        {/* Premium Financing toggle and input fields in Affordability tab */}
+	                        <div className="mt-2">
                             <div className="flex items-center gap-2">
                                 <input type="checkbox" checked={isPremiumFinancing} onChange={(e) => setIsPremiumFinancing(e.target.checked)} />
                                 <label className="text-xs font-bold text-slate-500">保費融資 Premium Financing</label>
@@ -6564,23 +6607,31 @@ const showMed = (isPHNotSame && !isLifeOrCI)
                     }
                     const res = affordData.calculationResult;
                     const results = res.detailedResults || [];
-                    const hasOverhang = results.some(p => p.overhangYears > 0);
-                    const annualTotalHKD = results.reduce((sum, p) => sum + (p.premiumInHKD || 0), 0);
-                    const postRetTotalHKD = results.reduce((sum, p) => sum + (p.premiumInHKD || 0) * (p.overhangYears || 0), 0);
-                    const preRetireShortfallSum = results.reduce((sum, p) => sum + (p.shortfallAnnual || 0) * (p.preRetireYears || 0), 0);
-                    const incomeUsed = res.effectiveIncome || 0;
-                    const netAssets = res.effectiveAssets || 0;
-                    const isSplitScenario = hasOverhang && preRetireShortfallSum === 0 && incomeUsed >= annualTotalHKD && netAssets >= postRetTotalHKD;
-                    const preIncomeSufficient = preRetireShortfallSum === 0 && incomeUsed >= annualTotalHKD;
-                    const assetSupportRequiredHKD = postRetTotalHKD + preRetireShortfallSum;
-                    const isRetirementAssetInsufficient = hasOverhang && postRetTotalHKD > 0 && netAssets < postRetTotalHKD;
-                    const isRetirementOnlyAssetSupport = hasOverhang && postRetTotalHKD > 0 && Math.abs(assetSupportRequiredHKD - postRetTotalHKD) < 1;
+	                    const hasOverhang = results.some(p => p.overhangYears > 0);
+	                    const annualTotalHKD = results.reduce((sum, p) => sum + (p.premiumInHKD || 0), 0);
+	                    const postRetTotalHKD = results.reduce((sum, p) => sum + (p.premiumInHKD || 0) * (p.overhangYears || 0), 0);
+	                    const postRetAssetRequiredHKD = res.postRetireAssetRequiredSum !== undefined
+	                        ? Number(res.postRetireAssetRequiredSum || 0)
+	                        : postRetTotalHKD;
+	                    const preRetireShortfallSum = results.reduce((sum, p) => sum + (p.shortfallAnnual || 0) * (p.preRetireYears || 0), 0);
+	                    const incomeUsed = res.effectiveIncome || 0;
+	                    const netAssets = res.effectiveAssets || 0;
+	                    const isSplitScenario = hasOverhang && preRetireShortfallSum === 0 && incomeUsed >= annualTotalHKD && netAssets >= postRetAssetRequiredHKD;
+	                    const preIncomeSufficient = preRetireShortfallSum === 0 && incomeUsed >= annualTotalHKD;
+	                    const assetSupportRequiredHKD = postRetAssetRequiredHKD + preRetireShortfallSum;
+	                    const isRetirementAssetInsufficient = hasOverhang && postRetAssetRequiredHKD > 0 && netAssets < postRetAssetRequiredHKD;
+	                    const isRetirementOnlyAssetSupport = hasOverhang && postRetAssetRequiredHKD > 0 && Math.abs(assetSupportRequiredHKD - postRetAssetRequiredHKD) < 1;
                     const mode = affordData.calcMode;
                     let totalPremHKD = res.grossTotalDisplay;
                     if (isSplitScenario) {
                         lines.push(`   Total Annual Premiums before retirement: ${formatMoney(annualTotalHKD, 'HKD')}`);
                         lines.push(`   Income used for each year prior to retirement: ${formatMoney(incomeUsed)}`);
-                        lines.push(`   Total premiums is required (need to be supported by net asset) after retirement: ${formatMoney(postRetTotalHKD)}`);
+	                        if (postRetAssetRequiredHKD > 0) {
+	                            lines.push(`   Total premiums is required (need to be supported by net asset) after retirement: ${formatMoney(postRetAssetRequiredHKD)}`);
+	                        }
+	                        if (affordData.allowRetirementIncomeCover) {
+	                            lines.push(`   Considering client has other income (such as retirement fund, rental income) which is ${res.retirementIncomeCoverPass ? 'sufficient' : 'insufficient'} to cover the premium after retirement, affordability ${res.isPass ? 'pass' : 'failed'}.`);
+	                        }
                         // When Premium Financing is used, insert Asset Required above Net assets available for use
                         if (affordData.isPremiumFinancing && res.totalRequiredHKD) {
                             lines.push(`   Asset Required: ${formatMoney(res.totalRequiredHKD, 'HKD')}`);
@@ -6608,8 +6659,11 @@ const showMed = (isPHNotSame && !isLifeOrCI)
                             lines.push(`   Total premiums (need to be supported by net asset): ${formatMoney(assetSupportRequiredHKD)}`);
                         }
                         if (isRetirementAssetInsufficient || isRetirementOnlyAssetSupport) {
-                            lines.push(`   Total premiums is required (need to be supported by net asset) after retirement: ${formatMoney(postRetTotalHKD)}`);
-                        }
+	                            lines.push(`   Total premiums is required (need to be supported by net asset) after retirement: ${formatMoney(postRetAssetRequiredHKD)}`);
+	                        }
+	                        if (affordData.allowRetirementIncomeCover && hasOverhang) {
+	                            lines.push(`   Considering client has other income (such as retirement fund, rental income) which is ${res.retirementIncomeCoverPass ? 'sufficient' : 'insufficient'} to cover the premium after retirement, affordability ${res.isPass ? 'pass' : 'failed'}.`);
+	                        }
                         // Insert Asset Required line above Net assets when Premium Financing is enabled
                         if (affordData.isPremiumFinancing && res.totalRequiredHKD) {
                             lines.push(`   Asset Required: ${formatMoney(res.totalRequiredHKD, 'HKD')}`);
@@ -7327,15 +7381,18 @@ const shouldShowMed = () => {
                                     const netAssets = res.effectiveAssets || 0;
                                     const diff = res.diff;
                                     const results = res.detailedResults || [];
-                                    const hasOverhang = results.some(p => p.overhangYears > 0);
-                                    const annualTotalHKD = results.reduce((sum, p) => sum + (p.premiumInHKD || 0), 0);
-                                    const postRetTotalHKD = results.reduce((sum, p) => sum + (p.premiumInHKD || 0) * (p.overhangYears || 0), 0);
-                                    const preRetireShortfallSum = results.reduce((sum, p) => sum + (p.shortfallAnnual || 0) * (p.preRetireYears || 0), 0);
-                                    const isSplitScenario = hasOverhang && preRetireShortfallSum === 0 && incomeUsed >= annualTotalHKD && netAssets >= postRetTotalHKD;
-                                    const preIncomeSufficient = preRetireShortfallSum === 0 && incomeUsed >= annualTotalHKD;
-                                    const assetSupportRequiredHKD = postRetTotalHKD + preRetireShortfallSum;
-                                    const isRetirementAssetInsufficient = hasOverhang && postRetTotalHKD > 0 && netAssets < postRetTotalHKD;
-                                    const isRetirementOnlyAssetSupport = hasOverhang && postRetTotalHKD > 0 && Math.abs(assetSupportRequiredHKD - postRetTotalHKD) < 1;
+	                                    const hasOverhang = results.some(p => p.overhangYears > 0);
+	                                    const annualTotalHKD = results.reduce((sum, p) => sum + (p.premiumInHKD || 0), 0);
+	                                    const postRetTotalHKD = results.reduce((sum, p) => sum + (p.premiumInHKD || 0) * (p.overhangYears || 0), 0);
+	                                    const postRetAssetRequiredHKD = res.postRetireAssetRequiredSum !== undefined
+	                                        ? Number(res.postRetireAssetRequiredSum || 0)
+	                                        : postRetTotalHKD;
+	                                    const preRetireShortfallSum = results.reduce((sum, p) => sum + (p.shortfallAnnual || 0) * (p.preRetireYears || 0), 0);
+	                                    const isSplitScenario = hasOverhang && preRetireShortfallSum === 0 && incomeUsed >= annualTotalHKD && netAssets >= postRetAssetRequiredHKD;
+	                                    const preIncomeSufficient = preRetireShortfallSum === 0 && incomeUsed >= annualTotalHKD;
+	                                    const assetSupportRequiredHKD = postRetAssetRequiredHKD + preRetireShortfallSum;
+	                                    const isRetirementAssetInsufficient = hasOverhang && postRetAssetRequiredHKD > 0 && netAssets < postRetAssetRequiredHKD;
+	                                    const isRetirementOnlyAssetSupport = hasOverhang && postRetAssetRequiredHKD > 0 && Math.abs(assetSupportRequiredHKD - postRetAssetRequiredHKD) < 1;
                                     const lines = [];
                                     const pdfSuffix = (policyData.payMode === 'Prepay' && policyData.pdfAmount) ? ` (Total premium includes PDF: ${formatMoney(Number(policyData.pdfAmount), policyData.curr || 'HKD')})` : '';
                                     const policyCount = results.length || 0;
@@ -7344,7 +7401,12 @@ const shouldShowMed = () => {
                                     if (isSplitScenario) {
                                         lines.push(<div key="fnaSplit1" className="pl-4">Total Annual Premiums before retirement: {formatMoney(annualTotalHKD, 'HKD')}</div>);
                                         lines.push(<div key="fnaSplit2" className="pl-4">Income used for each year prior to retirement: {formatMoney(incomeUsed)}</div>);
-                                        lines.push(<div key="fnaSplit3" className="pl-4">Total premiums is required (need to be supported by net asset) after retirement: {formatMoney(postRetTotalHKD)}</div>);
+	                                        if (postRetAssetRequiredHKD > 0) {
+	                                            lines.push(<div key="fnaSplit3" className="pl-4">Total premiums is required (need to be supported by net asset) after retirement: {formatMoney(postRetAssetRequiredHKD)}</div>);
+	                                        }
+	                                        if (affordData.allowRetirementIncomeCover) {
+	                                            lines.push(<div key="fnaSplitIncome" className="pl-4">Considering client has other income (such as retirement fund, rental income) which is {res.retirementIncomeCoverPass ? 'sufficient' : 'insufficient'} to cover the premium after retirement, affordability {res.isPass ? 'pass' : 'failed'}.</div>);
+	                                        }
                                         // Insert Asset Required row when Premium Financing is active
                                         if (affordData.isPremiumFinancing && res.totalRequiredHKD) {
                                             lines.push(<div key="fnaSplitAsset" className="pl-4">Asset Required: {formatMoney(res.totalRequiredHKD, 'HKD')}</div>);
@@ -7369,8 +7431,11 @@ const shouldShowMed = () => {
                                             lines.push(<div key="fna2b" className="pl-4">Total premiums (need to be supported by net asset): {formatMoney(assetSupportRequiredHKD)}</div>);
                                         }
                                         if (isRetirementAssetInsufficient || isRetirementOnlyAssetSupport) {
-                                            lines.push(<div key="fna2c" className="pl-4">Total premiums is required (need to be supported by net asset) after retirement: {formatMoney(postRetTotalHKD)}</div>);
-                                        }
+	                                            lines.push(<div key="fna2c" className="pl-4">Total premiums is required (need to be supported by net asset) after retirement: {formatMoney(postRetAssetRequiredHKD)}</div>);
+	                                        }
+	                                        if (affordData.allowRetirementIncomeCover && hasOverhang) {
+	                                            lines.push(<div key="fna2d" className="pl-4">Considering client has other income (such as retirement fund, rental income) which is {res.retirementIncomeCoverPass ? 'sufficient' : 'insufficient'} to cover the premium after retirement, affordability {res.isPass ? 'pass' : 'failed'}.</div>);
+	                                        }
                                         // Insert Asset Required row above Net assets when Premium Financing is enabled
                                         if (affordData.isPremiumFinancing && res.totalRequiredHKD) {
                                             lines.push(<div key="fnaAsset" className="pl-4">Asset Required: {formatMoney(res.totalRequiredHKD, 'HKD')}</div>);
@@ -7577,7 +7642,7 @@ const shouldShowMed = () => {
                 });
                 items.push({
                     prefix: '@@@E',
-                    messages: [`Critical Illness Benefit for Early Stage or Minor Critical Illnesses will not be payable if the loss or claim is directly or indirectly due to ${minorEn} and its complications.`]
+                    messages: [`Critical Illness Benefit for Early Stage or Minor Illnesses will not be payable if the loss or claim is directly or indirectly due to ${minorEn} and its complications.`]
                 });
                 items.push({
                     prefix: '@@@C',
@@ -7599,7 +7664,7 @@ const shouldShowMed = () => {
                 items.push({ prefix: '@@@E', messages: [majorEngLine] });
                 items.push({
                     prefix: '@@@E',
-                    messages: [`Critical Illness Benefit for Early Stage or Minor Critical Illnesses will not be payable if the loss or claim is directly or indirectly due to Early Stage Malignancy / Carcinoma-in-situ of ${minorEn}, surgical excision of benign tumour of ${minorEn} and its complications.`]
+                    messages: [`Critical Illness Benefit for Early Stage or Minor Illnesses will not be payable if the loss or claim is directly or indirectly due to Early Stage Malignancy / Carcinoma-in-situ of ${minorEn}, surgical excision of benign tumour of ${minorEn} and its complications.`]
                 });
                 let majorCnLine = metastasis ? `嚴重疾病 - 不保事項: ${majorCn}癌症及其治療、轉移及併發症。` : `嚴重疾病 - 不保事項: ${majorCn}癌症及其併發症。`;
                 items.push({
