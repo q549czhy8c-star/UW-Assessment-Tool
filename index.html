@@ -3251,6 +3251,7 @@ const HK_HOLIDAYS_2025_2026 = [
             const [liquidAsset, setLiquidAsset] = useState(860000);
             const [assetPercent, setAssetPercent] = useState(100);
             const [allowRetirementIncomeCover, setAllowRetirementIncomeCover] = useState(false);
+            const [allowIncomeSurplusAssetAccumulation, setAllowIncomeSurplusAssetAccumulation] = useState(false);
             const [policies, setPolicies] = useState([
                  // [UPDATE v2.8] add payType property to identify Single vs Regular pay
                  { id: 1, name: '', status: 'Applying', premium: 0, currency: 'HKD', term: 5, payType: 'Regular' },
@@ -3281,6 +3282,7 @@ const HK_HOLIDAYS_2025_2026 = [
                         if (s.liquidAsset !== undefined && s.liquidAsset !== null) setLiquidAsset(Number(s.liquidAsset));
                         if (s.assetPercent !== undefined && s.assetPercent !== null) setAssetPercent(Number(s.assetPercent));
                         if (s.allowRetirementIncomeCover !== undefined) setAllowRetirementIncomeCover(!!s.allowRetirementIncomeCover);
+                        if (s.allowIncomeSurplusAssetAccumulation !== undefined) setAllowIncomeSurplusAssetAccumulation(!!s.allowIncomeSurplusAssetAccumulation);
                         // Hydrate Premium Financing fields
                         if (s.isPremiumFinancing !== undefined) setIsPremiumFinancing(!!s.isPremiumFinancing);
                         if (s.pfLoanAmount !== undefined) setPfLoanAmount(Number(s.pfLoanAmount));
@@ -3317,6 +3319,7 @@ const HK_HOLIDAYS_2025_2026 = [
                         liquidAsset,
                         assetPercent,
                         allowRetirementIncomeCover,
+                        allowIncomeSurplusAssetAccumulation,
                         // [UPDATE v2.8] persist policies including payType
                         policies,
                         // persist PF fields for hydration/export
@@ -3331,7 +3334,7 @@ const HK_HOLIDAYS_2025_2026 = [
                 } catch (err) {
                     console.error('Failed to persist Affordability full state', err);
                 }
-            }, [age, retireAge, calcMode, monthlyIncome, incomePercent, liquidAsset, assetPercent, allowRetirementIncomeCover, policies, affHydrated,
+            }, [age, retireAge, calcMode, monthlyIncome, incomePercent, liquidAsset, assetPercent, allowRetirementIncomeCover, allowIncomeSurplusAssetAccumulation, policies, affHydrated,
                 // dependencies for PF states
                 isPremiumFinancing, pfLoanAmount, pfLoanRate, pfLoanTenor, pfRepaymentAmount]);
 
@@ -3362,8 +3365,20 @@ const HK_HOLIDAYS_2025_2026 = [
                 // In asset-only mode, income is not considered
                 if (calcMode === 'asset') effectiveIncome = 0;
 
-                // Sort policies by term descending (longer first)
-                const sortedPolicies = [...policies].sort((a, b) => b.term - a.term);
+	                // Sort policies by term descending (longer first)
+	                const sortedPolicies = [...policies].sort((a, b) => b.term - a.term);
+	                const annualRegularPremiumTotalHKD = sortedPolicies.reduce((sum, p) => {
+	                    if (p.payType === 'Single') return sum;
+	                    const premium = Number(p.premium) || 0;
+	                    return sum + (p.currency === 'USD' ? premium * USD_RATE : premium);
+	                }, 0);
+	                const yearlyDisposableIncomeSurplus = calcMode === 'asset'
+	                    ? 0
+	                    : Math.max(0, effectiveIncome - annualRegularPremiumTotalHKD);
+	                const incomeSurplusAccumulationYears = Math.max(0, yearsToRetire);
+	                const incomeSurplusAccumulationAvailable = allowIncomeSurplusAssetAccumulation
+	                    ? yearlyDisposableIncomeSurplus * incomeSurplusAccumulationYears
+	                    : 0;
 
                 let currentRemainingIncome = effectiveIncome;
                 let currentRemainingRetirementIncome = allowRetirementIncomeCover ? effectiveIncome : 0;
@@ -3451,10 +3466,15 @@ const HK_HOLIDAYS_2025_2026 = [
                     const tenor = Number(pfLoanTenor) || 0;
                     projectedInterest = loan * (rate / 100) * tenor;
                 }
-                // Test A: asset requirement without interest
-	                const assetRequirement = totalRequiredHKD;
-                // Test B: include projected interest when PF is on
-                const assetRequirementWithInterest = totalRequiredHKD + projectedInterest;
+	                // Test A: asset requirement without interest
+		                const assetRequirement = totalRequiredHKD;
+	                const assetShortfallBeforeAccumulation = Math.max(0, assetRequirement - effectiveAssets);
+	                const incomeSurplusAccumulationApplied = allowIncomeSurplusAssetAccumulation
+	                    ? Math.min(incomeSurplusAccumulationAvailable, assetShortfallBeforeAccumulation)
+	                    : 0;
+	                const effectiveAssetsAfterAccumulation = effectiveAssets + incomeSurplusAccumulationApplied;
+	                // Test B: include projected interest when PF is on
+	                const assetRequirementWithInterest = totalRequiredHKD + projectedInterest;
 
                 // Determine pass/fail for Premium Affordability (Test A) and Over‑leveraging (Test B)
                 let isPassA;
@@ -3462,28 +3482,28 @@ const HK_HOLIDAYS_2025_2026 = [
                 let diffA;
                 let diffB;
                 // Remaining net assets (100% of liquidAsset) after paying all premium requirements (Test A requirement)
-                const remainingRawAssetsAfterPremiums = (Number(liquidAsset) || 0) - assetRequirement;
-                if (calcMode === 'income') {
-                    if (preRetireShortfallSum > 0) {
-                        // Income cannot cover pre‑retire premiums; fail both tests regardless of assets
-                        isPassA = false;
-                        isPassB = false;
-                        diffA = effectiveAssets - assetRequirement;
-                        diffB = remainingRawAssetsAfterPremiums - projectedInterest;
-                    } else {
-                        isPassA = effectiveAssets >= assetRequirement;
-                        // Test B uses raw net assets (not capped by assetPercent)
-                        isPassB = remainingRawAssetsAfterPremiums >= projectedInterest;
-                        diffA = effectiveAssets - assetRequirement;
-                        diffB = remainingRawAssetsAfterPremiums - projectedInterest;
-                    }
-                } else {
-                    // For combined or asset-only modes, compare assets directly
-                    isPassA = effectiveAssets >= assetRequirement;
-                    isPassB = remainingRawAssetsAfterPremiums >= projectedInterest;
-                    diffA = effectiveAssets - assetRequirement;
-                    diffB = remainingRawAssetsAfterPremiums - projectedInterest;
-                }
+	                const remainingRawAssetsAfterPremiums = (Number(liquidAsset) || 0) + incomeSurplusAccumulationApplied - assetRequirement;
+	                if (calcMode === 'income') {
+	                    if (preRetireShortfallSum > 0) {
+	                        // Income cannot cover pre‑retire premiums; fail both tests regardless of assets
+	                        isPassA = false;
+	                        isPassB = false;
+	                        diffA = effectiveAssetsAfterAccumulation - assetRequirement;
+	                        diffB = remainingRawAssetsAfterPremiums - projectedInterest;
+	                    } else {
+	                        isPassA = effectiveAssetsAfterAccumulation >= assetRequirement;
+	                        // Test B uses raw net assets (not capped by assetPercent)
+	                        isPassB = remainingRawAssetsAfterPremiums >= projectedInterest;
+	                        diffA = effectiveAssetsAfterAccumulation - assetRequirement;
+	                        diffB = remainingRawAssetsAfterPremiums - projectedInterest;
+	                    }
+	                } else {
+	                    // For combined or asset-only modes, compare assets directly
+	                    isPassA = effectiveAssetsAfterAccumulation >= assetRequirement;
+	                    isPassB = remainingRawAssetsAfterPremiums >= projectedInterest;
+	                    diffA = effectiveAssetsAfterAccumulation - assetRequirement;
+	                    diffB = remainingRawAssetsAfterPremiums - projectedInterest;
+	                }
 
                 // For backward compatibility: use Test A result for existing pass/diff properties
                 const isPass = isPassA;
@@ -3492,9 +3512,17 @@ const HK_HOLIDAYS_2025_2026 = [
 	                return {
                     detailedResults,
                     effectiveIncome,
-	                    effectiveAssets,
-	                    allowRetirementIncomeCover,
-	                    hasRetirementPremium: postRetireAnnualPremiumSum > 0,
+		                    effectiveAssets,
+		                    allowRetirementIncomeCover,
+		                    allowIncomeSurplusAssetAccumulation,
+		                    annualRegularPremiumTotalHKD,
+		                    yearlyDisposableIncomeSurplus,
+		                    incomeSurplusAccumulationYears,
+		                    incomeSurplusAccumulationAvailable,
+		                    incomeSurplusAccumulationApplied,
+		                    assetShortfallBeforeAccumulation,
+		                    effectiveAssetsAfterAccumulation,
+		                    hasRetirementPremium: postRetireAnnualPremiumSum > 0,
 	                    postRetireAnnualPremiumSum,
 	                    postRetireAssetRequiredSum,
 	                    retirementIncomeCoverPass: !allowRetirementIncomeCover || postRetireAssetRequiredSum === 0,
@@ -3511,7 +3539,7 @@ const HK_HOLIDAYS_2025_2026 = [
                     isPassB,
                     diffB
                 };
-            }, [policies, monthlyIncome, incomePercent, liquidAsset, assetPercent, yearsToRetire, calcMode, allowRetirementIncomeCover, isPremiumFinancing, pfLoanAmount, pfLoanRate, pfLoanTenor]);
+            }, [policies, monthlyIncome, incomePercent, liquidAsset, assetPercent, yearsToRetire, calcMode, allowRetirementIncomeCover, allowIncomeSurplusAssetAccumulation, isPremiumFinancing, pfLoanAmount, pfLoanRate, pfLoanTenor]);
 
             const addPolicy = () => {
                 const newId = Math.max(...policies.map(p=>p.id), 0) + 1;
@@ -3607,6 +3635,7 @@ const HK_HOLIDAYS_2025_2026 = [
                 setLiquidAsset(860000);
                 setAssetPercent(100);
                 setAllowRetirementIncomeCover(false);
+                setAllowIncomeSurplusAssetAccumulation(false);
                 setPolicies([
                     { id: 1, name: '', status: 'Applying', premium: 0, currency: 'HKD', term: 5, payType: 'Regular' },
                 ]);
@@ -3636,6 +3665,7 @@ const HK_HOLIDAYS_2025_2026 = [
 	                            liquidAsset,
 	                            assetPercent,
 	                            allowRetirementIncomeCover,
+	                            allowIncomeSurplusAssetAccumulation,
                             // Include premium financing information for case summary
                             isPremiumFinancing,
                             projectedInterest: calculationResult.projectedInterest || 0,
@@ -3654,7 +3684,7 @@ const HK_HOLIDAYS_2025_2026 = [
                 } catch (err) {
                     console.error('Failed to save case summary affordability data', err);
                 }
-            }, [policies, calculationResult, calcMode, sofSelections, monthlyIncome, incomePercent, liquidAsset, assetPercent, allowRetirementIncomeCover, affHydrated,
+            }, [policies, calculationResult, calcMode, sofSelections, monthlyIncome, incomePercent, liquidAsset, assetPercent, allowRetirementIncomeCover, allowIncomeSurplusAssetAccumulation, affHydrated,
                 // premium financing
                 isPremiumFinancing, pfLoanAmount, pfLoanRate, pfLoanTenor, pfRepaymentAmount]);
 
@@ -3727,8 +3757,8 @@ const HK_HOLIDAYS_2025_2026 = [
                                 {calcMode === 'income' && <div className="text-[9px] text-blue-500 mt-1 font-bold">* 僅用於退休後年期支付</div>}
 	                            </div>
 	                        </div>
-	                        {calculationResult.hasRetirementPremium && (
-	                            <div className="mt-2 rounded border border-blue-100 bg-blue-50 px-3 py-2">
+		                        {calculationResult.hasRetirementPremium && (
+		                            <div className="mt-2 rounded border border-blue-100 bg-blue-50 px-3 py-2">
 	                                <label className="flex items-start gap-2 text-xs text-blue-900">
 	                                    <input
 	                                        type="checkbox"
@@ -3741,9 +3771,31 @@ const HK_HOLIDAYS_2025_2026 = [
 	                                        <span className="block text-[10px] text-blue-700">For other income such as retirement fund or rental income. Calculation will refresh automatically.</span>
 	                                    </span>
 	                                </label>
+		                            </div>
+		                        )}
+	                        {calculationResult.assetShortfallBeforeAccumulation > 0 && (
+	                            <div className="mt-2 rounded border border-emerald-100 bg-emerald-50 px-3 py-2">
+	                                <label className="flex items-start gap-2 text-xs text-emerald-900">
+	                                    <input
+	                                        type="checkbox"
+	                                        checked={allowIncomeSurplusAssetAccumulation}
+	                                        onChange={(e) => setAllowIncomeSurplusAssetAccumulation(e.target.checked)}
+	                                        disabled={calculationResult.yearlyDisposableIncomeSurplus <= 0}
+	                                        className="mt-0.5"
+	                                    />
+	                                    <span>
+	                                        <span className="font-bold">Use annual disposable income surplus to fill assets shortfall</span>
+	                                        <span className="block text-[10px] text-emerald-700">
+	                                            Annual surplus after total annual premiums: {formatMoney(calculationResult.yearlyDisposableIncomeSurplus)} × {calculationResult.incomeSurplusAccumulationYears} years = {formatMoney(calculationResult.incomeSurplusAccumulationAvailable)}
+	                                        </span>
+	                                        {calculationResult.yearlyDisposableIncomeSurplus <= 0 && (
+	                                            <span className="block text-[10px] text-red-600">No disposable income surplus is available for accumulation.</span>
+	                                        )}
+	                                    </span>
+	                                </label>
 	                            </div>
 	                        )}
-	                        {/* Premium Financing toggle and input fields in Affordability tab */}
+		                        {/* Premium Financing toggle and input fields in Affordability tab */}
 	                        <div className="mt-2">
                             <div className="flex items-center gap-2">
                                 <input type="checkbox" checked={isPremiumFinancing} onChange={(e) => setIsPremiumFinancing(e.target.checked)} />
@@ -3901,12 +3953,24 @@ const HK_HOLIDAYS_2025_2026 = [
                                             </div>
                                         )}
 
-                                        <div className="flex justify-between items-center text-sm">
-                                            <span className="text-slate-500">有效淨流動資產 (Effective Net Assets):</span>
-                                            <span className="font-bold text-lg text-green-600">{formatMoney(calculationResult.effectiveAssets)}</span>
-                                        </div>
+	                                        <div className="flex justify-between items-center text-sm">
+	                                            <span className="text-slate-500">有效淨流動資產 (Effective Net Assets):</span>
+	                                            <span className="font-bold text-lg text-green-600">{formatMoney(calculationResult.effectiveAssets)}</span>
+	                                        </div>
+	                                        {allowIncomeSurplusAssetAccumulation && (
+	                                            <div className="rounded border border-emerald-100 bg-emerald-50 p-2 space-y-1 text-xs">
+	                                                <div className="flex justify-between gap-3">
+	                                                    <span className="text-emerald-700">Annual disposable income surplus:</span>
+	                                                    <span className="font-bold text-emerald-800">{formatMoney(calculationResult.yearlyDisposableIncomeSurplus)}</span>
+	                                                </div>
+	                                                <div className="flex justify-between gap-3">
+	                                                    <span className="text-emerald-700">Accumulation used for asset shortfall:</span>
+	                                                    <span className="font-bold text-emerald-800">{formatMoney(calculationResult.incomeSurplusAccumulationApplied)}</span>
+	                                                </div>
+	                                            </div>
+	                                        )}
 
-                                        <div className="h-px bg-slate-200 my-2"></div>
+	                                        <div className="h-px bg-slate-200 my-2"></div>
                                         {!isPremiumFinancing && (
                                             <div className="flex justify-between items-center">
                                                 <span className="font-bold text-slate-700">差額 (Difference):</span>
@@ -6632,6 +6696,9 @@ const showMed = (isPHNotSame && !isLifeOrCI)
 	                        if (affordData.allowRetirementIncomeCover) {
 	                            lines.push(`   Considering client has other income (such as retirement fund, rental income) which is ${res.retirementIncomeCoverPass ? 'sufficient' : 'insufficient'} to cover the premium after retirement, affordability ${res.isPass ? 'pass' : 'failed'}.`);
 	                        }
+	                        if (affordData.allowIncomeSurplusAssetAccumulation && res.assetShortfallBeforeAccumulation > 0) {
+	                            lines.push(`   Considering yearly disposable income surplus after deducting total annual premiums is ${formatMoney(res.yearlyDisposableIncomeSurplus)}, accumulated for ${res.incomeSurplusAccumulationYears} year(s) = ${formatMoney(res.incomeSurplusAccumulationAvailable)}. ${formatMoney(res.incomeSurplusAccumulationApplied)} is used to fill the assets shortfall, affordability ${res.isPass ? 'pass' : 'failed'}.`);
+	                        }
                         // When Premium Financing is used, insert Asset Required above Net assets available for use
                         if (affordData.isPremiumFinancing && res.totalRequiredHKD) {
                             lines.push(`   Asset Required: ${formatMoney(res.totalRequiredHKD, 'HKD')}`);
@@ -6663,6 +6730,9 @@ const showMed = (isPHNotSame && !isLifeOrCI)
 	                        }
 	                        if (affordData.allowRetirementIncomeCover && hasOverhang) {
 	                            lines.push(`   Considering client has other income (such as retirement fund, rental income) which is ${res.retirementIncomeCoverPass ? 'sufficient' : 'insufficient'} to cover the premium after retirement, affordability ${res.isPass ? 'pass' : 'failed'}.`);
+	                        }
+	                        if (affordData.allowIncomeSurplusAssetAccumulation && res.assetShortfallBeforeAccumulation > 0) {
+	                            lines.push(`   Considering yearly disposable income surplus after deducting total annual premiums is ${formatMoney(res.yearlyDisposableIncomeSurplus)}, accumulated for ${res.incomeSurplusAccumulationYears} year(s) = ${formatMoney(res.incomeSurplusAccumulationAvailable)}. ${formatMoney(res.incomeSurplusAccumulationApplied)} is used to fill the assets shortfall, affordability ${res.isPass ? 'pass' : 'failed'}.`);
 	                        }
                         // Insert Asset Required line above Net assets when Premium Financing is enabled
                         if (affordData.isPremiumFinancing && res.totalRequiredHKD) {
@@ -7407,6 +7477,9 @@ const shouldShowMed = () => {
 	                                        if (affordData.allowRetirementIncomeCover) {
 	                                            lines.push(<div key="fnaSplitIncome" className="pl-4">Considering client has other income (such as retirement fund, rental income) which is {res.retirementIncomeCoverPass ? 'sufficient' : 'insufficient'} to cover the premium after retirement, affordability {res.isPass ? 'pass' : 'failed'}.</div>);
 	                                        }
+	                                        if (affordData.allowIncomeSurplusAssetAccumulation && res.assetShortfallBeforeAccumulation > 0) {
+	                                            lines.push(<div key="fnaSplitAccumulation" className="pl-4">Considering yearly disposable income surplus after deducting total annual premiums is {formatMoney(res.yearlyDisposableIncomeSurplus)}, accumulated for {res.incomeSurplusAccumulationYears} year(s) = {formatMoney(res.incomeSurplusAccumulationAvailable)}. {formatMoney(res.incomeSurplusAccumulationApplied)} is used to fill the assets shortfall, affordability {res.isPass ? 'pass' : 'failed'}.</div>);
+	                                        }
                                         // Insert Asset Required row when Premium Financing is active
                                         if (affordData.isPremiumFinancing && res.totalRequiredHKD) {
                                             lines.push(<div key="fnaSplitAsset" className="pl-4">Asset Required: {formatMoney(res.totalRequiredHKD, 'HKD')}</div>);
@@ -7435,6 +7508,9 @@ const shouldShowMed = () => {
 	                                        }
 	                                        if (affordData.allowRetirementIncomeCover && hasOverhang) {
 	                                            lines.push(<div key="fna2d" className="pl-4">Considering client has other income (such as retirement fund, rental income) which is {res.retirementIncomeCoverPass ? 'sufficient' : 'insufficient'} to cover the premium after retirement, affordability {res.isPass ? 'pass' : 'failed'}.</div>);
+	                                        }
+	                                        if (affordData.allowIncomeSurplusAssetAccumulation && res.assetShortfallBeforeAccumulation > 0) {
+	                                            lines.push(<div key="fna2e" className="pl-4">Considering yearly disposable income surplus after deducting total annual premiums is {formatMoney(res.yearlyDisposableIncomeSurplus)}, accumulated for {res.incomeSurplusAccumulationYears} year(s) = {formatMoney(res.incomeSurplusAccumulationAvailable)}. {formatMoney(res.incomeSurplusAccumulationApplied)} is used to fill the assets shortfall, affordability {res.isPass ? 'pass' : 'failed'}.</div>);
 	                                        }
                                         // Insert Asset Required row above Net assets when Premium Financing is enabled
                                         if (affordData.isPremiumFinancing && res.totalRequiredHKD) {
