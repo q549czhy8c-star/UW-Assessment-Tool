@@ -2346,6 +2346,14 @@ function formatResidentLoadingRule(rule) {
             return `${day} ${month} ${year}`;
         };
 
+        const formatDateFullMonth = (date) => {
+            if (!date) return "";
+            const d = new Date(date);
+            const day = d.getDate();
+            const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+            return `${day} ${monthNames[d.getMonth()]} ${d.getFullYear()}`;
+        };
+
         const normalizeDateInput = (dateStr) => {
             const str = String(dateStr || '').trim();
             return /^\d{4}-\d{2}-\d{2}$/.test(str) ? str : null;
@@ -2395,6 +2403,30 @@ const HK_HOLIDAYS_2025_2026 = [
             '2026-01-01', '2026-02-17', '2026-02-18', '2026-02-19', '2026-04-03', '2026-04-04', '2026-04-06', '2026-04-07',
             '2026-05-01', '2026-05-25', '2026-06-19', '2026-07-01', '2026-09-26', '2026-10-01', '2026-10-19', '2026-12-25', '2026-12-26'
         ];
+
+        const CBI_RBI_PENDING_TEXT = `For AML requirement, please submit supplementary form confirm below information:
+(A)  Did you obtain residence rights under a CBI/RBI scheme?
+(B)  Do you hold residence rights in any other jurisdiction(s)?
+(C)  Have you spent more than 90 days in any other jurisdiction(s) during the previous year?
+(D)  In which jurisdiction(s) have you filed personal income tax returns during the previous year?`;
+
+        const CBI_RBI_JURISDICTIONS = new Set([
+            'antigua and barbuda',
+            'bahamas',
+            'bahrain',
+            'barbados',
+            'cyprus',
+            'dominica',
+            'grenada',
+            'saint kitts and nevis',
+            'saint lucia',
+            'seychelles',
+            'turks and caicos islands',
+            'united arab emirates',
+            'vanuatu'
+        ]);
+
+        const normalizeJurisdictionName = (value) => String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
 
         const PENDING_MESSAGES = [
             { prefix: '(Pending)', text: 'Agent / Broker memo to confirm how the payment is split between initial and prepayment premiums' },
@@ -2451,6 +2483,7 @@ const HK_HOLIDAYS_2025_2026 = [
             { prefix: '(Pending)', text: 'Parent’s consent for grandparent to apply for insurance on behalf of proposed insured' },
             { prefix: '(Pending)', text: 'CTC of proposed insured and policyholder’s travel documents for non-permanent HKID holder(s)' },
             { prefix: '(Pending)', text: 'Balance of premium with levy USD XXXXXX and payment slip' },
+            { prefix: '(Pending)', text: CBI_RBI_PENDING_TEXT },
             { prefix: '(FYI)', text: 'Case is pending for premium processing by our Finance Dept' },
             { prefix: '(FYI)', text: 'Case is pending for premium collection from credit card' },
             { prefix: '(FYI)', text: 'Trust Application is subject to compliance clearance; further requirements may be required' },
@@ -4177,6 +4210,12 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                 const formatted = `${dd}/${mm}/${yyyy}`;
                 return pfBank === "CMB" ? `${formatted} (TBC)` : formatted;
             }, [isPremiumFinancing, pfBank]);
+            const pfPaymentDeadlineDate = useMemo(() => {
+                if (!isPremiumFinancing) return "";
+                const date = new Date();
+                date.setDate(date.getDate() + 45);
+                return formatDateFullMonth(date);
+            }, [isPremiumFinancing]);
 
             // ====== HNW (LionMaster) fields ======
             // When the plan is LionMaster, these fields capture the high-net-worth inputs. They are kept separate
@@ -4983,6 +5022,21 @@ ${hnwFinancially || ''}`;
                 return !allowedNames.includes(normalizedCountry);
             }, [phResidency, phOtherCountry]);
 
+            const cbiRbiSupplementRequired = useMemo(() => {
+                const codeMap = {
+                    CN: 'China',
+                    TW: 'Taiwan',
+                    MO: 'Macau',
+                    KR: 'South Korea',
+                    TH: 'Thailand',
+                    HK: 'Hong Kong'
+                };
+                const residenceName = phResidency === 'Other'
+                    ? phOtherCountry
+                    : (codeMap[phResidency] || phResidency);
+                return CBI_RBI_JURISDICTIONS.has(normalizeJurisdictionName(residenceName));
+            }, [phResidency, phOtherCountry]);
+
             const birthdayAlert = useMemo(() => {
                 if (prodType !== 'GIO' && prodType !== 'Annuity') return null;
                 const hasCompleteProposalDate = /^\d{4}-\d{2}-\d{2}$/.test(String(proposalDate || ''));
@@ -5594,13 +5648,18 @@ ${hnwFinancially || ''}`;
                                                 </div>
                                             )}
 
-                                            {(['Life','CI','Annuity'].includes(prodType)) && (riskLevel || residentLoadingText) && (
-                                                <div className="flex flex-wrap gap-2 items-center mt-2">
-                                                    {riskLevel && <span className={`text-xs font-bold px-2 py-1 rounded whitespace-nowrap ${riskLevel==='High'||riskLevel==='Sanctioned'?'bg-red-100 text-red-700':riskLevel==='Medium'?'bg-blue-100 text-blue-700':'bg-green-100 text-green-700'}`}>{riskLevel} Risk</span>}
-                                                    {residentLoadingText && <span className="text-xs font-bold px-2 py-1 rounded whitespace-nowrap bg-purple-100 text-purple-700">Resident Loading: {residentLoadingText}</span>}
-                                                </div>
-                                            )}
-{needsAddressProof && (
+	                                            {(['Life','CI','Annuity'].includes(prodType)) && (riskLevel || residentLoadingText) && (
+	                                                <div className="flex flex-wrap gap-2 items-center mt-2">
+	                                                    {riskLevel && <span className={`text-xs font-bold px-2 py-1 rounded whitespace-nowrap ${riskLevel==='High'||riskLevel==='Sanctioned'?'bg-red-100 text-red-700':riskLevel==='Medium'?'bg-blue-100 text-blue-700':'bg-green-100 text-green-700'}`}>{riskLevel} Risk</span>}
+	                                                    {residentLoadingText && <span className="text-xs font-bold px-2 py-1 rounded whitespace-nowrap bg-purple-100 text-purple-700">Resident Loading: {residentLoadingText}</span>}
+	                                                </div>
+	                                            )}
+	                                            {cbiRbiSupplementRequired && (
+	                                                <div className="mt-2 rounded border border-red-200 bg-red-50 px-2 py-1 text-xs font-bold text-red-700">
+	                                                    Supplementary Form to clarify CBI/RBI scheme
+	                                                </div>
+	                                            )}
+	{needsAddressProof && (
                                                 <div className="bg-red-50 p-2 rounded border border-red-200 animate-pulse mt-2">
                                                     <label className="text-[10px] text-red-700 font-bold block mb-1">地址證明類型 (Address Proof Type) *</label>
                                                     <select value={addressProofType} onChange={(e) =>setAddressProofType(e.target.value)} className="w-full border border-red-300 rounded p-1 text-sm bg-white text-red-800">
@@ -5768,11 +5827,11 @@ ${hnwFinancially || ''}`;
                                                         ))}
                                                     </select>
                                                 </div>
-                                                {pfBankExpectedCloseDate && (
-                                                    <div className="col-span-2">
-                                                        <label className="text-xs font-bold text-slate-500">Expected Close Date (DD/MM/YYYY)</label>
-                                                        <div className="flex items-center gap-2">
-                                                            <input type="text" readOnly value={pfBankExpectedCloseDate} className="w-full border rounded p-1.5 text-sm bg-slate-100" />
+	                                                {pfBankExpectedCloseDate && (
+	                                                    <div className="col-span-2">
+	                                                        <label className="text-xs font-bold text-slate-500">Expected Close Date (DD/MM/YYYY)</label>
+	                                                        <div className="flex items-center gap-2">
+	                                                            <input type="text" readOnly value={pfBankExpectedCloseDate} className="w-full border rounded p-1.5 text-sm bg-slate-100" />
                                                             <button
                                                                 type="button"
                                                                 onClick={() => copyToClipboard(pfBankExpectedCloseDate, 'Expected close date copied')}
@@ -5780,11 +5839,26 @@ ${hnwFinancially || ''}`;
                                                             >
                                                                 <Copy size={12} /> Copy
                                                             </button>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
+	                                                        </div>
+	                                                    </div>
+	                                                )}
+	                                                {pfPaymentDeadlineDate && (
+	                                                    <div className="col-span-2">
+	                                                        <label className="text-xs font-bold text-slate-500">Payment Deadline Date</label>
+	                                                        <div className="flex items-center gap-2">
+	                                                            <input type="text" readOnly value={pfPaymentDeadlineDate} className="w-full border rounded p-1.5 text-sm bg-slate-100" />
+	                                                            <button
+	                                                                type="button"
+	                                                                onClick={() => copyToClipboard(pfPaymentDeadlineDate, 'Payment deadline date copied')}
+	                                                                className="text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 flex items-center gap-1"
+	                                                            >
+	                                                                <Copy size={12} /> Copy
+	                                                            </button>
+	                                                        </div>
+	                                                    </div>
+	                                                )}
+	                                            </div>
+	                                        )}
                                         {isPremiumFinancing && (
                                             <div className="mt-2 text-[11px] text-slate-700 space-y-1">
                                                 <div className="text-red-700 font-bold">
@@ -6968,37 +7042,17 @@ const showMed = (isPHNotSame && !isLifeOrCI)
                     combined = combined ? (combined + "\n\n" + pfAuthMissingMsg) : pfAuthMissingMsg;
                 }
 
-                // [v1.13] AML supplementary questions for specific CBI/RBI jurisdictions (Residence-based)
-                const AML_JURISDICTIONS = new Set([
-                    'antigua and barbuda',
-                    'bahamas',
-                    'bahrain',
-                    'barbados',
-                    'cyprus',
-                    'dominica',
-                    'grenada',
-                    'saint kitts and nevis',
-                    'saint lucia',
-                    'seychelles',
-                    'turks and caicos islands',
-                    'united arab emirates',
-                    'vanuatu'
-                ]);
-                const norm = (s) => String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
-                const residenceName = (() => {
-                    if (!policyData) return '';
-                    if (policyData.phOtherCountry) return policyData.phOtherCountry;
-                    const map = { CN: 'China', TW: 'Taiwan', MO: 'Macau', KR: 'South Korea' };
-                    return map[policyData.phResidency] || policyData.phResidency || '';
-                })();
-                if (AML_JURISDICTIONS.has(norm(residenceName))) {
-                    const amlText = `(Pending) For AML requirement, please submit supplementary form confirm below information:
-(A)  Did you obtain residence rights under a CBI/RBI scheme?
-(B)  Do you hold residence rights in any other jurisdiction(s)?
-(C)  Have you spent more than 90 days in any other jurisdiction(s) during the previous year?
-(D)  In which jurisdiction(s) have you filed personal income tax returns during the previous year?`;
-                    combined = combined ? (combined + "\n\n" + amlText) : amlText;
-                }
+	                // [v1.13] AML supplementary questions for specific CBI/RBI jurisdictions (Residence-based)
+	                const residenceName = (() => {
+	                    if (!policyData) return '';
+	                    if (policyData.phOtherCountry) return policyData.phOtherCountry;
+	                    const map = { CN: 'China', TW: 'Taiwan', MO: 'Macau', KR: 'South Korea' };
+	                    return map[policyData.phResidency] || policyData.phResidency || '';
+	                })();
+	                if (CBI_RBI_JURISDICTIONS.has(normalizeJurisdictionName(residenceName))) {
+	                    const amlText = `(Pending) ${CBI_RBI_PENDING_TEXT}`;
+	                    combined = combined ? (combined + "\n\n" + amlText) : amlText;
+	                }
 
                 // Commission Spreading (Professional Investor - PI) -> append pending requirements to Issue UN
                 if (policyData.commissionSpreading && policyData.piScenarioKey) {
