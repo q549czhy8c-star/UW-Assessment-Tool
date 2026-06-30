@@ -2426,7 +2426,14 @@ const HK_HOLIDAYS_2025_2026 = [
             'vanuatu'
         ]);
 
-        const normalizeJurisdictionName = (value) => String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
+        const normalizeJurisdictionName = (value) => String(value || '')
+            .trim()
+            .toLowerCase()
+            .replace(/\s*\(\s*the\s*\)\s*$/i, '')
+            .replace(/\s*,\s*the\s*$/i, '')
+            .replace(/^the\s+/i, '')
+            .replace(/\s+/g, ' ')
+            .trim();
 
         const PENDING_MESSAGES = [
             { prefix: '(Pending)', text: 'Agent / Broker memo to confirm how the payment is split between initial and prepayment premiums' },
