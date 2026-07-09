@@ -2679,13 +2679,23 @@ const HK_HOLIDAYS_2025_2026 = [
             { maxUSD: Infinity, req: ["IC", "IC", "IC", "IC", "IC", "IC"] }
         ];
         const MED_RULE_LIFE = [
-            { maxUSD: 150000, req: ["SHQ / NM", "SHQ / NM", "SHQ / NM", "SHQ / NM", "SHQ / NM", "SHQ / NM"] },
-            { maxUSD: 300000, req: ["SHQ / NM", "SHQ / NM", "SHQ / NM", "SHQ / NM", "SHQ / NM", "ME"] },
-            { maxUSD: 500000, req: ["SHQ / NM", "SHQ / NM", "SHQ / NM", "SHQ / NM", "ME, MU", "ME, MU, BP0, ECG"] },
-            { maxUSD: 750000, req: ["SHQ / NM", "SHQ / NM", "SHQ / NM", "NM", "ME, MU, BP0, UC", "ME, MU, BP0, ECG, UC"] },
-            { maxUSD: 1500000, req: ["NM", "NM", "NM", "NM", "ME, MU, BP1, ECG, UC", "ME, MU, BP1, TMECG, UC"] },
+            { maxUSD: 150000, req: ["SHQ", "SHQ", "SHQ", "SHQ", "SHQ", "SHQ"] },
+            { maxUSD: 300000, req: ["SHQ", "SHQ", "SHQ", "SHQ", "SHQ", "ME"] },
+            { maxUSD: 500000, req: ["SHQ", "SHQ", "SHQ", "SHQ", "ME, MU", "ME, MU, BP0, ECG"] },
+            { maxUSD: 750000, req: ["SHQ", "SHQ", "SHQ", "NM", "ME, MU, BP0, UC", "ME, MU, BP0, ECG, UC"] },
+            { maxUSD: 1500000, req: ["NM", "NM", "NM", "NM", "ME, MU, BP0, UC", "ME, MU, BP0, ECG, UC"] },
             { maxUSD: 3000000, req: ["IC", "ME, APS", "ME, MU, BP0", "ME, MU, BP1", "ME, MU, BP1, ECG, UC", "ME, MU, BP1, TMECG, UC"] },
-            { maxUSD: 7000000, req: ["IC", "ME, APS", "ME, MU, BP1, ECG", "ME, MU, BP1, ECG", "ME, MU, BP1, TMECG, UC, APS", "ME, MU, BP1, TMECG, UC, APS"] },
+            { maxUSD: 7000000, req: ["IC", "ME, APS", "ME, MU, BP1, ECG", "ME, MU, BP1, TMECG, UC, APS", "ME, MU, BP1, TMECG, UC, APS", "ME, MU, BP1, TMECG, UC, APS"] },
+            { maxUSD: Infinity, req: ["IC", "IC", "IC", "IC", "IC", "IC"] }
+        ];
+        const MED_RULE_LION_PATRON = [
+            { maxUSD: 150000, req: ["NM", "NM", "NM", "NM", "NM", "NM"] },
+            { maxUSD: 300000, req: ["NM", "NM", "NM", "NM", "NM", "ME"] },
+            { maxUSD: 500000, req: ["NM", "NM", "NM", "NM", "ME, MU", "ME, MU, BP0, ECG"] },
+            { maxUSD: 750000, req: ["NM", "NM", "NM", "NM", "ME, MU, BP0, UC", "ME, MU, BP0, ECG, UC"] },
+            { maxUSD: 1500000, req: ["NM", "NM", "NM", "NM", "ME, MU, BP0, UC", "ME, MU, BP0, ECG, UC"] },
+            { maxUSD: 3000000, req: ["IC", "ME, APS", "ME, MU, BP0", "ME, MU, BP1", "ME, MU, BP1, ECG, UC", "ME, MU, BP1, TMECG, UC"] },
+            { maxUSD: 7000000, req: ["IC", "ME, APS", "ME, MU, BP1, ECG", "ME, MU, BP1, TMECG, UC, APS", "ME, MU, BP1, TMECG, UC, APS", "ME, MU, BP1, TMECG, UC, APS"] },
             { maxUSD: Infinity, req: ["IC", "IC", "IC", "IC", "IC", "IC"] }
         ];
 
@@ -2797,29 +2807,11 @@ const HK_HOLIDAYS_2025_2026 = [
                 else if (age <= 55) colIdx = 3;
                 else if (age <= 65) colIdx = 4;
                 else colIdx = 5;
-                for (const tier of MED_RULE_LIFE) {
+                const lifeRuleTable = product.name === 'LionPatron' ? MED_RULE_LION_PATRON : MED_RULE_LIFE;
+                for (const tier of lifeRuleTable) {
                     if (checkSA <= tier.maxUSD) {
                         result = tier.req[colIdx];
                         break;
-                    }
-                }
-                // [UPDATE] Custom SHQ logic for specific Life plans
-                // For Generali Supreme Gold and LionPainter Flexi, only use SHQ for 18-45 age group with total SA ≤ 750k USD; otherwise, use NM when SHQ is present
-                if (product.name === 'Generali Supreme Gold' || product.name === 'LionPainter Flexi') {
-                    if (typeof result === 'string' && result.includes('SHQ')) {
-                        // Determine if this is one of the 4 highlighted SHQ cases
-                        if (age <= 45 && checkSA <= 750000) {
-                            result = 'SHQ';
-                        } else {
-                            // For all other combinations showing SHQ/NM, display NM only
-                            result = 'NM';
-                        }
-                    }
-                }
-                // For LionPatron, always use NM (never SHQ)
-                if (product.name === 'LionPatron') {
-                    if (typeof result === 'string' && result.includes('SHQ')) {
-                        result = 'NM';
                     }
                 }
             }
