@@ -2437,6 +2437,7 @@ const HK_HOLIDAYS_2025_2026 = [
 
         const PENDING_MESSAGES = [
             { prefix: '(Pending)', text: 'Agent / Broker memo to confirm how the payment is split between initial and prepayment premiums' },
+            { prefix: '(Pending)', text: 'Supplementary Form to confirm the policy delivery arrangement, i.e. whether the policy pack should be sent directly to the client by post or whether the broker is nominated to receive the policy on the client\'s behalf, as only one option may be selected.' },
             { prefix: '(Pending)', text: 'Revised illustration with the new age (xx). Settlor\'s verification is needed trust policies' },
             { prefix: '(FYI)', text: 'No back-dating for savings or prepayments' },
             { prefix: '(Pending)', text: 'Bank statement or letter showing both account number and holder’s name to confirm payment is from an approved payor' },
@@ -2508,6 +2509,34 @@ const HK_HOLIDAYS_2025_2026 = [
             { prefix: '(FYI)', text: 'After having reviewed your supplement, we will extend the deadline.' },
             { prefix: '(Pending)', text: 'Await Notice of Assignment issued from Bank.' }
         ];
+
+        const PLAN_RIDER_OPTIONS = [
+            { key: 'ubb', inputLabel: 'UBB', summaryLabel: '(UBB)' },
+            { key: 'wp', inputLabel: 'WP', summaryLabel: 'w/ WP' },
+            { key: 'pb', inputLabel: 'PB', summaryLabel: 'w/ PB' },
+            { key: 'extendedLove', inputLabel: 'Extended Love', summaryLabel: 'w/ Extended Love' }
+        ];
+        const createEmptyPlanRiders = () => PLAN_RIDER_OPTIONS.reduce((acc, option) => {
+            acc[option.key] = false;
+            return acc;
+        }, {});
+        const normalizePlanRiders = (value) => {
+            const base = createEmptyPlanRiders();
+            if (!value || typeof value !== 'object') return base;
+            PLAN_RIDER_OPTIONS.forEach(option => {
+                base[option.key] = !!value[option.key];
+            });
+            return base;
+        };
+        const getPlanRiderSuffix = (riders) => PLAN_RIDER_OPTIONS
+            .filter(option => !!riders?.[option.key])
+            .map(option => option.summaryLabel)
+            .join(' ');
+        const getDisplayPlanName = (planName, riders) => {
+            const base = String(planName || '').trim();
+            const suffix = getPlanRiderSuffix(riders);
+            return [base, suffix].filter(Boolean).join(' ');
+        };
 
         /* ========== Master Broker List Data ========== */
         // The master broker data is generated from the provided broker list.xlsx. Each broker maps to one or more RMs and each RM maps to a list of support staff.
@@ -4098,6 +4127,7 @@ const [addressProofType, setAddressProofType] = useState('');
             const [insSmoker, setInsSmoker] = useState("N");
             const [insResidency, setInsResidency] = useState("HK");
             const [planName, setPlanName] = useState("");
+            const [planRiders, setPlanRiders] = useState(() => createEmptyPlanRiders());
             const [prodType, setProdType] = useState("");
             const [sumAssured, setSumAssured] = useState("");
             const [curr, setCurr] = useState("USD");
@@ -4303,6 +4333,7 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
 
                         // Plan / premium
                         if (s.planName !== undefined) setPlanName(s.planName);
+                        if (s.planRiders !== undefined) setPlanRiders(normalizePlanRiders(s.planRiders));
                         if (s.prodType !== undefined) setProdType(s.prodType);
                         if (s.sumAssured !== undefined) setSumAssured(s.sumAssured);
                         if (s.curr !== undefined) setCurr(s.curr);
@@ -4423,6 +4454,7 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                         insResidency,
 
                         planName,
+                        planRiders,
                         prodType,
                         sumAssured,
                         curr,
@@ -4519,7 +4551,7 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                 proposalDate, signingDate, applicationSigningDate, fnaSigningDate,
                 phDob, phGender, phSmoker, phResidency, phOtherCountry, phArrivalDate, phExpiryDate, phIfsDate,
                 insDob, insGender, insSmoker, insResidency,
-                planName, prodType, sumAssured, curr, payMode, premAmount,
+                planName, planRiders, prodType, sumAssured, curr, payMode, premAmount,
                 occupationStatus, employer, location, lifeCiEmployerToggle, bizNature, position, monthlyIncome, sofWealthSupplementType,
                 targetSavingHKD, targetYear, surrenderValueUSD, yearTerm,
                 fnaRetireAge, fnaDisposableIncome, fnaSavingRate, fnaCurrentSavingRate, fnaAnnualInterestRate, fnaRateCurrentValue, fnaRatePastValue, fnaIncomePercent, fnaLiquidAssets, fnaAssetPercent, fnaSof, fnaSow, noFna,
@@ -5367,7 +5399,7 @@ ${hnwFinancially || ''}`;
                         businessInsuranceEnabled,
                         phAge, phGender, phSmoker, phDob,
                         insAge, insGender, insSmoker, insDob,
-                        planName, sumAssured, curr, prodType, otherInsurances,
+                        planName, planRiders, sumAssured, curr, prodType, otherInsurances,
                         height, weight, medicalReq, financialReq, returnCheck,
                         monthlyIncome, occupationStatus, position, employer, location, lifeCiEmployerToggle, bizNature,
                         sofWealthSupplementType, // v1.9
@@ -5420,7 +5452,7 @@ ${hnwFinancially || ''}`;
                 } catch (err) {
                     console.error('Failed to save case summary policy info', err);
                 }
-            }, [policyHydrated, phArrivalDate, fnaSigningDate, proposalDate, applicationSigningDate, signingDate, addressProofType, isSamePerson, phAge, phGender, phSmoker, phDob, insAge, insGender, insSmoker, insDob, planName, sumAssured, curr, prodType, otherInsurances, height, weight, medicalReq, financialReq, returnCheck, monthlyIncome, occupationStatus, position, employer, location, lifeCiEmployerToggle, bizNature, sofWealthSupplementType, premAmount, payMode, yearTerm, paymentDate, paymentCurrency, paymentAmount, paymentPayor, paymentMethod,
+            }, [policyHydrated, phArrivalDate, fnaSigningDate, proposalDate, applicationSigningDate, signingDate, addressProofType, isSamePerson, phAge, phGender, phSmoker, phDob, insAge, insGender, insSmoker, insDob, planName, planRiders, sumAssured, curr, prodType, otherInsurances, height, weight, medicalReq, financialReq, returnCheck, monthlyIncome, occupationStatus, position, employer, location, lifeCiEmployerToggle, bizNature, sofWealthSupplementType, premAmount, payMode, yearTerm, paymentDate, paymentCurrency, paymentAmount, paymentPayor, paymentMethod,
                 // Commission Spreading (Professional Investor - PI)
                 commissionSpreading, piInvestorType, piScenarioKey,
                 isDateBack, birthdayAlert, appType, businessInsuranceEnabled, trustDeclaration, niceActimize, pdfAmount, phResidency, phOtherCountry, reasonPurchaseHK, unpaidPremium, trustBeneficiaries, noFna, isSendToAFCChecked, fnaCurrentSavingRate,
@@ -5739,6 +5771,19 @@ ${hnwFinancially || ''}`;
                                                     <optgroup key={type} label={type}>{productGroups[type]?.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}</optgroup>
                                                 ))}
                                             </select>
+                                                <div className="mt-2 flex flex-wrap gap-2">
+                                                    {PLAN_RIDER_OPTIONS.map(option => (
+                                                        <label key={option.key} className="inline-flex items-center gap-1.5 px-2 py-1 rounded border border-slate-200 bg-slate-50 text-xs font-bold text-slate-600 cursor-pointer">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={!!planRiders?.[option.key]}
+                                                                onChange={(e) => setPlanRiders(prev => ({ ...normalizePlanRiders(prev), [option.key]: e.target.checked }))}
+                                                                className="h-3.5 w-3.5 rounded border-slate-300"
+                                                            />
+                                                            <span>{option.inputLabel}</span>
+                                                        </label>
+                                                    ))}
+                                                </div>
                                         </div>
                                         <div className="grid grid-cols-2 gap-3">
                                             <div>
@@ -6638,7 +6683,7 @@ if (isJobMonthlyPlan) {
     lines.push(`Monthly Income: ${formatHKDPlain(policyData.monthlyIncome)}`);
 }
 
-                lines.push(`Applying: ${policyData.planName || ''} ${getApplyingAmountLabel()}: ${policyData.curr || ''} ${policyData.sumAssured || ''}${pdfSuffixStr}`);
+                lines.push(`Applying: ${getDisplayPlanName(policyData.planName, policyData.planRiders)} ${getApplyingAmountLabel()}: ${policyData.curr || ''} ${policyData.sumAssured || ''}${pdfSuffixStr}`);
                 // Premium Financing details
                 if (policyData.isPremiumFinancing) {
                     lines.push('Premium Financing: Yes');
@@ -7410,7 +7455,7 @@ const shouldShowMed = () => {
     </>
 )}
 
-                        <div><span className="font-bold">5. Applying:</span> {policyData.planName || ''} {getApplyingAmountLabel()}: {policyData.curr || ''} {policyData.sumAssured || ''}{(policyData.payMode === 'Prepay' && policyData.pdfAmount) ? ` (Total premium includes PDF: ${formatMoney(Number(policyData.pdfAmount), policyData.curr || 'HKD')})` : ''}</div>
+                        <div><span className="font-bold">5. Applying:</span> {getDisplayPlanName(policyData.planName, policyData.planRiders)} {getApplyingAmountLabel()}: {policyData.curr || ''} {policyData.sumAssured || ''}{(policyData.payMode === 'Prepay' && policyData.pdfAmount) ? ` (Total premium includes PDF: ${formatMoney(Number(policyData.pdfAmount), policyData.curr || 'HKD')})` : ''}</div>
                         {/* Premium Financing details under Applying */}
                         {policyData.isPremiumFinancing ? (
                             <div className="pl-4 text-sm">
