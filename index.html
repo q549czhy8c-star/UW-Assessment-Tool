@@ -4231,7 +4231,7 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
             const [showSuggestions, setShowSuggestions] = useState(false);
             const pfBankExpectedCloseDate = useMemo(() => {
                 if (!isPremiumFinancing || !pfBank) return "";
-                const daysMap = { DBS: 120, EleBank: 30, CMB: 120 };
+                const daysMap = { DBS: 120, EleBank: 30, CMB: 90 };
                 const daysToAdd = daysMap[pfBank];
                 if (!daysToAdd) return "";
                 const date = new Date();
