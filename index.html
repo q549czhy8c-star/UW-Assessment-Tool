@@ -4104,9 +4104,11 @@ const HK_HOLIDAYS_2025_2026 = [
                         const [trustReasonCompany, setTrustReasonCompany] = useState('Pacific');
                         const [trustDeclaration, setTrustDeclaration] = useState('No');
             const [niceActimize, setNiceActimize] = useState('');
-const [addressProofType, setAddressProofType] = useState('');
+            const [addressProofType, setAddressProofType] = useState('');
             const [height, setHeight] = useState('');
             const [weight, setWeight] = useState('');
+            const [phHeight, setPhHeight] = useState('');
+            const [phWeight, setPhWeight] = useState('');
             const [isDateBack, setIsDateBack] = useState(false);
             const [isSamePerson, setIsSamePerson] = useState(true);
             const [businessInsuranceEnabled, setBusinessInsuranceEnabled] = useState(false);
@@ -4288,6 +4290,8 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                         if (s.addressProofType !== undefined) setAddressProofType(s.addressProofType);
                         if (s.height !== undefined) setHeight(s.height);
                         if (s.weight !== undefined) setWeight(s.weight);
+                        if (s.phHeight !== undefined) setPhHeight(s.phHeight);
+                        if (s.phWeight !== undefined) setPhWeight(s.phWeight);
                         if (s.isDateBack !== undefined) setIsDateBack(!!s.isDateBack);
                         if (s.isSamePerson !== undefined) setIsSamePerson(!!s.isSamePerson);
                         if (s.businessInsuranceEnabled !== undefined) setBusinessInsuranceEnabled(!!s.businessInsuranceEnabled);
@@ -4431,6 +4435,8 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                         addressProofType,
                         height,
                         weight,
+                        phHeight,
+                        phWeight,
                         isDateBack,
                         isSamePerson,
                         businessInsuranceEnabled,
@@ -4547,7 +4553,7 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                     console.error('Failed to persist Policy Input full state', err);
                 }
             }, [
-                appType, trustReasonCompany, trustDeclaration, niceActimize, addressProofType, height, weight, isDateBack, isSamePerson, businessInsuranceEnabled, psReinstatementEnabled,
+                appType, trustReasonCompany, trustDeclaration, niceActimize, addressProofType, height, weight, phHeight, phWeight, isDateBack, isSamePerson, businessInsuranceEnabled, psReinstatementEnabled,
                 isEverestBroker, requiredSendToAFC,
                 proposalDate, signingDate, applicationSigningDate, fnaSigningDate,
                 phDob, phGender, phSmoker, phResidency, phOtherCountry, phArrivalDate, phExpiryDate, phIfsDate,
@@ -5027,11 +5033,25 @@ ${hnwFinancially || ''}`;
                 return wKg / (hM * hM);
             }, [height, weight]);
 
+            const phBmiResult = useMemo(() => {
+                if (!phHeight || !phWeight) return null;
+                const hM = Number(phHeight) / 100;
+                const wKg = Number(phWeight);
+                if (hM <= 0) return null;
+                return wKg / (hM * hM);
+            }, [phHeight, phWeight]);
+
             const bmiWarning = useMemo(() => {
                 if (!bmiResult) return null;
                 if (bmiResult < 16 || bmiResult > 28) return 'Body build beyond normal range';
                 return null;
             }, [bmiResult]);
+
+            const phBmiWarning = useMemo(() => {
+                if (!phBmiResult) return null;
+                if (phBmiResult < 16 || phBmiResult > 28) return 'Body build beyond normal range';
+                return null;
+            }, [phBmiResult]);
 
             const flyToBuyAmlRequired = useMemo(() => {
                 if (!phResidency) return false;
@@ -5401,7 +5421,7 @@ ${hnwFinancially || ''}`;
                         phAge, phGender, phSmoker, phDob,
                         insAge, insGender, insSmoker, insDob,
                         planName, planRiders, sumAssured, curr, prodType, otherInsurances,
-                        height, weight, medicalReq, financialReq, returnCheck,
+                        height, weight, phHeight, phWeight, medicalReq, financialReq, returnCheck,
                         monthlyIncome, occupationStatus, position, employer, location, lifeCiEmployerToggle, bizNature,
                         sofWealthSupplementType, // v1.9
                         annualIncome: monthlyIncome ? Number(monthlyIncome) * 12 : 0,
@@ -5453,7 +5473,7 @@ ${hnwFinancially || ''}`;
                 } catch (err) {
                     console.error('Failed to save case summary policy info', err);
                 }
-            }, [policyHydrated, phArrivalDate, fnaSigningDate, proposalDate, applicationSigningDate, signingDate, addressProofType, isSamePerson, phAge, phGender, phSmoker, phDob, insAge, insGender, insSmoker, insDob, planName, planRiders, sumAssured, curr, prodType, otherInsurances, height, weight, medicalReq, financialReq, returnCheck, monthlyIncome, occupationStatus, position, employer, location, lifeCiEmployerToggle, bizNature, sofWealthSupplementType, premAmount, payMode, yearTerm, paymentDate, paymentCurrency, paymentAmount, paymentPayor, paymentMethod,
+            }, [policyHydrated, phArrivalDate, fnaSigningDate, proposalDate, applicationSigningDate, signingDate, addressProofType, isSamePerson, phAge, phGender, phSmoker, phDob, insAge, insGender, insSmoker, insDob, planName, planRiders, sumAssured, curr, prodType, otherInsurances, height, weight, phHeight, phWeight, medicalReq, financialReq, returnCheck, monthlyIncome, occupationStatus, position, employer, location, lifeCiEmployerToggle, bizNature, sofWealthSupplementType, premAmount, payMode, yearTerm, paymentDate, paymentCurrency, paymentAmount, paymentPayor, paymentMethod,
                 // Commission Spreading (Professional Investor - PI)
                 commissionSpreading, piInvestorType, piScenarioKey,
                 isDateBack, birthdayAlert, appType, businessInsuranceEnabled, trustDeclaration, niceActimize, pdfAmount, phResidency, phOtherCountry, reasonPurchaseHK, unpaidPremium, trustBeneficiaries, noFna, isSendToAFCChecked, fnaCurrentSavingRate,
@@ -5463,7 +5483,7 @@ ${hnwFinancially || ''}`;
 
             const handleResetPolicyInfo = () => {
                 localStorage.removeItem('businessInsuranceState');
-                setAppType('Individual'); setIsEverestBroker(false); setRequiredSendToAFC(false); setTrustDeclaration('No'); setBusinessInsuranceEnabled(false); setNiceActimize(''); setAddressProofType(''); setHeight(''); setWeight(''); setIsSamePerson(true); setIsDateBack(false);
+                setAppType('Individual'); setIsEverestBroker(false); setRequiredSendToAFC(false); setTrustDeclaration('No'); setBusinessInsuranceEnabled(false); setNiceActimize(''); setAddressProofType(''); setHeight(''); setWeight(''); setPhHeight(''); setPhWeight(''); setIsSamePerson(true); setIsDateBack(false);
                 setProposalDate(""); setSigningDate(""); setApplicationSigningDate(""); setFnaSigningDate("");
                 setPhDob(""); setPhGender("M"); setPhSmoker("N"); setPhResidency("HK"); setPhOtherCountry(""); setPhArrivalDate(""); setPhExpiryDate(""); setPhIfsDate("");
                 setInsDob(""); setInsGender("M"); setInsSmoker("N"); setInsResidency("HK");
@@ -6202,6 +6222,7 @@ ${hnwFinancially || ''}`;
                                         {(prodType === 'Life' || prodType === 'CI') && (
                                             <div className="bg-blue-50 p-2 rounded border border-blue-100">
                                                 <div className="flex items-center gap-1 mb-1 text-blue-800 font-bold text-xs"><Scale size={14}/> 體格 (Body Build)</div>
+                                                <div className="text-[10px] text-blue-700 font-bold mb-1">受保人 / Insured</div>
                                                 <div className="grid grid-cols-2 gap-2">
                                                     <div><label className="text-[10px] text-slate-500 font-bold">身高 (cm)</label><input type="number" value={height} onChange={(e) =>setHeight(e.target.value)} className="w-full border rounded p-1.5 text-sm"/></div>
                                                     <div><label className="text-[10px] text-slate-500 font-bold">體重 (kg)</label><input type="number" value={weight} onChange={(e) =>setWeight(e.target.value)} className="w-full border rounded p-1.5 text-sm"/></div>
@@ -6210,6 +6231,21 @@ ${hnwFinancially || ''}`;
                                                     <div className="mt-1 flex justify-between items-center">
                                                         <span className="text-[10px] text-slate-500 font-bold">BMI: {bmiResult.toFixed(1)}</span>
                                                         {bmiWarning && <span className="text-[10px] text-red-600 font-bold flex items-center gap-1"><AlertTriangle size={10}/> {bmiWarning}</span>}
+                                                    </div>
+                                                )}
+                                                {!!planRiders?.pb && (
+                                                    <div className="mt-3 pt-3 border-t border-blue-100">
+                                                        <div className="text-[10px] text-blue-700 font-bold mb-1">保單持有人 / Policyholder</div>
+                                                        <div className="grid grid-cols-2 gap-2">
+                                                            <div><label className="text-[10px] text-slate-500 font-bold">身高 (cm)</label><input type="number" value={phHeight} onChange={(e) =>setPhHeight(e.target.value)} className="w-full border rounded p-1.5 text-sm"/></div>
+                                                            <div><label className="text-[10px] text-slate-500 font-bold">體重 (kg)</label><input type="number" value={phWeight} onChange={(e) =>setPhWeight(e.target.value)} className="w-full border rounded p-1.5 text-sm"/></div>
+                                                        </div>
+                                                        {phBmiResult && (
+                                                            <div className="mt-1 flex justify-between items-center">
+                                                                <span className="text-[10px] text-slate-500 font-bold">BMI: {phBmiResult.toFixed(1)}</span>
+                                                                {phBmiWarning && <span className="text-[10px] text-red-600 font-bold flex items-center gap-1"><AlertTriangle size={10}/> {phBmiWarning}</span>}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 )}
                                             </div>
@@ -6750,10 +6786,18 @@ const showMed = (isPHNotSame && !isLifeOrCI)
                         const buildParts = [];
                         if (policyData.height) buildParts.push(`${policyData.height}cm`);
                         if (policyData.weight) buildParts.push(`${policyData.weight}kg`);
-                        lines.push(`   build: ${buildParts.join(', ')}`);
+                        lines.push(`   Insured build: ${buildParts.join(', ')}`);
                     }
                     const bmiVal = getBmiInfo();
-                    if (bmiVal) lines.push(`   BMI: ${bmiVal.toFixed(1)}`);
+                    if (bmiVal) lines.push(`   Insured BMI: ${bmiVal.toFixed(1)}`);
+                    if (policyData.planRiders?.pb && (policyData.phHeight || policyData.phWeight)) {
+                        const phBuildParts = [];
+                        if (policyData.phHeight) phBuildParts.push(`${policyData.phHeight}cm`);
+                        if (policyData.phWeight) phBuildParts.push(`${policyData.phWeight}kg`);
+                        lines.push(`   Policyholder build: ${phBuildParts.join(', ')}`);
+                    }
+                    const phBmiVal = getPhBmiInfo();
+                    if (policyData.planRiders?.pb && phBmiVal) lines.push(`   Policyholder BMI: ${phBmiVal.toFixed(1)}`);
                     if (policyData.medicalReq && policyData.medicalReq.req && policyData.medicalReq.req !== 'NM (GIO)' && policyData.medicalReq.req !== 'NM') {
                         lines.push(`   Medical Req: ${policyData.medicalReq.req}`);
                     }
@@ -7200,6 +7244,15 @@ const shouldShowMed = () => {
                 return bmi;
             };
 
+            const getPhBmiInfo = () => {
+                if (!policyData) return null;
+                const h = parseFloat(policyData.phHeight);
+                const w = parseFloat(policyData.phWeight);
+                if (!h || !w) return null;
+                const bmi = w / ((h / 100) ** 2);
+                return bmi;
+            };
+
             const getTsaMedUSD = () => {
                 if (!policyData || !policyData.medicalReq) return null;
                 const val = policyData.medicalReq.checkSA_USD;
@@ -7497,10 +7550,16 @@ const shouldShowMed = () => {
                                 {/* Build first, then BMI per requirements */}
                                 {(policyData.height || policyData.weight) && (
                                     <div className="pl-4">
-                                        Build: {policyData.height ? `${policyData.height}cm` : ''}{policyData.height && policyData.weight ? ', ' : ''}{policyData.weight ? `${policyData.weight}kg` : ''}
+                                        Insured Build: {policyData.height ? `${policyData.height}cm` : ''}{policyData.height && policyData.weight ? ', ' : ''}{policyData.weight ? `${policyData.weight}kg` : ''}
                                     </div>
                                 )}
-                                {getBmiInfo() && <div className="pl-4">BMI: {getBmiInfo().toFixed(1)}</div>}
+                                {getBmiInfo() && <div className="pl-4">Insured BMI: {getBmiInfo().toFixed(1)}</div>}
+                                {policyData.planRiders?.pb && (policyData.phHeight || policyData.phWeight) && (
+                                    <div className="pl-4">
+                                        Policyholder Build: {policyData.phHeight ? `${policyData.phHeight}cm` : ''}{policyData.phHeight && policyData.phWeight ? ', ' : ''}{policyData.phWeight ? `${policyData.phWeight}kg` : ''}
+                                    </div>
+                                )}
+                                {policyData.planRiders?.pb && getPhBmiInfo() && <div className="pl-4">Policyholder BMI: {getPhBmiInfo().toFixed(1)}</div>}
                                 {policyData.medicalReq && policyData.medicalReq.req && policyData.medicalReq.req !== 'NM (GIO)' && policyData.medicalReq.req !== 'NM' && (
                                     <div className="pl-4">Medical Req: {policyData.medicalReq.req}</div>
                                 )}
