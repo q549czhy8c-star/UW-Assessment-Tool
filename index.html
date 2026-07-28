@@ -4873,6 +4873,9 @@ ${hnwFinancially || ''}`;
                 setPlanName(name);
                 const product = PRODUCT_DB.find(p => p.name === name);
                 setProdType(product ? product.type : "");
+                if (name === 'Emerald') {
+                    setPayMode('Single');
+                }
                 // Reset noFna when plan changes
                 setNoFna(false);
             };
