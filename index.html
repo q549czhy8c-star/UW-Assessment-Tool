@@ -2989,13 +2989,17 @@ const HK_HOLIDAYS_2025_2026 = [
                     let prefixType = 'none';
                     let textA = seg;
                     const pendingMatch = /^\(Pending\)\s*/i;
-                    const reminderMatch = /^\((FYI|Reminder)\)\s*/i;
+                    const reminderMatch = /^\(Reminder\)\s*/i;
+                    const fyiMatch = /^\(FYI\)\s*/i;
                     if (pendingMatch.test(textA)) {
                         prefixType = 'pending';
                         textA = textA.replace(pendingMatch, '').trim();
                     } else if (reminderMatch.test(textA)) {
                         prefixType = 'reminder';
                         textA = textA.replace(reminderMatch, '').trim();
+                    } else if (fyiMatch.test(textA)) {
+                        prefixType = 'fyi';
+                        textA = textA.replace(fyiMatch, '').trim();
                     }
                     return { prefixType, customPrefix: '', textA, textB: '' };
                 });
@@ -3041,7 +3045,8 @@ const HK_HOLIDAYS_2025_2026 = [
 
                     let prefixStr = "";
                     if (row.prefixType === 'pending') prefixStr = "(Pending) ";
-                    else if (row.prefixType === 'reminder' || row.prefixType === 'fyi') prefixStr = "(Reminder) ";
+                    else if (row.prefixType === 'reminder') prefixStr = "(Reminder) ";
+                    else if (row.prefixType === 'fyi') prefixStr = "(FYI) ";
                     else if (row.prefixType === 'custom') prefixStr = row.customPrefix + " ";
 
                     if (prefixStr && !/^\s*\([A-Za-z0-9\s]+\)/.test(content)) content = prefixStr + content;
@@ -3171,10 +3176,11 @@ const HK_HOLIDAYS_2025_2026 = [
                                 <div key={row._idx} className="bg-white p-3 rounded shadow-sm border border-slate-200 mb-3 hover:shadow-md transition-shadow">
                                     <div className="flex justify-between items-center mb-2 pb-2 border-b border-slate-50">
                                         <span className="text-xs font-bold text-slate-400">項目 #{i+1}</span>
-                                        <select value={row.prefixType === 'fyi' ? 'reminder' : row.prefixType} onChange={(e)=>updateRow(row._idx, 'prefixType', e.target.value)} className={`text-xs border rounded p-1 font-medium ${row.prefixType === 'pending' ? 'text-orange-600 bg-orange-50' : (row.prefixType === 'reminder' || row.prefixType === 'fyi') ? 'text-blue-600 bg-blue-50' : 'text-slate-600'}`}>
+                                        <select value={row.prefixType} onChange={(e)=>updateRow(row._idx, 'prefixType', e.target.value)} className={`text-xs border rounded p-1 font-medium ${row.prefixType === 'pending' ? 'text-orange-600 bg-orange-50' : (row.prefixType === 'reminder' || row.prefixType === 'fyi') ? 'text-blue-600 bg-blue-50' : 'text-slate-600'}`}>
                                             <option value="none">無前綴</option>
                                             <option value="pending">(Pending)</option>
                                             <option value="reminder">(Reminder)</option>
+                                            <option value="fyi">(FYI)</option>
                                             <option value="custom">自訂...</option>
                                         </select>
                                     </div>
