@@ -3342,6 +3342,7 @@ const HK_HOLIDAYS_2025_2026 = [
             const [pfLoanTenor, setPfLoanTenor] = useState(0);
             // [UPDATE v2.8] Capture repayment amount per period for PF (for display only)
             const [pfRepaymentAmount, setPfRepaymentAmount] = useState(0);
+            const [pfBank, setPfBank] = useState("");
             const affordabilityPrintRef = useRef(null);
 
             // ===== v2.0 Export/Import Hydration (Affordability) =====
@@ -3370,6 +3371,7 @@ const HK_HOLIDAYS_2025_2026 = [
                         if (s.pfLoanTenor !== undefined) setPfLoanTenor(Number(s.pfLoanTenor));
                         // [UPDATE v2.8] hydrate PF repayment amount
                         if (s.pfRepaymentAmount !== undefined) setPfRepaymentAmount(Number(s.pfRepaymentAmount));
+                        if (s.pfBank !== undefined) setPfBank(s.pfBank || "");
                         if (Array.isArray(s.policies) && s.policies.length) {
                             // Ensure at least one policy marked as Applying
                             const hasApplying = s.policies.some(p => (p.status || '') === 'Applying');
@@ -3411,6 +3413,7 @@ const HK_HOLIDAYS_2025_2026 = [
                         pfLoanTenor,
                         // [UPDATE v2.8] persist PF repayment amount
                         pfRepaymentAmount,
+                        pfBank,
                     };
                     localStorage.setItem('affordabilityFullState', JSON.stringify(full));
                 } catch (err) {
@@ -3418,7 +3421,7 @@ const HK_HOLIDAYS_2025_2026 = [
                 }
             }, [age, retireAge, calcMode, sofSelections, sowSelections, monthlyIncome, incomePercent, liquidAsset, assetPercent, allowRetirementIncomeCover, allowIncomeSurplusAssetAccumulation, policies, affHydrated,
                 // dependencies for PF states
-                isPremiumFinancing, pfLoanAmount, pfLoanRate, pfLoanTenor, pfRepaymentAmount]);
+                isPremiumFinancing, pfLoanAmount, pfLoanRate, pfLoanTenor, pfRepaymentAmount, pfBank]);
 
             // =========================================================
 
@@ -3567,7 +3570,7 @@ const HK_HOLIDAYS_2025_2026 = [
                     const tenor = Number(pfLoanTenor) || 0;
                     projectedInterest = loan * (rate / 100) * tenor;
                 }
-	                // Test A: asset requirement without interest
+		                // Test A: asset requirement without interest
 		                const assetRequirement = totalRequiredHKD;
 	                const assetShortfallBeforeAccumulation = Math.max(0, assetRequirement - effectiveAssets);
 	                const incomeSurplusAccumulationApplied = allowIncomeSurplusAssetAccumulation
@@ -3675,6 +3678,7 @@ const HK_HOLIDAYS_2025_2026 = [
                     if (data.pfLoanTenor) setPfLoanTenor(Number(data.pfLoanTenor));
                     // [UPDATE v2.8] Copy PF repayment amount
                     if (data.pfRepaymentAmount !== undefined) setPfRepaymentAmount(Number(data.pfRepaymentAmount));
+                    if (data.pfBank !== undefined) setPfBank(data.pfBank || "");
 
                     const applyingPolicyIndex = policies.findIndex(p => p.status === 'Applying');
                     if (applyingPolicyIndex >= 0) {
@@ -3750,6 +3754,7 @@ const HK_HOLIDAYS_2025_2026 = [
                 setPfLoanRate(0);
                 setPfLoanTenor(0);
                 setPfRepaymentAmount(0);
+                setPfBank("");
             };
 
             const handlePrintAffordability = () => {
@@ -3913,24 +3918,26 @@ const HK_HOLIDAYS_2025_2026 = [
                                 <label className="text-xs font-bold text-slate-500">保費融資 Premium Financing</label>
                             </div>
                             {isPremiumFinancing && (
-                                <div className="grid grid-cols-2 gap-3 mt-2 p-2 rounded">
-                                    <div>
-                                        <label className="text-xs font-bold text-slate-500">貸款額</label>
-                                        <input type="number" value={pfLoanAmount} onChange={(e) => setPfLoanAmount(Number(e.target.value))} className="w-full border rounded p-1.5 text-sm bg-yellow-50" />
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-bold text-slate-500">貸款利率 %</label>
-                                        <input type="number" value={pfLoanRate} onChange={(e) => setPfLoanRate(Number(e.target.value))} className="w-full border rounded p-1.5 text-sm bg-yellow-50" />
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-bold text-slate-500">貸款年期 Years</label>
-                                        <input type="number" value={pfLoanTenor} onChange={(e) => setPfLoanTenor(Number(e.target.value))} className="w-full border rounded p-1.5 text-sm bg-yellow-50" />
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-bold text-slate-500">每期還款額</label>
-                                        <input type="text" value={pfRepaymentAmount} onChange={(e) => setPfRepaymentAmount(e.target.value)} className="w-full border rounded p-1.5 text-sm bg-yellow-50" />
-                                    </div>
-                                </div>
+	                                <div className="mt-2 p-2 rounded">
+	                                    <div className="grid grid-cols-2 gap-3">
+	                                        <div>
+	                                            <label className="text-xs font-bold text-slate-500">貸款額</label>
+	                                            <input type="number" value={pfLoanAmount} onChange={(e) => setPfLoanAmount(Number(e.target.value))} className="w-full border rounded p-1.5 text-sm bg-yellow-50" />
+	                                        </div>
+	                                        <div>
+	                                            <label className="text-xs font-bold text-slate-500">貸款利率 %</label>
+	                                            <input type="number" value={pfLoanRate} onChange={(e) => setPfLoanRate(Number(e.target.value))} className="w-full border rounded p-1.5 text-sm bg-yellow-50" />
+	                                        </div>
+	                                        <div>
+	                                            <label className="text-xs font-bold text-slate-500">貸款年期 Years</label>
+	                                            <input type="number" value={pfLoanTenor} onChange={(e) => setPfLoanTenor(Number(e.target.value))} className="w-full border rounded p-1.5 text-sm bg-yellow-50" />
+	                                        </div>
+	                                        <div>
+	                                            <label className="text-xs font-bold text-slate-500">每期還款額</label>
+	                                            <input type="text" value={pfRepaymentAmount} onChange={(e) => setPfRepaymentAmount(e.target.value)} className="w-full border rounded p-1.5 text-sm bg-yellow-50" />
+	                                        </div>
+	                                    </div>
+	                                </div>
                             )}
                         </div>
                     </div>
@@ -4232,6 +4239,9 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
             const [fnaAssetPercent, setFnaAssetPercent] = useState(100);
             const [fnaSof, setFnaSof] = useState([]);
             const [fnaSow, setFnaSow] = useState([]);
+            const [cmbFnaQ16, setCmbFnaQ16] = useState("");
+            const [cmbFnaQ28, setCmbFnaQ28] = useState("");
+            const [cmbFnaQ29, setCmbFnaQ29] = useState("");
             // [UPDATE Req 8] Allow skipping FNA for specific products
             const [noFna, setNoFna] = useState(false);
 
@@ -4433,6 +4443,9 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                         if (s.fnaAssetPercent !== undefined && s.fnaAssetPercent !== null) setFnaAssetPercent(Number(s.fnaAssetPercent));
                         if (Array.isArray(s.fnaSof)) setFnaSof(s.fnaSof);
                         if (Array.isArray(s.fnaSow)) setFnaSow(s.fnaSow);
+                        if (s.cmbFnaQ16 !== undefined) setCmbFnaQ16(s.cmbFnaQ16);
+                        if (s.cmbFnaQ28 !== undefined) setCmbFnaQ28(s.cmbFnaQ28);
+                        if (s.cmbFnaQ29 !== undefined) setCmbFnaQ29(s.cmbFnaQ29);
                         if (s.noFna !== undefined) setNoFna(!!s.noFna);
 
                         // Financial Questionnaire
@@ -4543,6 +4556,9 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                         fnaAssetPercent,
                         fnaSof,
                         fnaSow,
+                        cmbFnaQ16,
+                        cmbFnaQ28,
+                        cmbFnaQ29,
                         noFna,
                         showFinancialQuestionnaire,
                         fqPurposeOfInsurance,
@@ -4610,7 +4626,7 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                 planName, planRiders, prodType, sumAssured, curr, payMode, premAmount,
                 occupationStatus, employer, location, lifeCiEmployerToggle, bizNature, position, monthlyIncome, sofWealthSupplementType,
                 targetSavingHKD, targetYear, surrenderValueUSD, yearTerm,
-                fnaRetireAge, fnaDisposableIncome, fnaSavingRate, fnaCurrentSavingRate, fnaAnnualInterestRate, fnaRateCurrentValue, fnaRatePastValue, fnaIncomePercent, fnaLiquidAssets, fnaAssetPercent, fnaSof, fnaSow, noFna,
+                fnaRetireAge, fnaDisposableIncome, fnaSavingRate, fnaCurrentSavingRate, fnaAnnualInterestRate, fnaRateCurrentValue, fnaRatePastValue, fnaIncomePercent, fnaLiquidAssets, fnaAssetPercent, fnaSof, fnaSow, cmbFnaQ16, cmbFnaQ28, cmbFnaQ29, noFna,
                 showFinancialQuestionnaire, fqPurposeOfInsurance, fqSourceOfPremium, fqEarnedIncome, fqUnearnedIncome, fqAssets, fqLiabilities,
                 paymentDate, paymentCurrency, paymentAmount, paymentPayor, paymentMethod, pdfAmount,
                 commissionSpreading, piInvestorType, piScenarioKey,
@@ -5304,6 +5320,33 @@ ${hnwFinancially || ''}`;
                 return getFinancialReq(planName, occupationStatus, checkAge, saForReq, curr, annualIncome);
             }, [planName, occupationStatus, phAge, insAge, isSamePerson, sumAssured, curr, monthlyIncome, prodType, otherInsurances]);
 
+            const cmbFnaCheck = useMemo(() => {
+                if (!isPremiumFinancing || pfBank !== 'CMB') return null;
+                const payModeFactor = payMode === 'Monthly' ? 12 : (payMode === 'Quarterly' ? 4 : (payMode === 'Semi' ? 2 : 1));
+                const annualPremium = (Number(premAmount) || 0) * payModeFactor;
+                const annualPremiumUSD = curr === 'HKD' ? annualPremium / USD_RATE : annualPremium;
+                const loanAmount = Number(pfLoanAmount) || 0;
+                const loanAmountUSD = curr === 'HKD' ? loanAmount / USD_RATE : loanAmount;
+                const loanRate = Number(pfLoanRate) || 0;
+                const loanYears = Number(pfLoanTenor) || 0;
+                const projectedInterestUSD = loanAmountUSD * (loanRate / 100) * loanYears;
+                const q16 = Number(cmbFnaQ16) || 0;
+                const q28 = Number(cmbFnaQ28) || 0;
+                const q29 = Number(cmbFnaQ29) || 0;
+                const calculatedAmountUSD = q28 + (q29 * (q16 / 100) * loanYears);
+                const thresholdUSD = annualPremiumUSD + projectedInterestUSD;
+                const hasInputs = cmbFnaQ16 !== "" || cmbFnaQ28 !== "" || cmbFnaQ29 !== "";
+                return {
+                    annualPremiumUSD,
+                    projectedInterestUSD,
+                    calculatedAmountUSD,
+                    thresholdUSD,
+                    loanYears,
+                    hasInputs,
+                    pass: hasInputs ? calculatedAmountUSD > thresholdUSD : null
+                };
+            }, [isPremiumFinancing, pfBank, premAmount, payMode, curr, pfLoanAmount, pfLoanRate, pfLoanTenor, cmbFnaQ16, cmbFnaQ28, cmbFnaQ29]);
+
             const checkCompliance = useMemo(() => {
                 let msgs = [];
                 if (birthdayAlert && !birthdayAlert.birthdayPassedAfterPrintBeforeCurrent) {
@@ -5446,18 +5489,19 @@ ${hnwFinancially || ''}`;
                         isPremiumFinancing,
                         pfLoanAmount,
                         pfLoanRate,
-	                        pfLoanTenor,
-	                        pfRepaymentAmount,
-	                        fnaSof,
-	                        fnaSow,
-	                    };
+		                        pfLoanTenor,
+		                        pfRepaymentAmount,
+                        pfBank,
+		                        fnaSof,
+		                        fnaSow,
+		                    };
                     localStorage.setItem('policyInfoForAffordability', JSON.stringify(data));
                 } catch (err) {
                     console.error('Failed to save policy info for affordability', err);
                 }
 	            }, [policyHydrated, isSamePerson, phAge, insAge, fnaRetireAge, fnaDisposableIncome, fnaLiquidAssets, fnaSavingRate, fnaAnnualInterestRate, fnaIncomePercent, fnaAssetPercent, fnaSof, fnaSow, premAmount, yearTerm, payMode, curr,
                 // watch PF states to update affordability data when they change
-                isPremiumFinancing, pfLoanAmount, pfLoanRate, pfLoanTenor, pfRepaymentAmount]);
+                isPremiumFinancing, pfLoanAmount, pfLoanRate, pfLoanTenor, pfRepaymentAmount, pfBank]);
 
             useEffect(() => {
                 if (!policyHydrated) return;
@@ -5543,7 +5587,7 @@ ${hnwFinancially || ''}`;
                 setPlanName(""); setProdType(""); setSumAssured(""); setCurr("USD"); setPayMode("Annual"); setPremAmount("");
                 setOccupationStatus("Employed"); setEmployer(""); setLocation(""); setLifeCiEmployerToggle(false); setBizNature(""); setPosition(""); setMonthlyIncome(""); setSofWealthSupplementType("");
                 setTargetSavingHKD(""); setTargetYear(""); setSurrenderValueUSD(""); setYearTerm("");
-                setFnaRetireAge(""); setFnaDisposableIncome(""); setFnaCurrentSavingRate(false); setFnaIncomePercent(100); setFnaLiquidAssets(""); setFnaAssetPercent(100); setFnaSof([]); setFnaSow([]);
+                setFnaRetireAge(""); setFnaDisposableIncome(""); setFnaCurrentSavingRate(false); setFnaIncomePercent(100); setFnaLiquidAssets(""); setFnaAssetPercent(100); setFnaSof([]); setFnaSow([]); setCmbFnaQ16(""); setCmbFnaQ28(""); setCmbFnaQ29("");
                 setShowFinancialQuestionnaire(false); setFqPurposeOfInsurance([]); setFqSourceOfPremium([]);
                 setFqEarnedIncome({ salary: "", bonusesDividends: "", fringeBenefit: "", others: "" });
                 setFqUnearnedIncome({ rentalIncome: "", bankInterest: "", investmentEarnings: "", others: "" });
@@ -6539,14 +6583,46 @@ ${hnwFinancially || ''}`;
                                                 </div>
                                             </div>
                                         </div>
-                                        {(isSofSowRequiredPlan || isSendToAFCChecked) && (
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3 p-3 rounded-lg border border-slate-200 bg-slate-50">
-                                                <div><label className="text-xs font-bold text-slate-500">資金來源 (SoF)</label><MultiSelect options={SOF_OPTIONS} value={fnaSof} onChange={setFnaSof} placeholder="請選擇" /></div>
-                                                <div><label className="text-xs font-bold text-slate-500">財富來源 (SoW)</label><MultiSelect options={SOW_OPTIONS} value={fnaSow} onChange={setFnaSow} placeholder="請選擇" /></div>
-                                            </div>
-                                        )}
-                                    </>
-                                    )}
+	                                        {(isSofSowRequiredPlan || isSendToAFCChecked) && (
+	                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3 p-3 rounded-lg border border-slate-200 bg-slate-50">
+	                                                <div><label className="text-xs font-bold text-slate-500">資金來源 (SoF)</label><MultiSelect options={SOF_OPTIONS} value={fnaSof} onChange={setFnaSof} placeholder="請選擇" /></div>
+	                                                <div><label className="text-xs font-bold text-slate-500">財富來源 (SoW)</label><MultiSelect options={SOW_OPTIONS} value={fnaSow} onChange={setFnaSow} placeholder="請選擇" /></div>
+	                                            </div>
+	                                        )}
+	                                        {cmbFnaCheck && (
+	                                            <div className="mt-3 p-3 rounded-lg border border-amber-200 bg-amber-50">
+	                                                <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
+	                                                    <div>
+	                                                        <div className="text-xs font-bold text-amber-900">CMB FNA Checking</div>
+	                                                        <div className="text-[10px] text-amber-700">Formula: Q28 + Q29 x Q16% x premium financing loan years. Q16/Q28/Q29 are input in USD basis.</div>
+	                                                    </div>
+	                                                    <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${cmbFnaCheck.pass === null ? 'bg-slate-100 text-slate-500' : (cmbFnaCheck.pass ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700')}`}>
+	                                                        {cmbFnaCheck.pass === null ? 'Pending input' : (cmbFnaCheck.pass ? 'Pass' : 'Failed')}
+	                                                    </span>
+	                                                </div>
+	                                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+	                                                    <div><label className="text-xs font-bold text-slate-500">Q16 (%)</label><input type="number" value={cmbFnaQ16} onChange={(e) => setCmbFnaQ16(e.target.value)} className="w-full border rounded p-1.5 text-sm bg-white" /></div>
+	                                                    <div><label className="text-xs font-bold text-slate-500">Q28 (USD)</label><input type="number" value={cmbFnaQ28} onChange={(e) => setCmbFnaQ28(e.target.value)} className="w-full border rounded p-1.5 text-sm bg-white" /></div>
+	                                                    <div><label className="text-xs font-bold text-slate-500">Q29 (USD)</label><input type="number" value={cmbFnaQ29} onChange={(e) => setCmbFnaQ29(e.target.value)} className="w-full border rounded p-1.5 text-sm bg-white" /></div>
+	                                                </div>
+	                                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2 text-[10px] text-slate-700">
+	                                                    <div className="bg-white border rounded p-2">
+	                                                        <span className="block text-slate-500">Calculated amount</span>
+	                                                        <span className="font-bold font-mono">{formatMoney(cmbFnaCheck.calculatedAmountUSD, 'USD')}</span>
+	                                                    </div>
+	                                                    <div className="bg-white border rounded p-2">
+	                                                        <span className="block text-slate-500">Annual premium + projected total interest</span>
+	                                                        <span className="font-bold font-mono">{formatMoney(cmbFnaCheck.thresholdUSD, 'USD')}</span>
+	                                                    </div>
+	                                                    <div className="bg-white border rounded p-2">
+	                                                        <span className="block text-slate-500">Breakdown</span>
+	                                                        <span className="font-mono">Premium {formatMoney(cmbFnaCheck.annualPremiumUSD, 'USD')} + Interest {formatMoney(cmbFnaCheck.projectedInterestUSD, 'USD')}</span>
+	                                                    </div>
+	                                                </div>
+	                                            </div>
+	                                        )}
+	                                    </>
+	                                    )}
                                     {noFna && <div className="text-center p-4 text-slate-400 italic">FNA 已豁免 (FNA Skipped)</div>}
                                 </div>
                                 <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
