@@ -7234,7 +7234,7 @@ const showMed = (isPHNotSame && !isLifeOrCI)
                 if (!policyData) return;
                 let msgs = [];
                 const plan = policyData.planName || '';
-                if (['LionAchiever Elite', 'LionPrima', 'Pearl', 'Emerald'].includes(plan)) {
+                if (!policyData.isPremiumFinancing && ['LionAchiever Elite', 'LionPrima', 'Pearl', 'Emerald'].includes(plan)) {
                     msgs.push('a. Anonymous/cash payment is not allowed for high return products; b. Payor will be required to submit of Source(s) of Funds/Wealth Supplementary Information Questionnaire if premium payment is not fully made by proposed policyholder.');
                 }
                 if ((policyData.prodType === 'GIO' || policyData.prodType === 'Annuity') && policyData.birthdayAlert?.withinThreeMonths) {
