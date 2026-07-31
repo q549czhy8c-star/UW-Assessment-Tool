@@ -4216,6 +4216,7 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
     const [isPremiumFinancing, setIsPremiumFinancing] = useState(false);
     // Loan amount for premium financing. Should be entered in the same currency as the policy.
     const [pfLoanAmount, setPfLoanAmount] = useState("");
+    const [pfLoanCurrency, setPfLoanCurrency] = useState("");
     // Annualized interest rate (percentage) for the premium financing loan.
     const [pfLoanRate, setPfLoanRate] = useState("");
     // Loan tenor expressed in years. Used together with loan amount and rate to compute projected interest.
@@ -4423,6 +4424,7 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                         // Hydrate Premium Financing (PF) fields from stored state
                         if (s.isPremiumFinancing !== undefined) setIsPremiumFinancing(!!s.isPremiumFinancing);
                         if (s.pfLoanAmount !== undefined) setPfLoanAmount(s.pfLoanAmount);
+                        if (s.pfLoanCurrency !== undefined) setPfLoanCurrency(s.pfLoanCurrency);
                         if (s.pfLoanRate !== undefined) setPfLoanRate(s.pfLoanRate);
                         if (s.pfLoanTenor !== undefined) setPfLoanTenor(s.pfLoanTenor);
                         if (s.pfRepaymentAmount !== undefined) setPfRepaymentAmount(s.pfRepaymentAmount);
@@ -4588,6 +4590,7 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                         // Premium Financing (PF) fields - persisted for export/import
                         isPremiumFinancing,
                         pfLoanAmount,
+                        pfLoanCurrency,
                         pfLoanRate,
                         pfLoanTenor,
                         pfRepaymentAmount,
@@ -4632,7 +4635,7 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                 commissionSpreading, piInvestorType, piScenarioKey,
                 trustBeneficiaries, unpaidPremium, reasonPurchaseHK, otherInsurances, niceActimize,
                 // dependencies for PF fields
-                isPremiumFinancing, pfLoanAmount, pfLoanRate, pfLoanTenor, pfRepaymentAmount, pfIfsProvided, pfCustomerAuthorizationProvided, pfBank,
+                isPremiumFinancing, pfLoanAmount, pfLoanCurrency, pfLoanRate, pfLoanTenor, pfRepaymentAmount, pfIfsProvided, pfCustomerAuthorizationProvided, pfBank,
                 // HNW fields dependencies
                 hnwAppSignDate, hnwDOB, hnwGender, hnwSmoking, hnwClass, hnwNationality, hnwResidency,
                 hnwSumAssured, hnwTerms, hnwAnnualPremium, hnwExistingSA, hnwOccupation, hnwMedically, hnwFinancially, hnwAnnualIncome,
@@ -5326,7 +5329,8 @@ ${hnwFinancially || ''}`;
                 const annualPremium = (Number(premAmount) || 0) * payModeFactor;
                 const annualPremiumUSD = curr === 'HKD' ? annualPremium / USD_RATE : annualPremium;
                 const loanAmount = Number(pfLoanAmount) || 0;
-                const loanAmountUSD = curr === 'HKD' ? loanAmount / USD_RATE : loanAmount;
+                const loanCurrency = pfLoanCurrency || curr;
+                const loanAmountUSD = loanCurrency === 'HKD' ? loanAmount / USD_RATE : loanAmount;
                 const loanRate = Number(pfLoanRate) || 0;
                 const loanYears = Number(pfLoanTenor) || 0;
                 const projectedInterestUSD = loanAmountUSD * (loanRate / 100) * loanYears;
@@ -5339,13 +5343,15 @@ ${hnwFinancially || ''}`;
                 return {
                     annualPremiumUSD,
                     projectedInterestUSD,
+                    loanCurrency,
+                    loanAmountUSD,
                     calculatedAmountUSD,
                     thresholdUSD,
                     loanYears,
                     hasInputs,
                     pass: hasInputs ? calculatedAmountUSD > thresholdUSD : null
                 };
-            }, [isPremiumFinancing, pfBank, premAmount, payMode, curr, pfLoanAmount, pfLoanRate, pfLoanTenor, cmbFnaQ16, cmbFnaQ28, cmbFnaQ29]);
+            }, [isPremiumFinancing, pfBank, premAmount, payMode, curr, pfLoanAmount, pfLoanCurrency, pfLoanRate, pfLoanTenor, cmbFnaQ16, cmbFnaQ28, cmbFnaQ29]);
 
             const checkCompliance = useMemo(() => {
                 let msgs = [];
@@ -5488,6 +5494,7 @@ ${hnwFinancially || ''}`;
                         // Premium Financing (PF) values used by the Affordability calculator
                         isPremiumFinancing,
                         pfLoanAmount,
+                        pfLoanCurrency,
                         pfLoanRate,
 		                        pfLoanTenor,
 		                        pfRepaymentAmount,
@@ -5501,7 +5508,7 @@ ${hnwFinancially || ''}`;
                 }
 	            }, [policyHydrated, isSamePerson, phAge, insAge, fnaRetireAge, fnaDisposableIncome, fnaLiquidAssets, fnaSavingRate, fnaAnnualInterestRate, fnaIncomePercent, fnaAssetPercent, fnaSof, fnaSow, premAmount, yearTerm, payMode, curr,
                 // watch PF states to update affordability data when they change
-                isPremiumFinancing, pfLoanAmount, pfLoanRate, pfLoanTenor, pfRepaymentAmount, pfBank]);
+                isPremiumFinancing, pfLoanAmount, pfLoanCurrency, pfLoanRate, pfLoanTenor, pfRepaymentAmount, pfBank]);
 
             useEffect(() => {
                 if (!policyHydrated) return;
@@ -5558,6 +5565,7 @@ ${hnwFinancially || ''}`;
                         // Premium Financing details for case summary display
                         isPremiumFinancing,
                         pfLoanAmount,
+                        pfLoanCurrency,
                         pfLoanRate,
                         pfLoanTenor,
                         pfRepaymentAmount,
@@ -5576,7 +5584,7 @@ ${hnwFinancially || ''}`;
                 isDateBack, birthdayAlert, appType, businessInsuranceEnabled, trustDeclaration, niceActimize, pdfAmount, phResidency, phOtherCountry, reasonPurchaseHK, unpaidPremium, trustBeneficiaries, noFna, isSendToAFCChecked, fnaCurrentSavingRate,
                 showFinancialQuestionnaire, fqPurposeOfInsurance, fqSourceOfPremium, fqEarnedIncome, fqUnearnedIncome, fqAssets, fqLiabilities,
                 // Premium Financing dependencies
-                isPremiumFinancing, pfLoanAmount, pfLoanRate, pfLoanTenor, pfRepaymentAmount, pfIfsProvided, pfCustomerAuthorizationProvided, pfBank]);
+                isPremiumFinancing, pfLoanAmount, pfLoanCurrency, pfLoanRate, pfLoanTenor, pfRepaymentAmount, pfIfsProvided, pfCustomerAuthorizationProvided, pfBank]);
 
             const handleResetPolicyInfo = () => {
                 localStorage.removeItem('businessInsuranceState');
@@ -5606,6 +5614,7 @@ ${hnwFinancially || ''}`;
                 // Reset Premium Financing fields
                 setIsPremiumFinancing(false);
                 setPfLoanAmount('');
+                setPfLoanCurrency('');
                 setPfLoanRate('');
                 setPfLoanTenor('');
                 setPfRepaymentAmount('');
@@ -5948,10 +5957,16 @@ ${hnwFinancially || ''}`;
                                         </div>
                                         {isPremiumFinancing && (
                                             <div className="grid grid-cols-2 gap-3 mt-2 p-2 rounded">
-                                                <div>
-                                                    <label className="text-xs font-bold text-slate-500">貸款額</label>
-                                                    <input type="number" value={pfLoanAmount} onChange={(e) => setPfLoanAmount(e.target.value)} className="w-full border rounded p-1.5 text-sm bg-yellow-50" />
-                                                </div>
+	                                                <div>
+	                                                    <label className="text-xs font-bold text-slate-500">貸款額</label>
+	                                                    <div className="grid grid-cols-[1fr_88px] gap-2">
+	                                                        <input type="number" value={pfLoanAmount} onChange={(e) => setPfLoanAmount(e.target.value)} className="w-full border rounded p-1.5 text-sm bg-yellow-50" />
+	                                                        <select value={pfLoanCurrency || curr} onChange={(e) => setPfLoanCurrency(e.target.value)} className="w-full border rounded p-1.5 text-sm bg-yellow-50">
+	                                                            <option value="HKD">HKD</option>
+	                                                            <option value="USD">USD</option>
+	                                                        </select>
+	                                                    </div>
+	                                                </div>
                                                 <div>
                                                     <label className="text-xs font-bold text-slate-500">貸款利率 %</label>
                                                     <input type="number" value={pfLoanRate} onChange={(e) => setPfLoanRate(e.target.value)} className="w-full border rounded p-1.5 text-sm bg-yellow-50" />
@@ -6616,7 +6631,10 @@ ${hnwFinancially || ''}`;
 	                                                    </div>
 	                                                    <div className="bg-white border rounded p-2">
 	                                                        <span className="block text-slate-500">Breakdown</span>
-	                                                        <span className="font-mono">Premium {formatMoney(cmbFnaCheck.annualPremiumUSD, 'USD')} + Interest {formatMoney(cmbFnaCheck.projectedInterestUSD, 'USD')}</span>
+	                                                        <span className="font-mono">
+	                                                            Premium {formatMoney(cmbFnaCheck.annualPremiumUSD, 'USD')} + Interest {formatMoney(cmbFnaCheck.projectedInterestUSD, 'USD')}
+	                                                            <span className="block text-slate-500">Loan basis: {cmbFnaCheck.loanCurrency} {Number(pfLoanAmount || 0).toLocaleString()} = {formatMoney(cmbFnaCheck.loanAmountUSD, 'USD')}</span>
+	                                                        </span>
 	                                                    </div>
 	                                                </div>
 	                                            </div>
