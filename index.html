@@ -4216,7 +4216,7 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
     const [isPremiumFinancing, setIsPremiumFinancing] = useState(false);
     // Loan amount for premium financing. Should be entered in the same currency as the policy.
     const [pfLoanAmount, setPfLoanAmount] = useState("");
-    const [pfLoanCurrency, setPfLoanCurrency] = useState("");
+    const [pfLoanCurrency, setPfLoanCurrency] = useState("HKD");
     // Annualized interest rate (percentage) for the premium financing loan.
     const [pfLoanRate, setPfLoanRate] = useState("");
     // Loan tenor expressed in years. Used together with loan amount and rate to compute projected interest.
@@ -5329,7 +5329,7 @@ ${hnwFinancially || ''}`;
                 const annualPremium = (Number(premAmount) || 0) * payModeFactor;
                 const annualPremiumUSD = curr === 'HKD' ? annualPremium / USD_RATE : annualPremium;
                 const loanAmount = Number(pfLoanAmount) || 0;
-                const loanCurrency = pfLoanCurrency || curr;
+                const loanCurrency = pfLoanCurrency || 'HKD';
                 const loanAmountUSD = loanCurrency === 'HKD' ? loanAmount / USD_RATE : loanAmount;
                 const loanRate = Number(pfLoanRate) || 0;
                 const loanYears = Number(pfLoanTenor) || 0;
@@ -5614,7 +5614,7 @@ ${hnwFinancially || ''}`;
                 // Reset Premium Financing fields
                 setIsPremiumFinancing(false);
                 setPfLoanAmount('');
-                setPfLoanCurrency('');
+                setPfLoanCurrency('HKD');
                 setPfLoanRate('');
                 setPfLoanTenor('');
                 setPfRepaymentAmount('');
@@ -5961,7 +5961,7 @@ ${hnwFinancially || ''}`;
 	                                                    <label className="text-xs font-bold text-slate-500">貸款額</label>
 	                                                    <div className="grid grid-cols-[1fr_88px] gap-2">
 	                                                        <input type="number" value={pfLoanAmount} onChange={(e) => setPfLoanAmount(e.target.value)} className="w-full border rounded p-1.5 text-sm bg-yellow-50" />
-	                                                        <select value={pfLoanCurrency || curr} onChange={(e) => setPfLoanCurrency(e.target.value)} className="w-full border rounded p-1.5 text-sm bg-yellow-50">
+	                                                        <select value={pfLoanCurrency || 'HKD'} onChange={(e) => setPfLoanCurrency(e.target.value)} className="w-full border rounded p-1.5 text-sm bg-yellow-50">
 	                                                            <option value="HKD">HKD</option>
 	                                                            <option value="USD">USD</option>
 	                                                        </select>
