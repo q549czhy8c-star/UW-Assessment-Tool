@@ -5723,6 +5723,43 @@ ${hnwFinancially || ''}`;
                             </div>
                             <button onClick={handleResetPolicyInfo} className="text-xs bg-white border border-slate-300 text-red-500 px-3 py-1.5 rounded hover:bg-red-50 transition-colors flex items-center gap-1"><RotateCw size={12}/> 重設資料</button>
                         </div>
+                        <div className="mb-3 border border-slate-300 bg-white rounded-lg overflow-hidden shadow-sm">
+                            <div className="px-3 py-2 bg-slate-100 border-b border-slate-200 text-xs font-bold italic text-slate-800">
+                                Blacklist Brokers Reference
+                            </div>
+                            <div className="max-h-44 overflow-y-auto custom-scrollbar">
+                                <table className="w-full text-[11px]">
+                                    <tbody className="divide-y divide-slate-200">
+                                        <tr>
+                                            <td className="align-top p-2 w-[62%]">
+                                                <ul className="list-disc pl-4 space-y-0.5">
+                                                    <li>ASI-Union Global Assets Management Ltd. (FB1534)</li>
+                                                    <li>Macroscopica International Wealth Management Ltd. (FB1557)</li>
+                                                    <li>Bay Union Insurance Brokers Limited (formerly known as Huize Hong Kong Insurance Broker Limited) (FB1661)</li>
+                                                </ul>
+                                            </td>
+                                            <td className="align-top p-2 border-l border-slate-200">Additional measure</td>
+                                        </tr>
+                                        <tr>
+                                            <td className="align-top p-2"><span className="pl-4">Chief Financial Services Ltd</span></td>
+                                            <td className="align-top p-2 border-l border-slate-200">No NB</td>
+                                        </tr>
+                                        <tr>
+                                            <td className="align-top p-2"><span className="pl-4">Everest</span></td>
+                                            <td className="align-top p-2 border-l border-slate-200">Need EDD</td>
+                                        </tr>
+                                        <tr>
+                                            <td className="align-top p-2"><span className="pl-4">StarFlame and Wanson</span></td>
+                                            <td className="align-top p-2 border-l border-slate-200">PI watchlist brokers (Hold-on per email dated Aug 3 2026)</td>
+                                        </tr>
+                                        <tr>
+                                            <td className="align-top p-2 font-bold"><span className="pl-4">Best Management Wealth Limited</span></td>
+                                            <td className="align-top p-2 border-l border-slate-200 font-bold">Need additional post-meeting communications including written correspondence through any communication channel, that confirm the discussion and demonstrate the settlor's direct participation in the FNA process</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                         <div className="mt-1 mb-3 flex items-center gap-2">
                             <label className="text-xs font-bold text-slate-700">Broker = Everest Global:</label>
                             <input type="checkbox" checked={isEverestBroker} onChange={(e) => setIsEverestBroker(e.target.checked)} className="h-4 w-4" />
