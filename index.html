@@ -246,6 +246,7 @@
             { name: "LionPrima", category: "saving60", target: "0-60%" },
             { name: "Pearl Savings Insurance Plan", category: "saving60", target: "0-60%", aliases: ["Pearl"] },
             { name: "Emerald Savings Insurance Plan", category: "saving60", target: "0-60%", aliases: ["Emerald"] },
+            { name: "PrimeAchiever", category: "saving60", target: "0-60%", aliases: ["PrimeAchiever"] },
             { name: "LionHarvest Prime Deferred Annuity", category: "annuity20", target: "0-20%", aliases: ["LionHarvest Prime"] },
             { name: "LionPromise Pro", category: "promise40", target: "0-40%" },
             { name: "LionPatron", category: "protection50", target: "20-50%" },
@@ -2686,6 +2687,7 @@ const HK_HOLIDAYS_2025_2026 = [
             { name: "Lion Achiever", type: "GIO", q1: "Must: E === Optional: A, C, D", q2: "A, F, G", q6: "Must be equal or greater than payment term", ruleType: "GIO" },
             { name: "LionPrima", type: "GIO", q1: "A (Optional), C (Optional), D (Optional), E, E(iii)", q2: "A", q3: "E - G", q6: "A - F (2 Pay / 5 Pay); B - F (8 Pay)", ruleType: "GIO" },
             { name: "Emerald", type: "GIO", q1: "A (Optional), C (Optional), D (Optional), E, E(iii)", q2: "A", q3: "D - G", q6: "G", ruleType: "GIO" },
+            { name: "PrimeAchiever", type: "GIO", q1: "A (Optional), C (Optional), D (Optional), E, E(iii)", q2: "A", q3: "D - G", q6: "G", ruleType: "GIO" },
             { name: "Pearl", type: "GIO", q1: "A (Optional), C (Optional), D (Optional), E, E(iii)", q2: "A", q3: "D - G", q6: "A - F", ruleType: "GIO" },
             { name: "LionTycoon Beyond Savings Insurance Plan 3 (Launch date TBC)", type: "GIO", q1: "A (Optional), C (Optional), D (Optional), E, E(iii)", q2: "A", q3: "F - G", q6: "A - F (3 Pay); B - F (8 Pay); Single payment", ruleType: "GIO" },
 
@@ -4899,8 +4901,11 @@ ${hnwFinancially || ''}`;
                 setPlanName(name);
                 const product = PRODUCT_DB.find(p => p.name === name);
                 setProdType(product ? product.type : "");
-                if (name === 'Emerald') {
+                if (name === 'Emerald' || name === 'PrimeAchiever') {
                     setPayMode('Single');
+                }
+                if (name === 'PrimeAchiever') {
+                    setPaymentMethod('Bank Deposit');
                 }
                 // Reset noFna when plan changes
                 setNoFna(false);
@@ -5040,7 +5045,7 @@ ${hnwFinancially || ''}`;
             }, [prodType, appType, isHighRisk, isEverestBroker, lifeCiEmployerToggle]);
 
             // v1.9 / v1.12 Non-employed supplementary triggers
-            const SOF_SOW_REQUIRED_PLANS = useMemo(() => new Set(['LionAchiever Elite', 'LionPrima', 'Pearl', 'Emerald']), []);
+            const SOF_SOW_REQUIRED_PLANS = useMemo(() => new Set(['LionAchiever Elite', 'LionPrima', 'Pearl', 'Emerald', 'PrimeAchiever']), []);
             const isSofSowRequiredPlan = useMemo(() => SOF_SOW_REQUIRED_PLANS.has(planName), [SOF_SOW_REQUIRED_PLANS, planName]);
 
             const isNonEmployedElitePrimaCase = useMemo(() => {
@@ -5362,6 +5367,10 @@ ${hnwFinancially || ''}`;
                 if (flyToBuyAmlRequired) {
                     msgs.push({ type: 'warning', text: 'please complete AML checklist for fly to buy client' });
                 }
+                const primeAchieverAllowedPaymentMethods = new Set(['Bank Deposit', 'TT', 'CHATS', 'Cheque', 'Bank Draft / Cashier Order']);
+                if (planName === 'PrimeAchiever' && paymentMethod && !primeAchieverAllowedPaymentMethods.has(paymentMethod)) {
+                    msgs.push({ type: 'error', text: 'PrimeAchiever payment only accepts bank deposit, TT, CHATS, cheque, bank draft and cashier order.' });
+                }
                 const datesToCheck = [];
                 if (proposalDate) datesToCheck.push({ label: '印刷日期', date: new Date(proposalDate), rawDate: proposalDate });
                 if (signingDate) datesToCheck.push({ label: '簽署日期', date: new Date(signingDate), rawDate: signingDate });
@@ -5419,7 +5428,7 @@ ${hnwFinancially || ''}`;
                     }
                 }
                 return msgs;
-            }, [proposalDate, signingDate, applicationSigningDate, fnaSigningDate, phResidency, phArrivalDate, phExpiryDate, phIfsDate, appType, premAmount, curr, pdfAmount, paymentCurrency, birthdayAlert, flyToBuyAmlRequired]);
+            }, [proposalDate, signingDate, applicationSigningDate, fnaSigningDate, phResidency, phArrivalDate, phExpiryDate, phIfsDate, appType, premAmount, curr, pdfAmount, paymentCurrency, paymentMethod, planName, birthdayAlert, flyToBuyAmlRequired]);
 
             // ==========================================
             // Jumbo Case (大額保單) Logic
@@ -6717,7 +6726,7 @@ ${hnwFinancially || ''}`;
                                         <div>
                                             <label className="text-xs font-bold text-slate-500">付款方式</label>
                                             <select value={paymentMethod} onChange={(e) =>setPaymentMethod(e.target.value)} className="w-full border rounded p-1.5 text-sm">
-                                                <option value="Bank Transfer">Bank Transfer</option><option value="Direct Deposit">Direct Deposit</option><option value="Bank Draft / Cashier Order">Bank Draft / Cashier Order</option><option value="Credit Card">Credit Card</option><option value="Credit Card Form">Credit Card Form</option><option value="Bravo Payment">Bravo Payment</option><option value="Online Banking">Online Banking</option><option value="TT">TT</option><option value="PPS / FPS">PPS / FPS</option><option value="Cheque">Cheque</option>
+	                                                <option value="Bank Transfer">Bank Transfer</option><option value="Bank Deposit">Bank Deposit</option><option value="Direct Deposit">Direct Deposit</option><option value="CHATS">CHATS</option><option value="Bank Draft / Cashier Order">Bank Draft / Cashier Order</option><option value="Credit Card">Credit Card</option><option value="Credit Card Form">Credit Card Form</option><option value="Bravo Payment">Bravo Payment</option><option value="Online Banking">Online Banking</option><option value="TT">TT</option><option value="PPS / FPS">PPS / FPS</option><option value="Cheque">Cheque</option>
                                             </select>
                                             <div className="flex items-center gap-2 mt-2">
                                                 <input type="checkbox" checked={unpaidPremium} onChange={(e) => setUnpaidPremium(e.target.checked)} className="rounded text-blue-600" />
@@ -7314,7 +7323,7 @@ const showMed = (isPHNotSame && !isLifeOrCI)
                 if (!policyData) return;
                 let msgs = [];
                 const plan = policyData.planName || '';
-                if (!policyData.isPremiumFinancing && ['LionAchiever Elite', 'LionPrima', 'Pearl', 'Emerald'].includes(plan)) {
+                if (!policyData.isPremiumFinancing && ['LionAchiever Elite', 'LionPrima', 'Pearl', 'Emerald', 'PrimeAchiever'].includes(plan)) {
                     msgs.push('a. Anonymous/cash payment is not allowed for high return products; b. Payor will be required to submit of Source(s) of Funds/Wealth Supplementary Information Questionnaire if premium payment is not fully made by proposed policyholder.');
                 }
                 if ((policyData.prodType === 'GIO' || policyData.prodType === 'Annuity') && policyData.birthdayAlert?.withinThreeMonths) {
