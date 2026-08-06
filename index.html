@@ -5572,7 +5572,11 @@ ${hnwFinancially || ''}`;
                         pfRepaymentAmount,
                         pfIfsProvided,
                         pfCustomerAuthorizationProvided,
-                        pfBank
+                        pfBank,
+                        cmbFnaQ16,
+                        cmbFnaQ28,
+                        cmbFnaQ29,
+                        cmbFnaCheck
                     };
                     localStorage.setItem('caseSummaryPolicyInfo', JSON.stringify(summary));
                     window.dispatchEvent(new CustomEvent('caseSummaryUpdate'));
@@ -5585,7 +5589,7 @@ ${hnwFinancially || ''}`;
                 isDateBack, birthdayAlert, appType, businessInsuranceEnabled, trustDeclaration, niceActimize, pdfAmount, phResidency, phOtherCountry, reasonPurchaseHK, unpaidPremium, trustBeneficiaries, noFna, isSendToAFCChecked, fnaCurrentSavingRate,
                 showFinancialQuestionnaire, fqPurposeOfInsurance, fqSourceOfPremium, fqEarnedIncome, fqUnearnedIncome, fqAssets, fqLiabilities,
                 // Premium Financing dependencies
-                isPremiumFinancing, pfLoanAmount, pfLoanCurrency, pfLoanRate, pfLoanTenor, pfRepaymentAmount, pfIfsProvided, pfCustomerAuthorizationProvided, pfBank]);
+                isPremiumFinancing, pfLoanAmount, pfLoanCurrency, pfLoanRate, pfLoanTenor, pfRepaymentAmount, pfIfsProvided, pfCustomerAuthorizationProvided, pfBank, cmbFnaQ16, cmbFnaQ28, cmbFnaQ29, cmbFnaCheck]);
 
             const handleResetPolicyInfo = () => {
                 localStorage.removeItem('businessInsuranceState');
@@ -7124,6 +7128,14 @@ const showMed = (isPHNotSame && !isLifeOrCI)
                         lines.push(pfDetail);
                         lines.push('   Net assets after premium payments: ' + formatMoney(remRaw));
                         lines.push('   Projected total interest: ' + formatMoney(projInt));
+                        if (policyData?.isPremiumFinancing && policyData?.pfBank === 'CMB' && policyData?.cmbFnaCheck?.hasInputs) {
+                            const cmb = policyData.cmbFnaCheck;
+                            const sign = Number(cmb.calculatedAmountUSD || 0) > Number(cmb.thresholdUSD || 0) ? '>' : (Number(cmb.calculatedAmountUSD || 0) < Number(cmb.thresholdUSD || 0) ? '<' : '=');
+                            const resultText = Number(cmb.calculatedAmountUSD || 0) > Number(cmb.thresholdUSD || 0)
+                                ? 'figure higher is acceptable'
+                                : 'figure lower is not acceptable';
+                            lines.push(`   FNA Q28 + (FNA Q29 x FNA Q16 x Years) = ${formatMoney(cmb.calculatedAmountUSD, 'USD')} ${sign} Annual premium + (Loan amount x loan rate x years) = ${formatMoney(cmb.thresholdUSD, 'USD')} -> ${resultText}`);
+                        }
                         if ((Number(affordData.diffB) || 0) < 0) {
                             lines.push('   Shortfall (Test B): ' + formatMoney(Math.abs(Number(affordData.diffB) || 0)));
                         } else {
@@ -7889,10 +7901,22 @@ const shouldShowMed = () => {
                                         if (repayVal) {
                                             pfDetail += ', Repayment Amt: ' + formatMoney(Number(repayVal) || 0);
                                         }
-                                        lines.push(<div key="fnaPf1" className="pl-4">{pfDetail}</div>);
-                                        lines.push(<div key="fnaPf2" className="pl-4">Net assets after premium payments: {formatMoney(remRaw)}</div>);
-                                        lines.push(<div key="fnaPf3" className="pl-4">Projected total interest: {formatMoney(projInt)}</div>);
-                                        if (diffB < 0) {
+	                                        lines.push(<div key="fnaPf1" className="pl-4">{pfDetail}</div>);
+	                                        lines.push(<div key="fnaPf2" className="pl-4">Net assets after premium payments: {formatMoney(remRaw)}</div>);
+	                                        lines.push(<div key="fnaPf3" className="pl-4">Projected total interest: {formatMoney(projInt)}</div>);
+	                                        if (policyData?.isPremiumFinancing && policyData?.pfBank === 'CMB' && policyData?.cmbFnaCheck?.hasInputs) {
+	                                            const cmb = policyData.cmbFnaCheck;
+	                                            const sign = Number(cmb.calculatedAmountUSD || 0) > Number(cmb.thresholdUSD || 0) ? '>' : (Number(cmb.calculatedAmountUSD || 0) < Number(cmb.thresholdUSD || 0) ? '<' : '=');
+	                                            const resultText = Number(cmb.calculatedAmountUSD || 0) > Number(cmb.thresholdUSD || 0)
+	                                                ? 'figure higher is acceptable'
+	                                                : 'figure lower is not acceptable';
+	                                            lines.push(
+	                                                <div key="fnaPfCmb" className="pl-4">
+	                                                    FNA Q28 + (FNA Q29 x FNA Q16 x Years) = {formatMoney(cmb.calculatedAmountUSD, 'USD')} {sign} Annual premium + (Loan amount x loan rate x years) = {formatMoney(cmb.thresholdUSD, 'USD')} {'->'} {resultText}
+	                                                </div>
+	                                            );
+	                                        }
+	                                        if (diffB < 0) {
                                             lines.push(<div key="fnaPf4" className="pl-4">Shortfall (Test B): {formatMoney(Math.abs(diffB))}</div>);
                                         } else {
                                             lines.push(<div key="fnaPf4" className="pl-4">Surplus (Test B): {formatMoney(diffB)}</div>);
