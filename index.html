@@ -7131,10 +7131,10 @@ const showMed = (isPHNotSame && !isLifeOrCI)
                         if (policyData?.isPremiumFinancing && policyData?.pfBank === 'CMB' && policyData?.cmbFnaCheck?.hasInputs) {
                             const cmb = policyData.cmbFnaCheck;
                             const sign = Number(cmb.calculatedAmountUSD || 0) > Number(cmb.thresholdUSD || 0) ? '>' : (Number(cmb.calculatedAmountUSD || 0) < Number(cmb.thresholdUSD || 0) ? '<' : '=');
-                            const resultText = Number(cmb.calculatedAmountUSD || 0) > Number(cmb.thresholdUSD || 0)
-                                ? 'figure higher is acceptable'
-                                : 'figure lower is not acceptable';
-                            lines.push(`   FNA Q28 + (FNA Q29 x FNA Q16 x Years) = ${formatMoney(cmb.calculatedAmountUSD, 'USD')} ${sign} Annual premium + (Loan amount x loan rate x years) = ${formatMoney(cmb.thresholdUSD, 'USD')} -> ${resultText}`);
+                            const resultText = Number(cmb.calculatedAmountUSD || 0) >= Number(cmb.thresholdUSD || 0)
+                                ? 'acceptable'
+                                : 'not acceptable';
+                            lines.push(`   per FNA Q31 total premium + interest = ${formatMoney(cmb.calculatedAmountUSD, 'USD')} ${sign} our calculation ${formatMoney(cmb.thresholdUSD, 'USD')} (${formatMoney(cmb.annualPremiumUSD, 'USD')} (illustration premium amount) + ${formatMoney(cmb.projectedInterestUSD, 'USD')} (IFS-PF)) according to the loan information in IFS-PF -> ${resultText}`);
                         }
                         if ((Number(affordData.diffB) || 0) < 0) {
                             lines.push('   Shortfall (Test B): ' + formatMoney(Math.abs(Number(affordData.diffB) || 0)));
@@ -7907,12 +7907,12 @@ const shouldShowMed = () => {
 	                                        if (policyData?.isPremiumFinancing && policyData?.pfBank === 'CMB' && policyData?.cmbFnaCheck?.hasInputs) {
 	                                            const cmb = policyData.cmbFnaCheck;
 	                                            const sign = Number(cmb.calculatedAmountUSD || 0) > Number(cmb.thresholdUSD || 0) ? '>' : (Number(cmb.calculatedAmountUSD || 0) < Number(cmb.thresholdUSD || 0) ? '<' : '=');
-	                                            const resultText = Number(cmb.calculatedAmountUSD || 0) > Number(cmb.thresholdUSD || 0)
-	                                                ? 'figure higher is acceptable'
-	                                                : 'figure lower is not acceptable';
+	                                            const resultText = Number(cmb.calculatedAmountUSD || 0) >= Number(cmb.thresholdUSD || 0)
+	                                                ? 'acceptable'
+	                                                : 'not acceptable';
 	                                            lines.push(
 	                                                <div key="fnaPfCmb" className="pl-4">
-	                                                    FNA Q28 + (FNA Q29 x FNA Q16 x Years) = {formatMoney(cmb.calculatedAmountUSD, 'USD')} {sign} Annual premium + (Loan amount x loan rate x years) = {formatMoney(cmb.thresholdUSD, 'USD')} {'->'} {resultText}
+	                                                    per FNA Q31 total premium + interest = {formatMoney(cmb.calculatedAmountUSD, 'USD')} {sign} our calculation {formatMoney(cmb.thresholdUSD, 'USD')} ({formatMoney(cmb.annualPremiumUSD, 'USD')} (illustration premium amount) + {formatMoney(cmb.projectedInterestUSD, 'USD')} (IFS-PF)) according to the loan information in IFS-PF {'->'} {resultText}
 	                                                </div>
 	                                            );
 	                                        }
