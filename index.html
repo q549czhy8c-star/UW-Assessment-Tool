@@ -3380,7 +3380,10 @@ const HK_HOLIDAYS_2025_2026 = [
                             const hasApplying = s.policies.some(p => (p.status || '') === 'Applying');
                             let safePolicies = hasApplying ? s.policies : [{ ...(s.policies[0] || {}), status: 'Applying' }, ...s.policies.slice(1)];
                             // [UPDATE v2.8] Ensure each policy has a payType property (default Regular)
-                            safePolicies = safePolicies.map(p => ({ ...p, payType: p.payType || 'Regular' }));
+	                            safePolicies = safePolicies.map(p => {
+	                                const payType = p.payType || 'Regular';
+	                                return { ...p, payType, term: payType === 'Single' ? 1 : p.term };
+	                            });
                             setPolicies(safePolicies);
                         }
                     }
@@ -3433,16 +3436,21 @@ const HK_HOLIDAYS_2025_2026 = [
                 () => (policies || []).some(p => (p.payType || '') === 'Single'),
                 [policies]
             );
+            const hasRegularPayPolicy = useMemo(
+                () => (policies || []).some(p => (p.payType || 'Regular') !== 'Single'),
+                [policies]
+            );
+            const isSinglePayOnly = hasSinglePayPolicy && !hasRegularPayPolicy;
             const handleCalcModeChange = (mode) => {
-                if (hasSinglePayPolicy && mode !== 'asset') return;
+                if (isSinglePayOnly && mode !== 'asset') return;
                 setCalcMode(mode);
             };
             useEffect(() => {
-                if (!hasSinglePayPolicy) return;
+                if (!isSinglePayOnly) return;
                 if (calcMode !== 'asset') setCalcMode('asset');
                 if (allowRetirementIncomeCover) setAllowRetirementIncomeCover(false);
                 if (allowIncomeSurplusAssetAccumulation) setAllowIncomeSurplusAssetAccumulation(false);
-            }, [hasSinglePayPolicy, calcMode, allowRetirementIncomeCover, allowIncomeSurplusAssetAccumulation]);
+            }, [isSinglePayOnly, calcMode, allowRetirementIncomeCover, allowIncomeSurplusAssetAccumulation]);
             const recommendedCalcMode = useMemo(() => {
                 const sofList = Array.isArray(sofSelections) ? sofSelections : [];
                 const sowList = Array.isArray(sowSelections) ? sowSelections : [];
@@ -3456,24 +3464,36 @@ const HK_HOLIDAYS_2025_2026 = [
                 return null;
             }, [sofSelections, sowSelections]);
             const approachMismatchWarning = useMemo(() => {
-                if (hasSinglePayPolicy && recommendedCalcMode && recommendedCalcMode !== 'asset') {
+                const sofList = Array.isArray(sofSelections) ? sofSelections : [];
+                const sowList = Array.isArray(sowSelections) ? sowSelections : [];
+                const hasAssetSource = sofList.some(opt => SOF_ASSET_APPROACH_OPTIONS.has(opt)) || sowList.some(opt => SOW_ASSET_APPROACH_OPTIONS.has(opt));
+                if (isSinglePayOnly && recommendedCalcMode && recommendedCalcMode !== 'asset') {
                     return 'Single Pay 必須使用「僅計算資產 (Asset)」。目前 SoF/SoW 選項建議使用收入或綜合計算，請覆核是否選錯 SoF/SoW option。';
+                }
+                if (hasSinglePayPolicy && (sofList.length > 0 || sowList.length > 0) && !hasAssetSource) {
+                    return '保單包含 Single Pay，單繳部分必須以資產計算；目前 SoF/SoW 未見資產來源，請覆核是否選錯 SoF/SoW option。';
                 }
                 if (!recommendedCalcMode || calcMode === recommendedCalcMode) return "";
                 const modeText = recommendedCalcMode === 'income' ? '僅計算收入 (Income)' : (recommendedCalcMode === 'asset' ? '僅計算資產 (Asset)' : '綜合計算 (Both)');
                 return `SoF/SoW 選項建議使用「${modeText}」，目前選擇與 SoF/SoW 不一致。`;
-            }, [recommendedCalcMode, calcMode, hasSinglePayPolicy]);
+            }, [recommendedCalcMode, calcMode, hasSinglePayPolicy, isSinglePayOnly, sofSelections, sowSelections]);
 
             const calculationResult = useMemo(() => {
                 const annualNetIncomeRaw = monthlyIncome * 12;
-                let effectiveIncome = annualNetIncomeRaw * (incomePercent / 100);
+                const rawEffectiveIncome = annualNetIncomeRaw * (incomePercent / 100);
+                const annualIncomeDeficitHKD = Math.max(0, -rawEffectiveIncome);
+                let effectiveIncome = Math.max(0, rawEffectiveIncome);
                 let effectiveAssets = liquidAsset * (assetPercent / 100);
 
                 // In asset-only mode, income is not considered
                 if (calcMode === 'asset') effectiveIncome = 0;
 
 	                // Sort policies by term descending (longer first)
-	                const sortedPolicies = [...policies].sort((a, b) => b.term - a.term);
+		                const sortedPolicies = [...policies].sort((a, b) => b.term - a.term);
+		                const negativeIncomeAssetDeductionYears = annualIncomeDeficitHKD > 0
+		                    ? sortedPolicies.reduce((max, p) => Math.max(max, Number(p.term) || 0), 0)
+		                    : 0;
+		                const negativeIncomeAssetDeductionHKD = annualIncomeDeficitHKD * negativeIncomeAssetDeductionYears;
 	                const annualRegularPremiumTotalHKD = sortedPolicies.reduce((sum, p) => {
 	                    if (p.payType === 'Single') return sum;
 	                    const premium = Number(p.premium) || 0;
@@ -3497,10 +3517,10 @@ const HK_HOLIDAYS_2025_2026 = [
 
                 const detailedResults = sortedPolicies.map((p, index) => {
                     const annualPremiumRaw = Number(p.premium);
-                    const term = Number(p.term);
-                    let premiumInHKD = p.currency === 'USD' ? annualPremiumRaw * USD_RATE : annualPremiumRaw;
-                    // Determine if this policy is treated as single pay based on selected pay type
-                    const isSinglePolicy = (p.payType === 'Single');
+	                    let premiumInHKD = p.currency === 'USD' ? annualPremiumRaw * USD_RATE : annualPremiumRaw;
+	                    // Determine if this policy is treated as single pay based on selected pay type
+	                    const isSinglePolicy = (p.payType === 'Single');
+	                    const term = isSinglePolicy ? 1 : Number(p.term);
 
                     if (isSinglePolicy) {
                         // For single pay, premium is paid once from assets; income is not used
@@ -3509,11 +3529,12 @@ const HK_HOLIDAYS_2025_2026 = [
                         const preRetireYears = 0;
                         const overhangYears = 0;
                         const totalAssetCover = premiumInHKD;
-                        totalRequiredHKD += totalAssetCover;
-                        // Do not reduce currentRemainingIncome
-                        return {
-                            ...p,
-                            calculatedSequence: index + 1,
+	                        totalRequiredHKD += totalAssetCover;
+	                        // Do not reduce currentRemainingIncome
+	                        return {
+	                            ...p,
+	                            term,
+	                            calculatedSequence: index + 1,
                             premiumInHKD,
                             shortfallAnnual,
                             overhangYears,
@@ -3565,7 +3586,9 @@ const HK_HOLIDAYS_2025_2026 = [
                     };
                 });
 
-                // Calculate projected interest for premium financing
+	                totalRequiredHKD += negativeIncomeAssetDeductionHKD;
+
+	                // Calculate projected interest for premium financing
                 let projectedInterest = 0;
                 if (isPremiumFinancing) {
                     const loan = Number(pfLoanAmount) || 0;
@@ -3626,10 +3649,13 @@ const HK_HOLIDAYS_2025_2026 = [
 		                    yearlyDisposableIncomeSurplus,
 		                    incomeSurplusAccumulationYears,
 		                    incomeSurplusAccumulationAvailable,
-		                    incomeSurplusAccumulationApplied,
-		                    assetShortfallBeforeAccumulation,
-		                    effectiveAssetsAfterAccumulation,
-		                    hasRetirementPremium: postRetireAnnualPremiumSum > 0,
+			                    incomeSurplusAccumulationApplied,
+			                    assetShortfallBeforeAccumulation,
+			                    effectiveAssetsAfterAccumulation,
+			                    annualIncomeDeficitHKD,
+			                    negativeIncomeAssetDeductionYears,
+			                    negativeIncomeAssetDeductionHKD,
+			                    hasRetirementPremium: postRetireAnnualPremiumSum > 0,
 	                    postRetireAnnualPremiumSum,
 	                    postRetireAssetRequiredSum,
 	                    retirementIncomeCoverPass: !allowRetirementIncomeCover || postRetireAssetRequiredSum === 0,
@@ -3657,7 +3683,12 @@ const HK_HOLIDAYS_2025_2026 = [
                 setPolicies(policies.filter(p => p.id !== id));
             };
             const updatePolicy = (id, field, value) => {
-                setPolicies(policies.map(p => p.id === id ? { ...p, [field]: value } : p));
+                setPolicies(policies.map(p => {
+                    if (p.id !== id) return p;
+                    const next = { ...p, [field]: value };
+                    if (field === 'payType' && value === 'Single') next.term = 1;
+                    return next;
+                }));
             };
 
             const handleCopyFromPolicy = () => {
@@ -3697,13 +3728,12 @@ const HK_HOLIDAYS_2025_2026 = [
                         }
                         copiedPremium = copiedPremium * factor;
 	                        // Determine payType based on payMode; Prepay is treated as Regular Pay (not Single)
-	                        const copiedPayType = (data.payMode === 'Single') ? 'Single' : 'Regular';
-	                        if (copiedPayType === 'Single') setCalcMode('asset');
-	                        newPolicies[applyingPolicyIndex] = {
-                            ...newPolicies[applyingPolicyIndex],
-                            premium: copiedPremium,
-                            term: data.term ? Number(data.term) : newPolicies[applyingPolicyIndex].term,
-                            currency: data.currency ? data.currency : newPolicies[applyingPolicyIndex].currency,
+		                        const copiedPayType = (data.payMode === 'Single') ? 'Single' : 'Regular';
+		                        newPolicies[applyingPolicyIndex] = {
+	                            ...newPolicies[applyingPolicyIndex],
+	                            premium: copiedPremium,
+	                            term: copiedPayType === 'Single' ? 1 : (data.term ? Number(data.term) : newPolicies[applyingPolicyIndex].term),
+	                            currency: data.currency ? data.currency : newPolicies[applyingPolicyIndex].currency,
                             // [UPDATE v2.8] set payType when copying from policy info
                             payType: copiedPayType
                         };
@@ -3720,15 +3750,14 @@ const HK_HOLIDAYS_2025_2026 = [
                         }
                         annPrem = annPrem * factor2;
 	                        // Determine payType for the new policy; Prepay maps to Regular Pay
-	                        const newPayType = (data.payMode === 'Single') ? 'Single' : 'Regular';
-	                        if (newPayType === 'Single') setCalcMode('asset');
-	                        setPolicies([...policies, {
+		                        const newPayType = (data.payMode === 'Single') ? 'Single' : 'Regular';
+		                        setPolicies([...policies, {
                             id: newId,
                             name: 'Current Application',
                             status: 'Applying',
                             premium: annPrem,
                             currency: data.currency ? data.currency : 'USD',
-                            term: data.term ? Number(data.term) : 1,
+	                            term: newPayType === 'Single' ? 1 : (data.term ? Number(data.term) : 1),
                             payType: newPayType
                         }]);
                     }
@@ -3809,8 +3838,8 @@ const HK_HOLIDAYS_2025_2026 = [
                         <div className="mb-4 flex justify-between items-center">
 	                            <div className="flex-1 flex justify-center">
 	                                <div className="inline-flex bg-slate-100 p-1 rounded-lg border border-slate-200">
-	                                    <button disabled={hasSinglePayPolicy} onClick={() => handleCalcModeChange('both')} className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all disabled:opacity-40 disabled:cursor-not-allowed ${calcMode === 'both' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>綜合計算 (Both)</button>
-	                                    <button disabled={hasSinglePayPolicy} onClick={() => handleCalcModeChange('income')} className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all disabled:opacity-40 disabled:cursor-not-allowed ${calcMode === 'income' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>僅計算收入 (Income)</button>
+		                                    <button disabled={isSinglePayOnly} onClick={() => handleCalcModeChange('both')} className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all disabled:opacity-40 disabled:cursor-not-allowed ${calcMode === 'both' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>綜合計算 (Both)</button>
+		                                    <button disabled={isSinglePayOnly} onClick={() => handleCalcModeChange('income')} className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all disabled:opacity-40 disabled:cursor-not-allowed ${calcMode === 'income' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>僅計算收入 (Income)</button>
 	                                    <button onClick={() => handleCalcModeChange('asset')} className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${calcMode === 'asset' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>僅計算資產 (Asset)</button>
 	                                </div>
 	                            </div>
@@ -3831,11 +3860,13 @@ const HK_HOLIDAYS_2025_2026 = [
 	                                ⚠️ {approachMismatchWarning}
 	                            </div>
 	                        )}
-	                        {hasSinglePayPolicy && (
-	                            <div className="mb-3 rounded border border-blue-200 bg-blue-50 text-blue-800 px-3 py-2 text-xs font-bold">
-	                                Single Pay uses Asset approach only. Both and Income approach are disabled.
-	                            </div>
-	                        )}
+		                        {hasSinglePayPolicy && (
+		                            <div className="mb-3 rounded border border-blue-200 bg-blue-50 text-blue-800 px-3 py-2 text-xs font-bold">
+		                                {isSinglePayOnly
+		                                    ? 'Single Pay uses Asset approach only. Both and Income approach are disabled.'
+		                                    : 'Mixed payment modes: Regular Pay follows the selected approach; Single Pay is assessed by assets only.'}
+		                            </div>
+		                        )}
 
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-2">
                             <div>
@@ -3876,7 +3907,7 @@ const HK_HOLIDAYS_2025_2026 = [
                                 {calcMode === 'income' && <div className="text-[9px] text-blue-500 mt-1 font-bold">* 僅用於退休後年期支付</div>}
 	                            </div>
 	                        </div>
-			                        {!hasSinglePayPolicy && calculationResult.hasRetirementPremium && (
+				                        {hasRegularPayPolicy && calculationResult.hasRetirementPremium && (
 		                            <div className="mt-2 rounded border border-blue-100 bg-blue-50 px-3 py-2">
 	                                <label className="flex items-start gap-2 text-xs text-blue-900">
 	                                    <input
@@ -3892,7 +3923,7 @@ const HK_HOLIDAYS_2025_2026 = [
 	                                </label>
 		                            </div>
 		                        )}
-		                        {!hasSinglePayPolicy && calculationResult.assetShortfallBeforeAccumulation > 0 && (
+			                        {hasRegularPayPolicy && calculationResult.assetShortfallBeforeAccumulation > 0 && (
 	                            <div className="mt-2 rounded border border-emerald-100 bg-emerald-50 px-3 py-2">
 	                                <label className="flex items-start gap-2 text-xs text-emerald-900">
 	                                    <input
@@ -4033,7 +4064,7 @@ const HK_HOLIDAYS_2025_2026 = [
                                                     </td>
                                                     <td className="p-2 text-center border-r font-mono font-bold text-slate-700">{res.term}</td>
 	                                                    <td className="p-2 text-right border-r font-mono bg-orange-50/50 text-orange-700">
-	                                                        {hasSinglePayPolicy || calcMode === 'asset' ? 'N/A' : formatMoney(res.shortfallAnnual)}
+		                                                        {res.payType === 'Single' || calcMode === 'asset' ? 'N/A' : formatMoney(res.shortfallAnnual)}
 	                                                    </td>
                                                     <td className="p-2 text-center border-r font-mono bg-blue-50/50 text-blue-700">
                                                         {res.overhangYears}
@@ -4060,13 +4091,22 @@ const HK_HOLIDAYS_2025_2026 = [
 
                                         <div className="h-px bg-slate-100 my-1"></div>
 
-                                        <div className="flex justify-between items-center text-sm">
-                                            <span className="text-slate-500">
-                                                {calcMode === 'income' ? '收入/資產不足總額 (Total Shortfall):' : '資產負擔總需求 (Asset Required):'}
-                                            </span>
-                                            <span className="font-bold text-lg">{formatMoney(calculationResult.totalRequiredHKD)}</span>
-                                        </div>
-                                        {/* When premium financing is used, display the projected interest separately */}
+	                                        <div className="flex justify-between items-center text-sm">
+	                                            <span className="text-slate-500">
+	                                                {calcMode === 'income' ? '收入/資產不足總額 (Total Shortfall):' : '資產負擔總需求 (Asset Required):'}
+	                                            </span>
+	                                            <span className="font-bold text-lg">{formatMoney(calculationResult.totalRequiredHKD)}</span>
+	                                        </div>
+	                                        {calculationResult.negativeIncomeAssetDeductionHKD > 0 && (
+	                                            <div className="flex justify-between items-start gap-3 text-xs rounded border border-orange-100 bg-orange-50 px-2 py-1.5">
+	                                                <span className="text-orange-700">
+	                                                    Negative disposable income deducted from assets:
+	                                                    <span className="block text-[10px]">Annual deficit {formatMoney(calculationResult.annualIncomeDeficitHKD)} × {calculationResult.negativeIncomeAssetDeductionYears} year(s)</span>
+	                                                </span>
+	                                                <span className="font-bold text-orange-800">{formatMoney(calculationResult.negativeIncomeAssetDeductionHKD)}</span>
+	                                            </div>
+	                                        )}
+	                                        {/* When premium financing is used, display the projected interest separately */}
                                         {calcMode !== 'income' && calculationResult.projectedInterest > 0 && (
                                             <div className="flex justify-between items-center text-sm">
                                                 <span className="text-slate-500">預計總利息 (Projected Interest):</span>
@@ -4078,7 +4118,7 @@ const HK_HOLIDAYS_2025_2026 = [
 	                                            <span className="text-slate-500">有效淨流動資產 (Effective Net Assets):</span>
 	                                            <span className="font-bold text-lg text-green-600">{formatMoney(calculationResult.effectiveAssets)}</span>
 	                                        </div>
-		                                        {!hasSinglePayPolicy && allowIncomeSurplusAssetAccumulation && (
+			                                        {hasRegularPayPolicy && allowIncomeSurplusAssetAccumulation && (
 	                                            <div className="rounded border border-emerald-100 bg-emerald-50 p-2 space-y-1 text-xs">
 	                                                <div className="flex justify-between gap-3">
 	                                                    <span className="text-emerald-700">Annual disposable income surplus:</span>
@@ -4904,6 +4944,7 @@ ${hnwFinancially || ''}`;
                 setProdType(product ? product.type : "");
                 if (name === 'Emerald' || name === 'PrimeAchiever') {
                     setPayMode('Single');
+                    setYearTerm('1');
                 }
                 if (name === 'PrimeAchiever') {
                     setPaymentMethod('Bank Deposit');
@@ -5997,7 +6038,11 @@ ${hnwFinancially || ''}`;
                                         <div className="grid grid-cols-2 gap-3">
                                             <div>
                                                 <label className="text-xs font-bold text-slate-500">繳費模式</label>
-                                                <select value={payMode} onChange={(e) =>setPayMode(e.target.value)} className="w-full border rounded p-1.5 text-sm">
+                                                <select value={payMode} onChange={(e) => {
+                                                    const value = e.target.value;
+                                                    setPayMode(value);
+                                                    if (value === 'Single') setYearTerm('1');
+                                                }} className="w-full border rounded p-1.5 text-sm">
                                                     <option value="Annual">年繳</option>
                                                     <option value="Semi">半年繳</option>
                                                     <option value="Quarterly">季繳</option>
@@ -7097,12 +7142,15 @@ const showMed = (isPHNotSame && !isLifeOrCI)
                             lines.push(`   Total Premiums: ${formatMoney(totalPremHKD, 'HKD')}`);
                         }
 	                        if (!isSinglePayAssetOnly) lines.push(`   Income used for each year prior to retirement: ${formatMoney(incomeUsed)}`);
-                        if (!affordData.isPremiumFinancing && assetSupportRequiredHKD > 0 && !isRetirementOnlyAssetSupport) {
-                            lines.push(`   Total premiums (need to be supported by net asset): ${formatMoney(assetSupportRequiredHKD)}`);
-                        }
-                        if (isRetirementAssetInsufficient || isRetirementOnlyAssetSupport) {
-	                            lines.push(`   Total premiums is required (need to be supported by net asset) after retirement: ${formatMoney(postRetAssetRequiredHKD)}`);
-	                        }
+		                        if (!affordData.isPremiumFinancing && assetSupportRequiredHKD > 0 && !isRetirementOnlyAssetSupport) {
+		                            lines.push(`   Total premiums (need to be supported by net asset): ${formatMoney(assetSupportRequiredHKD)}`);
+		                        }
+		                        if (res.negativeIncomeAssetDeductionHKD > 0) {
+		                            lines.push(`   Negative disposable income deducted from assets: ${formatMoney(res.annualIncomeDeficitHKD)} x ${res.negativeIncomeAssetDeductionYears} year(s) = ${formatMoney(res.negativeIncomeAssetDeductionHKD)}`);
+		                        }
+		                        if (isRetirementAssetInsufficient || isRetirementOnlyAssetSupport) {
+			                            lines.push(`   Total premiums is required (need to be supported by net asset) after retirement: ${formatMoney(postRetAssetRequiredHKD)}`);
+			                        }
 		                        if (!isSinglePayAssetOnly && affordData.allowRetirementIncomeCover && hasOverhang) {
 		                            lines.push(`   Considering client has other income (such as retirement fund, rental income) which is ${res.retirementIncomeCoverPass ? 'sufficient' : 'insufficient'} to cover the premium after retirement, affordability ${res.isPass ? 'pass' : 'failed'}.`);
 		                        }
@@ -7879,12 +7927,15 @@ const shouldShowMed = () => {
                                             }
                                         }
 	                                        if (!isSinglePayAssetOnly) lines.push(<div key="fna2" className="pl-4">Income used for each year prior to retirement: {formatMoney(incomeUsed)}</div>);
-                                        if (!affordData.isPremiumFinancing && assetSupportRequiredHKD > 0 && !isRetirementOnlyAssetSupport) {
-                                            lines.push(<div key="fna2b" className="pl-4">Total premiums (need to be supported by net asset): {formatMoney(assetSupportRequiredHKD)}</div>);
-                                        }
-                                        if (isRetirementAssetInsufficient || isRetirementOnlyAssetSupport) {
-	                                            lines.push(<div key="fna2c" className="pl-4">Total premiums is required (need to be supported by net asset) after retirement: {formatMoney(postRetAssetRequiredHKD)}</div>);
+	                                        if (!affordData.isPremiumFinancing && assetSupportRequiredHKD > 0 && !isRetirementOnlyAssetSupport) {
+	                                            lines.push(<div key="fna2b" className="pl-4">Total premiums (need to be supported by net asset): {formatMoney(assetSupportRequiredHKD)}</div>);
 	                                        }
+	                                        if (res.negativeIncomeAssetDeductionHKD > 0) {
+	                                            lines.push(<div key="fna2bNegativeIncome" className="pl-4">Negative disposable income deducted from assets: {formatMoney(res.annualIncomeDeficitHKD)} x {res.negativeIncomeAssetDeductionYears} year(s) = {formatMoney(res.negativeIncomeAssetDeductionHKD)}</div>);
+	                                        }
+	                                        if (isRetirementAssetInsufficient || isRetirementOnlyAssetSupport) {
+		                                            lines.push(<div key="fna2c" className="pl-4">Total premiums is required (need to be supported by net asset) after retirement: {formatMoney(postRetAssetRequiredHKD)}</div>);
+		                                        }
 		                                        if (!isSinglePayAssetOnly && affordData.allowRetirementIncomeCover && hasOverhang) {
 		                                            lines.push(<div key="fna2d" className="pl-4">Considering client has other income (such as retirement fund, rental income) which is {res.retirementIncomeCoverPass ? 'sufficient' : 'insufficient'} to cover the premium after retirement, affordability {res.isPass ? 'pass' : 'failed'}.</div>);
 		                                        }
