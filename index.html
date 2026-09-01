@@ -4308,6 +4308,9 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
             const [pdfAmount, setPdfAmount] = useState('');
             const [trustBeneficiaries, setTrustBeneficiaries] = useState([{ name: '', relationType: 'Self', relationDetail: '', percent: '' }]);
             const [unpaidPremium, setUnpaidPremium] = useState(false);
+            const [oldAgeCampaignAcknowledged, setOldAgeCampaignAcknowledged] = useState(false);
+            const [applyPolicyContinuation, setApplyPolicyContinuation] = useState(false);
+            const [designatedBeneficiaryDob, setDesignatedBeneficiaryDob] = useState("");
 
             // Commission Spreading (Professional Investor - PI)
             const [commissionSpreading, setCommissionSpreading] = useState(false);
@@ -4399,6 +4402,9 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                         if (s.isDateBack !== undefined) setIsDateBack(!!s.isDateBack);
                         if (s.isSamePerson !== undefined) setIsSamePerson(!!s.isSamePerson);
                         if (s.businessInsuranceEnabled !== undefined) setBusinessInsuranceEnabled(!!s.businessInsuranceEnabled);
+                        if (s.oldAgeCampaignAcknowledged !== undefined) setOldAgeCampaignAcknowledged(!!s.oldAgeCampaignAcknowledged);
+                        if (s.applyPolicyContinuation !== undefined) setApplyPolicyContinuation(!!s.applyPolicyContinuation);
+                        if (s.designatedBeneficiaryDob !== undefined) setDesignatedBeneficiaryDob(s.designatedBeneficiaryDob);
 
                         // Dates
                         if (s.proposalDate !== undefined) setProposalDate(s.proposalDate);
@@ -4549,6 +4555,12 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                         isSamePerson,
                         businessInsuranceEnabled,
                         psReinstatementEnabled,
+                        oldAgeCampaignAcknowledged,
+                        applyPolicyContinuation,
+                        designatedBeneficiaryDob,
+                        designatedBeneficiaryAge,
+                        oldAgeCampaignEligible,
+                        oldAgeCampaignPass,
                         proposalDate,
                         signingDate,
                         applicationSigningDate,
@@ -4665,7 +4677,7 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                     console.error('Failed to persist Policy Input full state', err);
                 }
             }, [
-                appType, trustReasonCompany, trustDeclaration, niceActimize, addressProofType, height, weight, phHeight, phWeight, isDateBack, isSamePerson, businessInsuranceEnabled, psReinstatementEnabled,
+                appType, trustReasonCompany, trustDeclaration, niceActimize, addressProofType, height, weight, phHeight, phWeight, isDateBack, isSamePerson, businessInsuranceEnabled, psReinstatementEnabled, oldAgeCampaignAcknowledged, applyPolicyContinuation, designatedBeneficiaryDob, designatedBeneficiaryAge, oldAgeCampaignEligible, oldAgeCampaignPass,
                 isEverestBroker, requiredSendToAFC,
                 proposalDate, signingDate, applicationSigningDate, fnaSigningDate,
                 phDob, phGender, phSmoker, phResidency, phOtherCountry, phArrivalDate, phExpiryDate, phIfsDate,
@@ -4750,6 +4762,41 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
             // - If Policyholder = Insured: insuredAgeForCalc == phAge
             // - If Policyholder != Insured: insuredAgeForCalc == insAge (derived from Insured DOB)
             const insuredAgeForCalc = isSamePerson ? phAge : insAge;
+
+            const oldAgeCampaignEligibility = useMemo(() => {
+                const age = Number(insuredAgeForCalc);
+                if (!planName || !Number.isFinite(age)) return { eligible: false, reason: "" };
+                const term = Number(yearTerm) || 0;
+                const normalizedPlan = String(planName).trim().toLowerCase();
+                if (normalizedPlan === 'liontycoon beyond 2') {
+                    if (term === 2) return { eligible: age >= 66, reason: 'LionTycoon Beyond 2 - 2 pay: insured age 66 or above' };
+                    if ([5, 8, 10].includes(term)) return { eligible: age >= 61, reason: 'LionTycoon Beyond 2 - 5/8/10 pay: insured age 61 or above' };
+                    return { eligible: false, reason: "" };
+                }
+                if (normalizedPlan === 'lionachiever elite') return { eligible: age >= 61, reason: 'LionAchiever Elite: insured age 61 or above' };
+                if (normalizedPlan === 'emerald' || normalizedPlan === 'emerald savings insurance plan') return { eligible: age >= 66, reason: 'Emerald Savings Insurance Plan: insured age 66 or above' };
+                if (normalizedPlan === 'pearl' || normalizedPlan === 'pearl savings insurance plan') return { eligible: age >= 66, reason: 'Pearl Savings Insurance Plan: insured age 66 or above' };
+                if (normalizedPlan === 'primeachiever' || normalizedPlan === 'prime achiever insurance plan') return { eligible: age >= 60, reason: 'Prime Achiever Insurance Plan: insured age 60 or above' };
+                return { eligible: false, reason: "" };
+            }, [planName, insuredAgeForCalc, yearTerm]);
+
+            const oldAgeCampaignEligible = oldAgeCampaignEligibility.eligible;
+            const designatedBeneficiaryAge = useMemo(() => {
+                const refDateStr = proposalDate || new Date().toISOString().split('T')[0];
+                return calculateAge(designatedBeneficiaryDob, refDateStr);
+            }, [designatedBeneficiaryDob, proposalDate]);
+            const oldAgeCampaignPass = oldAgeCampaignAcknowledged && oldAgeCampaignEligible && applyPolicyContinuation && designatedBeneficiaryAge !== "" && Number(designatedBeneficiaryAge) < 60;
+
+            useEffect(() => {
+                if (!policyHydrated) return;
+                if (!oldAgeCampaignEligible) {
+                    if (oldAgeCampaignAcknowledged) setOldAgeCampaignAcknowledged(false);
+                    return;
+                }
+                if (oldAgeCampaignAcknowledged) return;
+                window.alert('Old age commission campaign check');
+                setOldAgeCampaignAcknowledged(true);
+            }, [policyHydrated, oldAgeCampaignEligible, oldAgeCampaignAcknowledged]);
 
             const investmentPeriodDisplay = useMemo(() => {
                 const phAgeNum = Number(phAge);
@@ -5574,6 +5621,13 @@ ${hnwFinancially || ''}`;
                         addressProofType: addressProofType || null,
                         isSamePerson,
                         businessInsuranceEnabled,
+                        oldAgeCampaignAcknowledged,
+                        applyPolicyContinuation,
+                        designatedBeneficiaryDob,
+                        designatedBeneficiaryAge,
+                        oldAgeCampaignEligible,
+                        oldAgeCampaignPass,
+                        oldAgeCampaignReason: oldAgeCampaignEligibility.reason,
                         phAge, phGender, phSmoker, phDob,
                         insAge, insGender, insSmoker, insDob,
                         planName, planRiders, sumAssured, curr, prodType, otherInsurances,
@@ -5637,7 +5691,7 @@ ${hnwFinancially || ''}`;
             }, [policyHydrated, phArrivalDate, fnaSigningDate, proposalDate, applicationSigningDate, signingDate, addressProofType, isSamePerson, phAge, phGender, phSmoker, phDob, insAge, insGender, insSmoker, insDob, planName, planRiders, sumAssured, curr, prodType, otherInsurances, height, weight, phHeight, phWeight, medicalReq, financialReq, returnCheck, monthlyIncome, occupationStatus, position, employer, location, lifeCiEmployerToggle, bizNature, sofWealthSupplementType, premAmount, payMode, yearTerm, paymentDate, paymentCurrency, paymentAmount, paymentPayor, paymentMethod,
                 // Commission Spreading (Professional Investor - PI)
                 commissionSpreading, piInvestorType, piScenarioKey,
-                isDateBack, birthdayAlert, appType, businessInsuranceEnabled, trustDeclaration, niceActimize, pdfAmount, phResidency, phOtherCountry, reasonPurchaseHK, unpaidPremium, trustBeneficiaries, noFna, isSendToAFCChecked, fnaCurrentSavingRate,
+                isDateBack, birthdayAlert, appType, businessInsuranceEnabled, oldAgeCampaignAcknowledged, applyPolicyContinuation, designatedBeneficiaryDob, designatedBeneficiaryAge, oldAgeCampaignEligible, oldAgeCampaignPass, oldAgeCampaignEligibility, trustDeclaration, niceActimize, pdfAmount, phResidency, phOtherCountry, reasonPurchaseHK, unpaidPremium, trustBeneficiaries, noFna, isSendToAFCChecked, fnaCurrentSavingRate,
                 showFinancialQuestionnaire, fqPurposeOfInsurance, fqSourceOfPremium, fqEarnedIncome, fqUnearnedIncome, fqAssets, fqLiabilities,
                 // Premium Financing dependencies
                 isPremiumFinancing, pfLoanAmount, pfLoanCurrency, pfLoanRate, pfLoanTenor, pfRepaymentAmount, pfIfsProvided, pfCustomerAuthorizationProvided, pfBank, cmbFnaQ16, cmbFnaQ28, cmbFnaQ29, cmbFnaCheck]);
@@ -5660,6 +5714,7 @@ ${hnwFinancially || ''}`;
                 setPaymentDate(""); setPaymentCurrency("HKD"); setPaymentAmount(""); setPaymentPayor("Policyholder"); setPaymentMethod("Bank Transfer");
                 setTrustBeneficiaries([{ name: '', relationType: 'Self', relationDetail: '', percent: '' }]);
                 setUnpaidPremium(false); setReasonPurchaseHK('');
+                setOldAgeCampaignAcknowledged(false); setApplyPolicyContinuation(false); setDesignatedBeneficiaryDob('');
                 // Reset Commission Spreading (PI)
                 setCommissionSpreading(false);
                 setPiInvestorType('');
@@ -5934,19 +5989,52 @@ ${hnwFinancially || ''}`;
                                                     </select>
                                                 </div>
                                             )}
-                                            {phResidency !== 'HK' && (
-                                                <div className="bg-yellow-50 p-2 rounded border border-yellow-200 mt-2">
-                                                    <label className="text-[10px] text-yellow-700 font-bold block mb-1">Reason of purchase insurance in HK</label>
-                                                    <select value={reasonPurchaseHK} onChange={(e) => setReasonPurchaseHK(e.target.value)} className="w-full border rounded p-1 text-sm bg-white">
+	                                            {phResidency !== 'HK' && (
+	                                                <div className="bg-yellow-50 p-2 rounded border border-yellow-200 mt-2">
+	                                                    <label className="text-[10px] text-yellow-700 font-bold block mb-1">Reason of purchase insurance in HK</label>
+	                                                    <select value={reasonPurchaseHK} onChange={(e) => setReasonPurchaseHK(e.target.value)} className="w-full border rounded p-1 text-sm bg-white">
                                                         <option value="">請選擇</option>
                                                         <option value="Provided">Provided</option>
                                                         <option value="NOT provided">NOT provided</option>
                                                     </select>
-                                                </div>
-                                            )}
-                                        </div>
-                                        {phResidency === 'CN' && (
-                                            <div className="bg-orange-50 p-2 rounded border border-orange-200">
+	                                                </div>
+	                                            )}
+	                                        </div>
+	                                        {oldAgeCampaignAcknowledged && oldAgeCampaignEligible && (
+	                                            <div className="rounded border border-indigo-200 bg-indigo-50 p-3 space-y-3">
+	                                                <div className="flex items-start gap-2">
+	                                                    <Info size={14} className="text-indigo-600 mt-0.5"/>
+	                                                    <div>
+	                                                        <div className="text-xs font-bold text-indigo-800">Old age commission campaign check</div>
+	                                                        <div className="text-[10px] text-indigo-700">{oldAgeCampaignEligibility.reason}</div>
+	                                                    </div>
+	                                                </div>
+	                                                <label className="flex items-center gap-2 text-xs font-bold text-indigo-900">
+	                                                    <input type="checkbox" checked={applyPolicyContinuation} onChange={(e) => setApplyPolicyContinuation(e.target.checked)} className="rounded text-indigo-600"/>
+	                                                    Apply Policy Continuation?
+	                                                </label>
+	                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+	                                                    <div>
+	                                                        <label className="text-[10px] text-indigo-700 font-bold">Designated Beneficiary DOB</label>
+	                                                        <input type="date" value={designatedBeneficiaryDob} onChange={(e) => setDesignatedBeneficiaryDob(e.target.value)} className="w-full border border-indigo-200 rounded p-1 text-sm"/>
+	                                                    </div>
+	                                                    <div className="rounded bg-white border border-indigo-100 p-2 text-xs">
+	                                                        <div className="text-[10px] text-slate-500 font-bold">Designated Beneficiary Age</div>
+	                                                        <div className="font-bold text-slate-800">{designatedBeneficiaryAge === "" ? '-' : `${designatedBeneficiaryAge} 歲`}</div>
+	                                                        <div className={`mt-1 font-bold ${designatedBeneficiaryAge !== "" && Number(designatedBeneficiaryAge) < 60 ? 'text-green-600' : 'text-red-600'}`}>
+	                                                            {designatedBeneficiaryAge === "" ? 'Pending DOB' : (Number(designatedBeneficiaryAge) < 60 ? 'Below 60 - OK' : 'Age 60 or above')}
+	                                                        </div>
+	                                                    </div>
+	                                                </div>
+	                                                <div className={`rounded border px-2 py-1.5 text-xs font-bold ${oldAgeCampaignPass ? 'bg-green-50 border-green-200 text-green-700' : 'bg-orange-50 border-orange-200 text-orange-700'}`}>
+	                                                    {oldAgeCampaignPass
+	                                                        ? 'PASS - Incentive code: AGEADJ26 for B2B2C; BKOLDAGE for broker'
+	                                                        : 'To pass: Apply Policy Continuation must be ticked and designated beneficiary age must be below 60.'}
+	                                                </div>
+	                                            </div>
+	                                        )}
+	                                        {phResidency === 'CN' && (
+	                                            <div className="bg-orange-50 p-2 rounded border border-orange-200">
                                                 <label className="text-[10px] text-orange-700 font-bold">IFS-MP submission date</label>
                                                 <input type="date" value={phIfsDate} onChange={(e) =>setPhIfsDate(e.target.value)} className="w-full border rounded p-1 text-sm" />
                                             </div>
@@ -6967,6 +7055,13 @@ ${hnwFinancially || ''}`;
                 if (!policyData.isSamePerson) {
                     lines.push(`Policyholder Info: ${getPolicyholderInfo()}`);
                 }
+                if (policyData.oldAgeCampaignEligible && policyData.oldAgeCampaignAcknowledged) {
+                    lines.push(`Old age commission campaign check: ${policyData.oldAgeCampaignPass ? 'Pass' : 'Pending'}`);
+                    lines.push(`Apply Policy Continuation: ${policyData.applyPolicyContinuation ? 'Yes' : 'No'}`);
+                    lines.push(`Designated Beneficiary DOB: ${policyData.designatedBeneficiaryDob ? formatDateVerbose(policyData.designatedBeneficiaryDob) : 'N/A'}`);
+                    lines.push(`Designated Beneficiary Age: ${policyData.designatedBeneficiaryAge === "" || policyData.designatedBeneficiaryAge === undefined ? 'N/A' : `${policyData.designatedBeneficiaryAge} years old`}`);
+                    if (policyData.oldAgeCampaignPass) lines.push('Incentive code: AGEADJ26 for B2B2C; BKOLDAGE for broker');
+                }
 // [UPDATE v1.4] For specific plans, explicitly show Job Position & Monthly Income in Basic Information
 const plan = (policyData.planName || '').trim();
 const isJobMonthlyPlan = (plan === 'LionTycoon Beyond 2' || plan === 'LionHarvest Prime');
@@ -7763,9 +7858,18 @@ const shouldShowMed = () => {
                             </>
                         )}
                         <div><span className="font-bold">4. Insured:</span> {getInsuredInfo()}</div>
-{!policyData.isSamePerson && (
-    <div className="pl-4"><span className="font-bold">Policyholder:</span> {getPolicyholderInfo()}</div>
-)}
+	{!policyData.isSamePerson && (
+	    <div className="pl-4"><span className="font-bold">Policyholder:</span> {getPolicyholderInfo()}</div>
+	)}
+	{policyData.oldAgeCampaignEligible && policyData.oldAgeCampaignAcknowledged && (
+	    <div className="pl-4">
+	        <div><span className="font-bold">Old age commission campaign check:</span> {policyData.oldAgeCampaignPass ? 'Pass' : 'Pending'}</div>
+	        <div className="pl-4">Apply Policy Continuation: {policyData.applyPolicyContinuation ? 'Yes' : 'No'}</div>
+	        <div className="pl-4">Designated Beneficiary DOB: {policyData.designatedBeneficiaryDob ? formatDateVerbose(policyData.designatedBeneficiaryDob) : 'N/A'}</div>
+	        <div className="pl-4">Designated Beneficiary Age: {policyData.designatedBeneficiaryAge === "" || policyData.designatedBeneficiaryAge === undefined ? 'N/A' : `${policyData.designatedBeneficiaryAge} years old`}</div>
+	        {policyData.oldAgeCampaignPass && <div className="pl-4 text-green-700 font-bold">Incentive code: AGEADJ26 for B2B2C; BKOLDAGE for broker</div>}
+	    </div>
+	)}
 {/* If Trust application and reasonPurchaseHK was not displayed above, show declaration here */}
 {policyData.appType === 'Trust' && !(policyData.phResidency && policyData.phResidency !== 'HK' && policyData.reasonPurchaseHK) && (
     <div className="pl-4"><span className="font-bold">Declaration for Trust:</span> {policyData.trustDeclaration || ''}</div>
