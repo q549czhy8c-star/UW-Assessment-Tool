@@ -4558,9 +4558,6 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                         oldAgeCampaignAcknowledged,
                         applyPolicyContinuation,
                         designatedBeneficiaryDob,
-                        designatedBeneficiaryAge,
-                        oldAgeCampaignEligible,
-                        oldAgeCampaignPass,
                         proposalDate,
                         signingDate,
                         applicationSigningDate,
@@ -4677,7 +4674,7 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                     console.error('Failed to persist Policy Input full state', err);
                 }
             }, [
-                appType, trustReasonCompany, trustDeclaration, niceActimize, addressProofType, height, weight, phHeight, phWeight, isDateBack, isSamePerson, businessInsuranceEnabled, psReinstatementEnabled, oldAgeCampaignAcknowledged, applyPolicyContinuation, designatedBeneficiaryDob, designatedBeneficiaryAge, oldAgeCampaignEligible, oldAgeCampaignPass,
+                appType, trustReasonCompany, trustDeclaration, niceActimize, addressProofType, height, weight, phHeight, phWeight, isDateBack, isSamePerson, businessInsuranceEnabled, psReinstatementEnabled, oldAgeCampaignAcknowledged, applyPolicyContinuation, designatedBeneficiaryDob,
                 isEverestBroker, requiredSendToAFC,
                 proposalDate, signingDate, applicationSigningDate, fnaSigningDate,
                 phDob, phGender, phSmoker, phResidency, phOtherCountry, phArrivalDate, phExpiryDate, phIfsDate,
