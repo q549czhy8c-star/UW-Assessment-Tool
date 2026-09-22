@@ -5254,27 +5254,33 @@ ${hnwFinancially || ''}`;
 
             const birthdayAlert = useMemo(() => {
                 if (prodType !== 'GIO' && prodType !== 'Annuity') return null;
-                const hasCompleteProposalDate = /^\d{4}-\d{2}-\d{2}$/.test(String(proposalDate || ''));
-                if (!hasCompleteProposalDate) return null;
-
                 const dobStr = isSamePerson ? phDob : insDob;
                 if (!dobStr) return null;
 
-                const refDate = new Date(proposalDate);
-                if (Number.isNaN(refDate.getTime())) return null;
                 const currentDate = new Date();
+                currentDate.setHours(0, 0, 0, 0);
+                const hasCompleteProposalDate = /^\d{4}-\d{2}-\d{2}$/.test(String(proposalDate || ''));
+                const proposalPrintDate = hasCompleteProposalDate ? new Date(proposalDate) : null;
+                if (proposalPrintDate) proposalPrintDate.setHours(0, 0, 0, 0);
                 const dob = new Date(dobStr);
-                let thisYearBirthday = new Date(refDate.getFullYear(), dob.getMonth(), dob.getDate());
-                let nextBirthday = new Date(refDate.getFullYear(), dob.getMonth(), dob.getDate());
-                if (nextBirthday < refDate) {
-                    nextBirthday.setFullYear(refDate.getFullYear() + 1);
+                let nextBirthday = new Date(currentDate.getFullYear(), dob.getMonth(), dob.getDate());
+                if (nextBirthday < currentDate) {
+                    nextBirthday.setFullYear(currentDate.getFullYear() + 1);
                 }
 
-                const diffTime = nextBirthday - refDate;
+                const diffTime = nextBirthday - currentDate;
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                const withinThreeMonths = diffDays <= 93;
-                const birthdayPassedAfterPrintBeforeCurrent =
-                    thisYearBirthday > refDate && thisYearBirthday < currentDate;
+                const withinThreeMonths = diffDays >= 0 && diffDays <= 93;
+                let birthdayPassedAfterPrintBeforeCurrent = false;
+                if (proposalPrintDate && !Number.isNaN(proposalPrintDate.getTime()) && proposalPrintDate < currentDate) {
+                    for (let year = proposalPrintDate.getFullYear(); year <= currentDate.getFullYear(); year++) {
+                        const birthday = new Date(year, dob.getMonth(), dob.getDate());
+                        if (birthday > proposalPrintDate && birthday <= currentDate) {
+                            birthdayPassedAfterPrintBeforeCurrent = true;
+                            break;
+                        }
+                    }
+                }
 
                 if (withinThreeMonths || birthdayPassedAfterPrintBeforeCurrent) {
                     const warningText = birthdayPassedAfterPrintBeforeCurrent
