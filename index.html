@@ -4248,6 +4248,7 @@ const HK_HOLIDAYS_2025_2026 = [
             const [targetYear, setTargetYear] = useState("");
             const [surrenderValueUSD, setSurrenderValueUSD] = useState("");
             const [yearTerm, setYearTerm] = useState("");
+            const previousNonSingleYearTermRef = useRef("");
 
 // ====== FNA Suitability Mapping Inputs (Part 2 / Part 3) ======
 const [fnaP2Q1, setFnaP2Q1] = useState([]);   // multi-select (e.g., A, C, D, E(iii))
@@ -4987,6 +4988,9 @@ ${hnwFinancially || ''}`;
                 const product = PRODUCT_DB.find(p => p.name === name);
                 setProdType(product ? product.type : "");
                 if (name === 'Emerald' || name === 'PrimeAchiever') {
+                    if (payMode !== 'Single' && String(yearTerm || '').trim()) {
+                        previousNonSingleYearTermRef.current = yearTerm;
+                    }
                     setPayMode('Single');
                     setYearTerm('1');
                 }
@@ -5708,6 +5712,7 @@ ${hnwFinancially || ''}`;
                 setPlanName(""); setProdType(""); setSumAssured(""); setCurr("USD"); setPayMode("Annual"); setPremAmount("");
                 setOccupationStatus("Employed"); setEmployer(""); setLocation(""); setLifeCiEmployerToggle(false); setBizNature(""); setPosition(""); setMonthlyIncome(""); setSofWealthSupplementType("");
                 setTargetSavingHKD(""); setTargetYear(""); setSurrenderValueUSD(""); setYearTerm("");
+                previousNonSingleYearTermRef.current = "";
                 setFnaRetireAge(""); setFnaDisposableIncome(""); setFnaCurrentSavingRate(false); setFnaIncomePercent(100); setFnaLiquidAssets(""); setFnaAssetPercent(100); setFnaSof([]); setFnaSow([]); setCmbFnaQ16(""); setCmbFnaQ28(""); setCmbFnaQ29("");
                 setShowFinancialQuestionnaire(false); setFqPurposeOfInsurance([]); setFqSourceOfPremium([]);
                 setFqEarnedIncome({ salary: "", bonusesDividends: "", fringeBenefit: "", others: "" });
@@ -6119,7 +6124,11 @@ ${hnwFinancially || ''}`;
                                                 )}
                                                 <input type="date" value={proposalDate} onChange={(e) =>setProposalDate(e.target.value)} className="w-full border rounded p-1.5 text-sm"/>
                                             </div>
-                                            <div><label className="text-xs font-bold text-slate-500">年期</label><input type="number" value={yearTerm} onChange={(e) =>setYearTerm(e.target.value)} className="w-full border rounded p-1.5 text-sm"/></div>
+                                            <div><label className="text-xs font-bold text-slate-500">年期</label><input type="number" value={yearTerm} onChange={(e) => {
+                                                const value = e.target.value;
+                                                setYearTerm(value);
+                                                if (payMode !== 'Single') previousNonSingleYearTermRef.current = value;
+                                            }} className="w-full border rounded p-1.5 text-sm"/></div>
                                         </div>
                                         {prodType && <div className="bg-blue-50 px-3 py-2 rounded text-xs font-bold text-blue-700 flex justify-between"><span>產品類型: {prodType}</span>{selectedProductData?.multiplier && <span>(規則: 保額 x {selectedProductData.multiplier})</span>}</div>}
                                         <div className="grid grid-cols-2 gap-3">
@@ -6131,8 +6140,19 @@ ${hnwFinancially || ''}`;
                                                 <label className="text-xs font-bold text-slate-500">繳費模式</label>
                                                 <select value={payMode} onChange={(e) => {
                                                     const value = e.target.value;
+                                                    if (value === 'Single') {
+                                                        if (payMode !== 'Single' && String(yearTerm || '').trim()) {
+                                                            previousNonSingleYearTermRef.current = yearTerm;
+                                                        }
+                                                        setPayMode(value);
+                                                        setYearTerm('1');
+                                                        return;
+                                                    }
                                                     setPayMode(value);
-                                                    if (value === 'Single') setYearTerm('1');
+                                                    if (payMode === 'Single') {
+                                                        const previousTerm = String(previousNonSingleYearTermRef.current || '').trim();
+                                                        setYearTerm(previousTerm || '');
+                                                    }
                                                 }} className="w-full border rounded p-1.5 text-sm">
                                                     <option value="Single">單繳</option>
                                                     <option value="Annual">年繳</option>
