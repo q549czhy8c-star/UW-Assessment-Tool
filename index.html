@@ -5442,6 +5442,8 @@ ${hnwFinancially || ''}`;
                 const calculatedAmountUSD = q28 + (q29 * (q16 / 100) * loanYears);
                 const thresholdUSD = annualPremiumUSD + projectedInterestUSD;
                 const hasInputs = cmbFnaQ16 !== "" || cmbFnaQ28 !== "" || cmbFnaQ29 !== "";
+                const hasLoanRateAndQ16 = pfLoanRate !== "" && cmbFnaQ16 !== "";
+                const loanRateExceedsQ16 = hasLoanRateAndQ16 && loanRate > q16;
                 return {
                     annualPremiumUSD,
                     projectedInterestUSD,
@@ -5451,6 +5453,9 @@ ${hnwFinancially || ''}`;
                     thresholdUSD,
                     loanYears,
                     hasInputs,
+                    loanRate,
+                    q16,
+                    loanRateExceedsQ16,
                     pass: hasInputs ? calculatedAmountUSD > thresholdUSD : null
                 };
             }, [isPremiumFinancing, pfBank, premAmount, payMode, curr, pfLoanAmount, pfLoanCurrency, pfLoanRate, pfLoanTenor, cmbFnaQ16, cmbFnaQ28, cmbFnaQ29]);
@@ -6835,10 +6840,15 @@ ${hnwFinancially || ''}`;
 	                                                    </span>
 	                                                </div>
 	                                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-	                                                    <div><label className="text-xs font-bold text-slate-500">Q16 (%)</label><input type="number" value={cmbFnaQ16} onChange={(e) => setCmbFnaQ16(e.target.value)} className="w-full border rounded p-1.5 text-sm bg-white" /></div>
+	                                                    <div><label className="text-xs font-bold text-slate-500">Q16 (%)</label><input type="number" value={cmbFnaQ16} onChange={(e) => setCmbFnaQ16(e.target.value)} className={`w-full border rounded p-1.5 text-sm bg-white ${cmbFnaCheck.loanRateExceedsQ16 ? 'border-red-400 ring-1 ring-red-200' : ''}`} /></div>
 	                                                    <div><label className="text-xs font-bold text-slate-500">Q28 (USD)</label><input type="number" value={cmbFnaQ28} onChange={(e) => setCmbFnaQ28(e.target.value)} className="w-full border rounded p-1.5 text-sm bg-white" /></div>
 	                                                    <div><label className="text-xs font-bold text-slate-500">Q29 (USD)</label><input type="number" value={cmbFnaQ29} onChange={(e) => setCmbFnaQ29(e.target.value)} className="w-full border rounded p-1.5 text-sm bg-white" /></div>
 	                                                </div>
+	                                                {cmbFnaCheck.loanRateExceedsQ16 && (
+	                                                    <div className="mt-2 rounded border border-red-200 bg-red-50 px-3 py-2 text-[11px] font-bold text-red-700">
+	                                                        提示：貸款利率 {cmbFnaCheck.loanRate}% 大過 CMB FNA Checking Q16 {cmbFnaCheck.q16}%，請覆核 Q16 或貸款利率。
+	                                                    </div>
+	                                                )}
 	                                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2 text-[10px] text-slate-700">
 	                                                    <div className="bg-white border rounded p-2">
 	                                                        <span className="block text-slate-500">Calculated amount</span>
