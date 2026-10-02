@@ -7193,7 +7193,7 @@ if (isJobMonthlyPlan) {
 const isPHNotSame = !policyData.isSamePerson;
 const isGIOPlan = (policyData.planName || '') === 'GIO';
 const sa = Number(String(policyData.sumAssured || '').replace(/,/g, '')) || 0;
-const saUSD = (policyData.curr === 'HKD') ? (sa / USD_RATE) : sa;
+const saUSD = (policyData.curr === 'HKD') ? (sa / FIN_USD_RATE) : sa;
 const isLifeOrCI = (policyData.prodType === 'Life' || policyData.prodType === 'CI');
 // [v1.6] Third-party exception: hide TSA(Med) + Medically for Non-Life/Non-CI products even when Owner != Insured
 const showMed = (isPHNotSame && !isLifeOrCI)
@@ -7686,7 +7686,7 @@ const shouldShowMed = () => {
     const isGIOPlan = (policyData.planName || '') === 'GIO';
     if (isGIOPlan && isPHNotSame) {
         const sa = Number(policyData.sumAssured) || 0;
-        const saUSD = (policyData.curr === 'HKD') ? (sa / USD_RATE) : sa;
+        const saUSD = (policyData.curr === 'HKD') ? (sa / FIN_USD_RATE) : sa;
         return saUSD > 2500000;
     }
     return (isLifeOrCI || isPHNotSame);
