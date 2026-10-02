@@ -238,7 +238,32 @@
             "Business - Business Loan"
         ];
         const FQ_SOURCE_OF_PREMIUM_OPTIONS = ["Own income", "Own Wealth", "Premium Financing", "Others"];
-        const PF_BANK_OPTIONS = ["DBS", "EleBank", "CMB"];
+        const PF_BANK_OPTIONS = ["DBS", "EleBank", "CMB", "iGB"];
+        const PF_EXCHANGE_RATE_SOURCE = {
+            label: "iGB 52-week average FX reference",
+            period: "2025-10-01 to 2026-09-29",
+            lastUpdated: "2026-10-02",
+            note: "1 unit foreign currency = HKD, rounded to 3 decimal places. ECB/Frankfurter market reference; AED inferred from USD peg."
+        };
+        const PF_CURRENCY_OPTIONS = [
+            { code: "HKD", label: "HKD", rateToHKD: 1.000 },
+            { code: "USD", label: "USD", rateToHKD: 7.817 },
+            { code: "GBP", label: "GBP", rateToHKD: 10.482 },
+            { code: "EUR", label: "EUR", rateToHKD: 9.081 },
+            { code: "SGD", label: "SGD", rateToHKD: 6.092 },
+            { code: "CNY", label: "CNY", rateToHKD: 1.135 },
+            { code: "JPY", label: "JPY", rateToHKD: 0.050 },
+            { code: "CHF", label: "CHF", rateToHKD: 9.816 },
+            { code: "AED", label: "AED", rateToHKD: 2.129 },
+            { code: "CAD", label: "CAD", rateToHKD: 5.633 },
+            { code: "AUD", label: "AUD", rateToHKD: 5.408 },
+        ];
+        const PF_EXCHANGE_RATES_TO_HKD = PF_CURRENCY_OPTIONS.reduce((acc, item) => {
+            acc[item.code] = item.rateToHKD;
+            return acc;
+        }, {});
+        const getPfExchangeRateToHKD = (currency) => PF_EXCHANGE_RATES_TO_HKD[currency || "HKD"] || 1;
+        const convertPfAmountToHKD = (amount, currency) => (Number(amount) || 0) * getPfExchangeRateToHKD(currency);
 
         const FNA_MAPPING_PRODUCTS = [
             { name: "LionAchiever Elite", category: "saving80", target: "0-80%" },
@@ -3341,6 +3366,7 @@ const HK_HOLIDAYS_2025_2026 = [
             // Premium Financing (PF) fields copied from Policy Info for affordability calculation
             const [isPremiumFinancing, setIsPremiumFinancing] = useState(false);
             const [pfLoanAmount, setPfLoanAmount] = useState(0);
+            const [pfLoanCurrency, setPfLoanCurrency] = useState("HKD");
             const [pfLoanRate, setPfLoanRate] = useState(0);
             const [pfLoanTenor, setPfLoanTenor] = useState(0);
             // [UPDATE v2.8] Capture repayment amount per period for PF (for display only)
@@ -3370,6 +3396,7 @@ const HK_HOLIDAYS_2025_2026 = [
                         // Hydrate Premium Financing fields
                         if (s.isPremiumFinancing !== undefined) setIsPremiumFinancing(!!s.isPremiumFinancing);
                         if (s.pfLoanAmount !== undefined) setPfLoanAmount(Number(s.pfLoanAmount));
+                        if (s.pfLoanCurrency !== undefined) setPfLoanCurrency(s.pfLoanCurrency || "HKD");
                         if (s.pfLoanRate !== undefined) setPfLoanRate(Number(s.pfLoanRate));
                         if (s.pfLoanTenor !== undefined) setPfLoanTenor(Number(s.pfLoanTenor));
                         // [UPDATE v2.8] hydrate PF repayment amount
@@ -3415,6 +3442,7 @@ const HK_HOLIDAYS_2025_2026 = [
                         // persist PF fields for hydration/export
                         isPremiumFinancing,
                         pfLoanAmount,
+                        pfLoanCurrency,
                         pfLoanRate,
                         pfLoanTenor,
                         // [UPDATE v2.8] persist PF repayment amount
@@ -3427,7 +3455,7 @@ const HK_HOLIDAYS_2025_2026 = [
                 }
             }, [age, retireAge, calcMode, sofSelections, sowSelections, monthlyIncome, incomePercent, liquidAsset, assetPercent, allowRetirementIncomeCover, allowIncomeSurplusAssetAccumulation, policies, affHydrated,
                 // dependencies for PF states
-                isPremiumFinancing, pfLoanAmount, pfLoanRate, pfLoanTenor, pfRepaymentAmount, pfBank]);
+                isPremiumFinancing, pfLoanAmount, pfLoanCurrency, pfLoanRate, pfLoanTenor, pfRepaymentAmount, pfBank]);
 
             // =========================================================
 
@@ -3590,11 +3618,14 @@ const HK_HOLIDAYS_2025_2026 = [
 
 	                // Calculate projected interest for premium financing
                 let projectedInterest = 0;
+                let pfLoanAmountHKD = 0;
+                let pfExchangeRateToHKD = getPfExchangeRateToHKD(pfLoanCurrency);
                 if (isPremiumFinancing) {
                     const loan = Number(pfLoanAmount) || 0;
                     const rate = Number(pfLoanRate) || 0;
                     const tenor = Number(pfLoanTenor) || 0;
-                    projectedInterest = loan * (rate / 100) * tenor;
+                    pfLoanAmountHKD = convertPfAmountToHKD(loan, pfLoanCurrency);
+                    projectedInterest = pfLoanAmountHKD * (rate / 100) * tenor;
                 }
 		                // Test A: asset requirement without interest
 		                const assetRequirement = totalRequiredHKD;
@@ -3665,6 +3696,9 @@ const HK_HOLIDAYS_2025_2026 = [
                     diff,
                     calcMode,
                     projectedInterest,
+                    pfLoanCurrency,
+                    pfExchangeRateToHKD,
+                    pfLoanAmountHKD,
                     isPremiumFinancing,
                     // Provide separate results for Test A and Test B
                     isPassA,
@@ -3672,7 +3706,7 @@ const HK_HOLIDAYS_2025_2026 = [
                     isPassB,
                     diffB
                 };
-            }, [policies, monthlyIncome, incomePercent, liquidAsset, assetPercent, yearsToRetire, calcMode, allowRetirementIncomeCover, allowIncomeSurplusAssetAccumulation, isPremiumFinancing, pfLoanAmount, pfLoanRate, pfLoanTenor]);
+            }, [policies, monthlyIncome, incomePercent, liquidAsset, assetPercent, yearsToRetire, calcMode, allowRetirementIncomeCover, allowIncomeSurplusAssetAccumulation, isPremiumFinancing, pfLoanAmount, pfLoanCurrency, pfLoanRate, pfLoanTenor]);
 
             const addPolicy = () => {
                 const newId = Math.max(...policies.map(p=>p.id), 0) + 1;
@@ -3708,6 +3742,7 @@ const HK_HOLIDAYS_2025_2026 = [
                     // Copy Premium Financing values from policy info
                     if (data.isPremiumFinancing !== undefined) setIsPremiumFinancing(!!data.isPremiumFinancing);
                     if (data.pfLoanAmount) setPfLoanAmount(Number(data.pfLoanAmount));
+                    if (data.pfLoanCurrency !== undefined) setPfLoanCurrency(data.pfLoanCurrency || "HKD");
                     if (data.pfLoanRate) setPfLoanRate(Number(data.pfLoanRate));
                     if (data.pfLoanTenor) setPfLoanTenor(Number(data.pfLoanTenor));
                     // [UPDATE v2.8] Copy PF repayment amount
@@ -3783,6 +3818,7 @@ const HK_HOLIDAYS_2025_2026 = [
                 // Reset Premium Financing states
                 setIsPremiumFinancing(false);
                 setPfLoanAmount(0);
+                setPfLoanCurrency("HKD");
                 setPfLoanRate(0);
                 setPfLoanTenor(0);
                 setPfRepaymentAmount(0);
@@ -3816,9 +3852,12 @@ const HK_HOLIDAYS_2025_2026 = [
                             testBPass: isPremiumFinancing ? (calculationResult.isPassB) : null,
                             // Persist PF fields for summary output
                             pfLoanAmount,
+                            pfLoanCurrency,
                             pfLoanRate,
                             pfLoanTenor,
                             pfRepaymentAmount,
+                            pfExchangeRateToHKD: calculationResult.pfExchangeRateToHKD,
+                            pfLoanAmountHKD: calculationResult.pfLoanAmountHKD,
                             // Persist diffB for net asset vs interest calculation
                             diffB: calculationResult.diffB
                         };
@@ -3829,7 +3868,7 @@ const HK_HOLIDAYS_2025_2026 = [
                 }
             }, [policies, calculationResult, calcMode, sofSelections, sowSelections, hasSinglePayPolicy, monthlyIncome, incomePercent, liquidAsset, assetPercent, allowRetirementIncomeCover, allowIncomeSurplusAssetAccumulation, affHydrated,
                 // premium financing
-                isPremiumFinancing, pfLoanAmount, pfLoanRate, pfLoanTenor, pfRepaymentAmount]);
+                isPremiumFinancing, pfLoanAmount, pfLoanCurrency, pfLoanRate, pfLoanTenor, pfRepaymentAmount]);
 
             return (
                 <div ref={affordabilityPrintRef} className="affordability-print-page affordability-print-target flex flex-col h-full bg-slate-50 overflow-hidden">
@@ -3956,7 +3995,14 @@ const HK_HOLIDAYS_2025_2026 = [
 	                                    <div className="grid grid-cols-2 gap-3">
 	                                        <div>
 	                                            <label className="text-xs font-bold text-slate-500">貸款額</label>
-	                                            <input type="number" value={pfLoanAmount} onChange={(e) => setPfLoanAmount(Number(e.target.value))} className="w-full border rounded p-1.5 text-sm bg-yellow-50" />
+	                                            <div className="grid grid-cols-[1fr_88px] gap-2">
+	                                                <input type="number" value={pfLoanAmount} onChange={(e) => setPfLoanAmount(Number(e.target.value))} className="w-full border rounded p-1.5 text-sm bg-yellow-50" />
+	                                                <select value={pfLoanCurrency || 'HKD'} onChange={(e) => setPfLoanCurrency(e.target.value)} className="w-full border rounded p-1.5 text-sm bg-yellow-50">
+	                                                    {PF_CURRENCY_OPTIONS.map((item) => (
+	                                                        <option key={item.code} value={item.code}>{item.label}</option>
+	                                                    ))}
+	                                                </select>
+	                                            </div>
 	                                        </div>
 	                                        <div>
 	                                            <label className="text-xs font-bold text-slate-500">貸款利率 %</label>
@@ -3969,6 +4015,10 @@ const HK_HOLIDAYS_2025_2026 = [
 	                                        <div>
 	                                            <label className="text-xs font-bold text-slate-500">每期還款額</label>
 	                                            <input type="text" value={pfRepaymentAmount} onChange={(e) => setPfRepaymentAmount(e.target.value)} className="w-full border rounded p-1.5 text-sm bg-yellow-50" />
+	                                        </div>
+	                                        <div className="col-span-2 text-[10px] text-slate-600 bg-slate-50 border border-slate-200 rounded p-2">
+	                                            Loan amount HKD equivalent: {formatMoney(calculationResult.pfLoanAmountHKD || 0, 'HKD')} ({pfLoanCurrency || 'HKD'} rate {Number(calculationResult.pfExchangeRateToHKD || 1).toFixed(3)})
+	                                            <span className="block">PF FX reference last update: {PF_EXCHANGE_RATE_SOURCE.lastUpdated}</span>
 	                                        </div>
 	                                    </div>
 	                                </div>
@@ -3984,7 +4034,7 @@ const HK_HOLIDAYS_2025_2026 = [
                                 <button onClick={addPolicy} className="text-xs bg-blue-600 text-white px-2 py-1 rounded flex items-center gap-1 hover:bg-blue-700 no-print"><Plus size={12}/> 新增</button>
                             </div>
                             <div className="p-2 bg-blue-50 text-[10px] text-blue-800 text-center border-b border-blue-100 flex items-center justify-center gap-2">
-                                <ArrowDownWideNarrow size={12}/> 系統自動按年期(長→短)排序 • USD以7.8計算
+                                <ArrowDownWideNarrow size={12}/> 系統自動按年期(長→短)排序 • 保單保費按原有匯率計算 • PF loan按PF FX reference換算
                             </div>
                             <div className="affordability-print-scroll flex-1 overflow-y-auto p-4 custom-scrollbar">
                                 {policies.map((p) => (
@@ -4339,7 +4389,7 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
             const [showSuggestions, setShowSuggestions] = useState(false);
             const pfBankExpectedCloseDate = useMemo(() => {
                 if (!isPremiumFinancing || !pfBank) return "";
-                const daysMap = { DBS: 120, EleBank: 30, CMB: 90 };
+                const daysMap = { DBS: 120, EleBank: 30, CMB: 90, iGB: 120 };
                 const daysToAdd = daysMap[pfBank];
                 if (!daysToAdd) return "";
                 const date = new Date();
@@ -4348,7 +4398,7 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                 const mm = String(date.getMonth() + 1).padStart(2, '0');
                 const yyyy = date.getFullYear();
                 const formatted = `${dd}/${mm}/${yyyy}`;
-                return formatted;
+                return pfBank === 'iGB' ? `${formatted} (TBC)` : formatted;
             }, [isPremiumFinancing, pfBank]);
             const pfPaymentDeadlineDate = useMemo(() => {
                 if (!isPremiumFinancing) return "";
@@ -5429,10 +5479,12 @@ ${hnwFinancially || ''}`;
                 if (!isPremiumFinancing || pfBank !== 'CMB') return null;
                 const payModeFactor = payMode === 'Monthly' ? 12 : (payMode === 'Quarterly' ? 4 : (payMode === 'Semi' ? 2 : 1));
                 const annualPremium = (Number(premAmount) || 0) * payModeFactor;
-                const annualPremiumUSD = curr === 'HKD' ? annualPremium / USD_RATE : annualPremium;
+                const pfUsdRate = getPfExchangeRateToHKD('USD');
+                const annualPremiumUSD = curr === 'HKD' ? annualPremium / pfUsdRate : annualPremium;
                 const loanAmount = Number(pfLoanAmount) || 0;
                 const loanCurrency = pfLoanCurrency || 'HKD';
-                const loanAmountUSD = loanCurrency === 'HKD' ? loanAmount / USD_RATE : loanAmount;
+                const loanAmountHKD = convertPfAmountToHKD(loanAmount, loanCurrency);
+                const loanAmountUSD = loanAmountHKD / pfUsdRate;
                 const loanRate = Number(pfLoanRate) || 0;
                 const loanYears = Number(pfLoanTenor) || 0;
                 const projectedInterestUSD = loanAmountUSD * (loanRate / 100) * loanYears;
@@ -6186,8 +6238,9 @@ ${hnwFinancially || ''}`;
 	                                                    <div className="grid grid-cols-[1fr_88px] gap-2">
 	                                                        <input type="number" value={pfLoanAmount} onChange={(e) => setPfLoanAmount(e.target.value)} className="w-full border rounded p-1.5 text-sm bg-yellow-50" />
 	                                                        <select value={pfLoanCurrency || 'HKD'} onChange={(e) => setPfLoanCurrency(e.target.value)} className="w-full border rounded p-1.5 text-sm bg-yellow-50">
-	                                                            <option value="HKD">HKD</option>
-	                                                            <option value="USD">USD</option>
+	                                                            {PF_CURRENCY_OPTIONS.map((item) => (
+	                                                                <option key={item.code} value={item.code}>{item.label}</option>
+	                                                            ))}
 	                                                        </select>
 	                                                    </div>
 	                                                </div>
@@ -6258,6 +6311,10 @@ ${hnwFinancially || ''}`;
 	                                                        </div>
 	                                                    </div>
 	                                                )}
+	                                                <div className="col-span-2 text-[10px] text-slate-600 bg-slate-50 border border-slate-200 rounded p-2">
+	                                                    PF FX reference: {PF_CURRENCY_OPTIONS.map(item => `${item.code} ${item.rateToHKD.toFixed(3)}`).join(' | ')}
+	                                                    <span className="block">Last update: {PF_EXCHANGE_RATE_SOURCE.lastUpdated}; calculation period: {PF_EXCHANGE_RATE_SOURCE.period}</span>
+	                                                </div>
 	                                            </div>
 	                                        )}
                                         {isPremiumFinancing && (
@@ -7107,12 +7164,15 @@ if (isJobMonthlyPlan) {
                 // Premium Financing details
                 if (policyData.isPremiumFinancing) {
                     lines.push('Premium Financing: Yes');
-                    const loan = policyData.pfLoanAmount || '';
+                    const loan = Number(policyData.pfLoanAmount || 0);
+                    const loanCurrency = policyData.pfLoanCurrency || 'HKD';
+                    const loanHKD = convertPfAmountToHKD(loan, loanCurrency);
+                    const loanRateToHKD = getPfExchangeRateToHKD(loanCurrency);
                     const rate = policyData.pfLoanRate || '';
                     const tenor = policyData.pfLoanTenor || '';
-                    // Compute projected interest for display.  Use numeric conversion with fallback 0.
-                    const proj = (Number(loan) || 0) * ((Number(rate) || 0) / 100) * (Number(tenor) || 0);
-                    lines.push(`Loan: $${loan}, Rate: ${rate}% , Tenor: ${tenor} yrs, Interest: $${Math.round(proj).toLocaleString()}`);
+                    const proj = loanHKD * ((Number(rate) || 0) / 100) * (Number(tenor) || 0);
+                    lines.push(`Loan: ${formatMoney(loan, loanCurrency)}, HKD equivalent: ${formatMoney(loanHKD, 'HKD')}, Rate: ${rate}% , Tenor: ${tenor} yrs, Interest: ${formatMoney(proj, 'HKD')}`);
+                    lines.push(`PF FX reference: 1 ${loanCurrency} = HKD ${loanRateToHKD.toFixed(3)}; source: ${PF_EXCHANGE_RATE_SOURCE.label}; last update: ${PF_EXCHANGE_RATE_SOURCE.lastUpdated}`);
                 } else {
                     lines.push('Premium Financing: No');
                 }
@@ -7299,6 +7359,9 @@ const showMed = (isPHNotSame && !isLifeOrCI)
                     // When premium financing is used, append Premium Financing details and over‑leveraging check
                     if (affordData.isPremiumFinancing) {
                         const loanAmt = Number(affordData.pfLoanAmount || 0);
+                        const loanCurrency = affordData.pfLoanCurrency || policyData?.pfLoanCurrency || 'HKD';
+                        const loanRateToHKD = Number(affordData.pfExchangeRateToHKD || getPfExchangeRateToHKD(loanCurrency));
+                        const loanAmtHKD = Number(affordData.pfLoanAmountHKD || convertPfAmountToHKD(loanAmt, loanCurrency));
                         const rateVal = Number(affordData.pfLoanRate || 0);
                         const tenorVal = Number(affordData.pfLoanTenor || 0);
                         const repayVal = affordData.pfRepaymentAmount || '';
@@ -7306,11 +7369,12 @@ const showMed = (isPHNotSame && !isLifeOrCI)
                         const totalRequired = Number(res.totalRequiredHKD || 0);
                         const remRaw = (Number(affordData.liquidAsset || 0)) - totalRequired;
                         // Construct PF detail line
-                        let pfDetail = '   Premium Financing details: Loan Amount: ' + formatMoney(loanAmt) + ', Rate: ' + rateVal + '% , Tenor: ' + tenorVal + ' yrs';
+                        let pfDetail = '   Premium Financing details: Loan Amount: ' + formatMoney(loanAmt, loanCurrency) + ' (HKD equivalent: ' + formatMoney(loanAmtHKD, 'HKD') + '), Rate: ' + rateVal + '% , Tenor: ' + tenorVal + ' yrs';
                         if (repayVal) {
                             pfDetail += ', Repayment Amt: ' + formatMoney(Number(repayVal) || 0);
                         }
                         lines.push(pfDetail);
+                        lines.push(`   PF FX reference: 1 ${loanCurrency} = HKD ${loanRateToHKD.toFixed(3)}; source: ${PF_EXCHANGE_RATE_SOURCE.label}; last update: ${PF_EXCHANGE_RATE_SOURCE.lastUpdated}`);
                         lines.push('   Net assets after premium payments: ' + formatMoney(remRaw));
                         lines.push('   Projected total interest: ' + formatMoney(projInt));
                         if (policyData?.isPremiumFinancing && policyData?.pfBank === 'CMB' && policyData?.cmbFnaCheck?.hasInputs) {
@@ -7919,10 +7983,14 @@ const shouldShowMed = () => {
                             <div className="pl-4 text-sm">
                                 <div><span className="font-bold">Premium Financing:</span> Yes</div>
                                 <div>
-                                    <span className="font-bold">Loan:</span> {`$${policyData.pfLoanAmount || ''}`},
+                                    <span className="font-bold">Loan:</span> {formatMoney(Number(policyData.pfLoanAmount || 0), policyData.pfLoanCurrency || 'HKD')},
+                                    <span className="font-bold"> HKD equivalent:</span> {formatMoney(convertPfAmountToHKD(policyData.pfLoanAmount, policyData.pfLoanCurrency || 'HKD'), 'HKD')},
                                     <span className="font-bold"> Rate:</span> {policyData.pfLoanRate || ''}% ,
                                     <span className="font-bold"> Tenor:</span> {policyData.pfLoanTenor || ''} yrs,
-                                    <span className="font-bold"> Interest:</span> {(() => { const loan = Number(policyData.pfLoanAmount) || 0; const rate = Number(policyData.pfLoanRate) || 0; const tenor = Number(policyData.pfLoanTenor) || 0; const p = loan * (rate/100) * tenor; return `$${Number.isFinite(p) ? Math.round(p).toLocaleString() : ''}`; })()}
+                                    <span className="font-bold"> Interest:</span> {(() => { const loanHKD = convertPfAmountToHKD(policyData.pfLoanAmount, policyData.pfLoanCurrency || 'HKD'); const rate = Number(policyData.pfLoanRate) || 0; const tenor = Number(policyData.pfLoanTenor) || 0; const p = loanHKD * (rate/100) * tenor; return formatMoney(Number.isFinite(p) ? p : 0, 'HKD'); })()}
+                                </div>
+                                <div className="text-xs text-slate-600">
+                                    PF FX reference: 1 {policyData.pfLoanCurrency || 'HKD'} = HKD {getPfExchangeRateToHKD(policyData.pfLoanCurrency || 'HKD').toFixed(3)}; last update {PF_EXCHANGE_RATE_SOURCE.lastUpdated}
                                 </div>
                             </div>
                         ) : (
@@ -8087,6 +8155,9 @@ const shouldShowMed = () => {
                                     }
                                     if (affordData.isPremiumFinancing) {
                                         const loanAmt = Number(affordData.pfLoanAmount || 0);
+                                        const loanCurrency = affordData.pfLoanCurrency || policyData?.pfLoanCurrency || 'HKD';
+                                        const loanRateToHKD = Number(affordData.pfExchangeRateToHKD || getPfExchangeRateToHKD(loanCurrency));
+                                        const loanAmtHKD = Number(affordData.pfLoanAmountHKD || convertPfAmountToHKD(loanAmt, loanCurrency));
                                         const rateVal = Number(affordData.pfLoanRate || 0);
                                         const tenorVal = Number(affordData.pfLoanTenor || 0);
                                         const repayVal = affordData.pfRepaymentAmount || '';
@@ -8094,11 +8165,12 @@ const shouldShowMed = () => {
                                         const totalRequired = Number(res.totalRequiredHKD || 0);
                                         const remRaw = (Number(affordData.liquidAsset || 0)) - totalRequired;
                                         const diffB = Number(affordData.diffB || 0);
-                                        let pfDetail = 'Premium Financing details: Loan Amount: ' + formatMoney(loanAmt) + ', Rate: ' + rateVal + '% , Tenor: ' + tenorVal + ' yrs';
+                                        let pfDetail = 'Premium Financing details: Loan Amount: ' + formatMoney(loanAmt, loanCurrency) + ' (HKD equivalent: ' + formatMoney(loanAmtHKD, 'HKD') + '), Rate: ' + rateVal + '% , Tenor: ' + tenorVal + ' yrs';
                                         if (repayVal) {
                                             pfDetail += ', Repayment Amt: ' + formatMoney(Number(repayVal) || 0);
                                         }
 	                                        lines.push(<div key="fnaPf1" className="pl-4">{pfDetail}</div>);
+	                                        lines.push(<div key="fnaPfFx" className="pl-4">PF FX reference: 1 {loanCurrency} = HKD {loanRateToHKD.toFixed(3)}; source: {PF_EXCHANGE_RATE_SOURCE.label}; last update: {PF_EXCHANGE_RATE_SOURCE.lastUpdated}</div>);
 	                                        lines.push(<div key="fnaPf2" className="pl-4">Net assets after premium payments: {formatMoney(remRaw)}</div>);
 	                                        lines.push(<div key="fnaPf3" className="pl-4">Projected total interest: {formatMoney(projInt)}</div>);
 	                                        if (policyData?.isPremiumFinancing && policyData?.pfBank === 'CMB' && policyData?.cmbFnaCheck?.hasInputs) {
