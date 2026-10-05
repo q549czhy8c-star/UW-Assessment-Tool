@@ -7170,8 +7170,13 @@ if (isJobMonthlyPlan) {
                     const rate = policyData.pfLoanRate || '';
                     const tenor = policyData.pfLoanTenor || '';
                     const proj = loanHKD * ((Number(rate) || 0) / 100) * (Number(tenor) || 0);
-                    lines.push(`Loan: ${formatMoney(loan, loanCurrency)}, HKD equivalent: ${formatMoney(loanHKD, 'HKD')}, Rate: ${rate}% , Tenor: ${tenor} yrs, Interest: ${formatMoney(proj, 'HKD')}`);
-                    lines.push(`PF FX reference: 1 ${loanCurrency} = HKD ${loanRateToHKD.toFixed(3)}; source: ${PF_EXCHANGE_RATE_SOURCE.label}; last update: ${PF_EXCHANGE_RATE_SOURCE.lastUpdated}`);
+                    const loanText = loanCurrency === 'HKD'
+                        ? `Loan: ${formatMoney(loan, 'HKD')}, Rate: ${rate}% , Tenor: ${tenor} yrs, Interest: ${formatMoney(proj, 'HKD')}`
+                        : `Loan: ${formatMoney(loan, loanCurrency)}, HKD equivalent: ${formatMoney(loanHKD, 'HKD')}, Rate: ${rate}% , Tenor: ${tenor} yrs, Interest: ${formatMoney(proj, 'HKD')}`;
+                    lines.push(loanText);
+                    if (loanCurrency !== 'HKD') {
+                        lines.push(`PF FX reference: 1 ${loanCurrency} = HKD ${loanRateToHKD.toFixed(3)}; source: ${PF_EXCHANGE_RATE_SOURCE.label}; last update: ${PF_EXCHANGE_RATE_SOURCE.lastUpdated}`);
+                    }
                 } else {
                     lines.push('Premium Financing: No');
                 }
@@ -7368,12 +7373,18 @@ const showMed = (isPHNotSame && !isLifeOrCI)
                         const totalRequired = Number(res.totalRequiredHKD || 0);
                         const remRaw = (Number(affordData.liquidAsset || 0)) - totalRequired;
                         // Construct PF detail line
-                        let pfDetail = '   Premium Financing details: Loan Amount: ' + formatMoney(loanAmt, loanCurrency) + ' (HKD equivalent: ' + formatMoney(loanAmtHKD, 'HKD') + '), Rate: ' + rateVal + '% , Tenor: ' + tenorVal + ' yrs';
+                        let pfDetail = '   Premium Financing details: Loan Amount: ' + formatMoney(loanAmt, loanCurrency);
+                        if (loanCurrency !== 'HKD') {
+                            pfDetail += ' (HKD equivalent: ' + formatMoney(loanAmtHKD, 'HKD') + ')';
+                        }
+                        pfDetail += ', Rate: ' + rateVal + '% , Tenor: ' + tenorVal + ' yrs';
                         if (repayVal) {
                             pfDetail += ', Repayment Amt: ' + formatMoney(Number(repayVal) || 0);
                         }
                         lines.push(pfDetail);
-                        lines.push(`   PF FX reference: 1 ${loanCurrency} = HKD ${loanRateToHKD.toFixed(3)}; source: ${PF_EXCHANGE_RATE_SOURCE.label}; last update: ${PF_EXCHANGE_RATE_SOURCE.lastUpdated}`);
+                        if (loanCurrency !== 'HKD') {
+                            lines.push(`   PF FX reference: 1 ${loanCurrency} = HKD ${loanRateToHKD.toFixed(3)}; source: ${PF_EXCHANGE_RATE_SOURCE.label}; last update: ${PF_EXCHANGE_RATE_SOURCE.lastUpdated}`);
+                        }
                         lines.push('   Net assets after premium payments: ' + formatMoney(remRaw));
                         lines.push('   Projected total interest: ' + formatMoney(projInt));
                         if (policyData?.isPremiumFinancing && policyData?.pfBank === 'CMB' && policyData?.cmbFnaCheck?.hasInputs) {
@@ -7983,14 +7994,18 @@ const shouldShowMed = () => {
                                 <div><span className="font-bold">Premium Financing:</span> Yes</div>
                                 <div>
                                     <span className="font-bold">Loan:</span> {formatMoney(Number(policyData.pfLoanAmount || 0), policyData.pfLoanCurrency || 'HKD')},
-                                    <span className="font-bold"> HKD equivalent:</span> {formatMoney(convertPfAmountToHKD(policyData.pfLoanAmount, policyData.pfLoanCurrency || 'HKD'), 'HKD')},
+                                    {(policyData.pfLoanCurrency || 'HKD') !== 'HKD' && (
+                                        <><span className="font-bold"> HKD equivalent:</span> {formatMoney(convertPfAmountToHKD(policyData.pfLoanAmount, policyData.pfLoanCurrency || 'HKD'), 'HKD')},</>
+                                    )}
                                     <span className="font-bold"> Rate:</span> {policyData.pfLoanRate || ''}% ,
                                     <span className="font-bold"> Tenor:</span> {policyData.pfLoanTenor || ''} yrs,
                                     <span className="font-bold"> Interest:</span> {(() => { const loanHKD = convertPfAmountToHKD(policyData.pfLoanAmount, policyData.pfLoanCurrency || 'HKD'); const rate = Number(policyData.pfLoanRate) || 0; const tenor = Number(policyData.pfLoanTenor) || 0; const p = loanHKD * (rate/100) * tenor; return formatMoney(Number.isFinite(p) ? p : 0, 'HKD'); })()}
                                 </div>
-                                <div className="text-xs text-slate-600">
-                                    PF FX reference: 1 {policyData.pfLoanCurrency || 'HKD'} = HKD {getPfExchangeRateToHKD(policyData.pfLoanCurrency || 'HKD').toFixed(3)}; last update {PF_EXCHANGE_RATE_SOURCE.lastUpdated}
-                                </div>
+                                {(policyData.pfLoanCurrency || 'HKD') !== 'HKD' && (
+                                    <div className="text-xs text-slate-600">
+                                        PF FX reference: 1 {policyData.pfLoanCurrency || 'HKD'} = HKD {getPfExchangeRateToHKD(policyData.pfLoanCurrency || 'HKD').toFixed(3)}; last update {PF_EXCHANGE_RATE_SOURCE.lastUpdated}
+                                    </div>
+                                )}
                             </div>
                         ) : (
                             <div className="pl-4 text-sm"><span className="font-bold">Premium Financing:</span> No</div>
@@ -8164,12 +8179,18 @@ const shouldShowMed = () => {
                                         const totalRequired = Number(res.totalRequiredHKD || 0);
                                         const remRaw = (Number(affordData.liquidAsset || 0)) - totalRequired;
                                         const diffB = Number(affordData.diffB || 0);
-                                        let pfDetail = 'Premium Financing details: Loan Amount: ' + formatMoney(loanAmt, loanCurrency) + ' (HKD equivalent: ' + formatMoney(loanAmtHKD, 'HKD') + '), Rate: ' + rateVal + '% , Tenor: ' + tenorVal + ' yrs';
+                                        let pfDetail = 'Premium Financing details: Loan Amount: ' + formatMoney(loanAmt, loanCurrency);
+                                        if (loanCurrency !== 'HKD') {
+                                            pfDetail += ' (HKD equivalent: ' + formatMoney(loanAmtHKD, 'HKD') + ')';
+                                        }
+                                        pfDetail += ', Rate: ' + rateVal + '% , Tenor: ' + tenorVal + ' yrs';
                                         if (repayVal) {
                                             pfDetail += ', Repayment Amt: ' + formatMoney(Number(repayVal) || 0);
                                         }
 	                                        lines.push(<div key="fnaPf1" className="pl-4">{pfDetail}</div>);
-	                                        lines.push(<div key="fnaPfFx" className="pl-4">PF FX reference: 1 {loanCurrency} = HKD {loanRateToHKD.toFixed(3)}; source: {PF_EXCHANGE_RATE_SOURCE.label}; last update: {PF_EXCHANGE_RATE_SOURCE.lastUpdated}</div>);
+	                                        if (loanCurrency !== 'HKD') {
+	                                            lines.push(<div key="fnaPfFx" className="pl-4">PF FX reference: 1 {loanCurrency} = HKD {loanRateToHKD.toFixed(3)}; source: {PF_EXCHANGE_RATE_SOURCE.label}; last update: {PF_EXCHANGE_RATE_SOURCE.lastUpdated}</div>);
+	                                        }
 	                                        lines.push(<div key="fnaPf2" className="pl-4">Net assets after premium payments: {formatMoney(remRaw)}</div>);
 	                                        lines.push(<div key="fnaPf3" className="pl-4">Projected total interest: {formatMoney(projInt)}</div>);
 	                                        if (policyData?.isPremiumFinancing && policyData?.pfBank === 'CMB' && policyData?.cmbFnaCheck?.hasInputs) {
