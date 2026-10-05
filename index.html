@@ -2533,8 +2533,7 @@ const HK_HOLIDAYS_2025_2026 = [
             { prefix: '(Reminder)', text: 'Trust Application is subject to compliance clearance; further requirements may be required' },
             { prefix: '(Reminder)', text: 'Medical Consultant/Reinsurer is reviewing the case' },
             { prefix: '(Reminder)', text: 'Case is pending for company search result' },
-            { prefix: '(Reminder)', text: 'Submit revised illustration with new age is required if payment date or document signed date is after policyholder\'s birthday. Settlor verification is required for trust policies.' },
-            { prefix: '(Reminder)', text: 'No back-dating will be allowed for saving plans or prepayments.' },
+            { prefix: '(Reminder)', text: 'Submit revised illustration with new age is required if payment date or document signed date is on or after insured\'s birthday. No back-dating will be allowed for saving plans or prepayments.' },
             { prefix: '(Reminder)', text: 'Extra loading will be imposed due to xxxxxxx' },
             { prefix: '(Reminder)', text: 'Application will be accepted with borderline standard due to xxxxx disease' },
             { prefix: '(Reminder)', text: 'Payor will be required to submit Source(s) of Funds/Wealth Supplementary Information Questionnaire if premium payment is not fully made by proposed policyholder. Compliance review is also required' },
@@ -7577,7 +7576,7 @@ const showMed = (isPHNotSame && !isLifeOrCI)
                     msgs.push('a. Anonymous/cash payment is not allowed for high return products; b. Payor will be required to submit of Source(s) of Funds/Wealth Supplementary Information Questionnaire if premium payment is not fully made by proposed policyholder.');
                 }
                 if ((policyData.prodType === 'GIO' || policyData.prodType === 'Annuity') && policyData.birthdayAlert?.withinThreeMonths) {
-                    msgs.push('Submit revised illustration with new age is required if payment date or document signed date is after insured\'s birthday. No back-dating will be allowed for saving plans or prepayments.');
+                    msgs.push('Submit revised illustration with new age is required if payment date or document signed date is on or after insured\'s birthday. No back-dating will be allowed for saving plans or prepayments.');
                 }
                 if ((policyData.prodType === 'GIO' || policyData.prodType === 'Annuity') && policyData.birthdayAlert?.birthdayPassedAfterPrintBeforeCurrent) {
                     msgs.push('(Pending) Please submit a revised illustration reflecting the new age, as the insured’s birthday has passed. No back-dating will be allowed for saving plans or prepayments.');
