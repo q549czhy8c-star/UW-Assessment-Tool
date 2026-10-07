@@ -2422,6 +2422,59 @@ function formatResidentLoadingRule(rule) {
                 window.dispatchEvent(new CustomEvent('showToast', { detail: toastMessage }));
             } catch (e) {}
         };
+        const TRUSTEE_REFERENCES = [
+            { value: 'Pacific', label: 'Pacific Fiduciary', page: 11 },
+            { value: 'Relyon', label: 'Relyon Trustee Limited', page: 3 },
+            { value: 'Probiz', label: 'Probiz', page: 4 },
+            { value: 'METIS', label: 'METIS', page: 5 },
+            { value: 'Victory Global', label: 'Victory Global', page: 1 },
+            { value: 'Target', label: 'Target', page: 2 },
+            { value: 'JLT HK', label: 'JLT HK', page: 6 },
+            { value: 'Gold Profit', label: 'Gold Profit', page: 7 },
+            { value: 'Fountain TC', label: 'Fountain TC', page: 8 },
+            { value: 'First Fund', label: 'First Fund', page: 9 },
+            { value: 'Alpadis', label: 'Alpadis Trust (HK) Limited', page: 10 }
+        ];
+        const TrusteeSignatureReference = ({ company, onClose }) => {
+            const dialogRef = useRef(null);
+            const frameRef = useRef(null);
+            const [status, setStatus] = useState('loading');
+            const trustee = TRUSTEE_REFERENCES.find(item => item.value === company);
+            useEffect(() => { dialogRef.current.showModal(); }, []);
+            useEffect(() => {
+                setStatus('loading');
+                const timeout = window.setTimeout(() => setStatus('missing'), 8000);
+                const receive = event => {
+                    if (event.source !== frameRef.current?.contentWindow ||
+                        event.data?.type !== 'trustee-reference-ready' ||
+                        event.data?.company !== company) return;
+                    window.clearTimeout(timeout);
+                    setStatus('ready');
+                };
+                window.addEventListener('message', receive);
+                return () => {
+                    window.clearTimeout(timeout);
+                    window.removeEventListener('message', receive);
+                };
+            }, [company]);
+            return (
+                <dialog ref={dialogRef} onCancel={onClose} onClose={onClose} aria-labelledby="trust-signature-title" className="rounded-lg border border-slate-300 p-0 shadow-xl" style={{ width: 'min(1100px, 94vw)', maxWidth: '94vw', height: '88vh', maxHeight: '88vh' }}>
+                    <div className="flex flex-col h-full min-h-0">
+                        <div className="flex items-center justify-between gap-3 p-3 border-b bg-slate-100">
+                            <h2 id="trust-signature-title" className="font-bold text-sm">{trustee?.label || company} - Authorized Signatures</h2>
+                            <button type="button" onClick={onClose} aria-label="Close signature reference" className="p-1 text-sm text-slate-600 hover:bg-slate-200 rounded">Close</button>
+                        </div>
+                        {status === 'loading' && <p role="status" className="p-3 text-sm">Loading signature reference...</p>}
+                        {status === 'missing' && <div role="alert" className="p-4 text-sm text-amber-900 bg-amber-50">
+                            <p>Signature reference is not available. Place trustee-signatures.html in the same folder as index.html, then open the local UW tool.</p>
+                            <p className="mt-2">The public website cannot read a file stored on your computer. The signature reference is not published to GitHub.</p>
+                        </div>}
+                        <iframe ref={frameRef} key={company} title={(trustee?.label || company) + ' signature specimens'} src={'./trustee-signatures.html#trustee=' + encodeURIComponent(company) + '&embedded=1'} className="w-full flex-1 min-h-0 border-0" style={{ visibility: status === 'ready' ? 'visible' : 'hidden' }} />
+                    </div>
+                </dialog>
+            );
+        };
+
         const TRUST_REASON_TEXTS = {
             Pacific: `• Referring to Trust deed, the purpose of adopting trust is for assets management. The trustee can deal with the trust asset, to purchase the purchase on behalf of the trust ant property including insurance policy.
 • A trust sets up for management of the assets of Grantor (settlor) and protection of the Grantor’s (settlor) assets when the Grantor (settlor) becomes incapacitated during the Grantor’s (settlor) lifetime.
@@ -4251,6 +4304,9 @@ const HK_HOLIDAYS_2025_2026 = [
             const [requiredSendToAFC, setRequiredSendToAFC] = useState(false);
                         const [trustReasonCompany, setTrustReasonCompany] = useState('Pacific');
             const [trustDeclaration, setTrustDeclaration] = useState('No');
+            const [trustSignatureCheckedFor, setTrustSignatureCheckedFor] = useState('');
+            const [showTrustSignatureReference, setShowTrustSignatureReference] = useState(false);
+            const trustSignatureChecked = trustSignatureCheckedFor === trustReasonCompany;
             const [niceActimize, setNiceActimize] = useState('');
             const [showBrokerReference, setShowBrokerReference] = useState(false);
             const [addressProofType, setAddressProofType] = useState('');
@@ -4443,6 +4499,7 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                         if (s.requiredSendToAFC !== undefined) setRequiredSendToAFC(!!s.requiredSendToAFC);
                         if (s.trustReasonCompany !== undefined) setTrustReasonCompany(s.trustReasonCompany);
                         if (s.trustDeclaration !== undefined) setTrustDeclaration(s.trustDeclaration);
+                        setTrustSignatureCheckedFor(s.trustSignatureCheckedFor || '');
                         if (s.niceActimize !== undefined) setNiceActimize(s.niceActimize);
                         if (s.addressProofType !== undefined) setAddressProofType(s.addressProofType);
                         if (s.height !== undefined) setHeight(s.height);
@@ -4596,6 +4653,7 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                         requiredSendToAFC,
                         trustReasonCompany,
                         trustDeclaration,
+                        trustSignatureCheckedFor,
                         addressProofType,
                         height,
                         weight,
@@ -4724,7 +4782,7 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                     console.error('Failed to persist Policy Input full state', err);
                 }
             }, [
-                appType, trustReasonCompany, trustDeclaration, niceActimize, addressProofType, height, weight, phHeight, phWeight, isDateBack, isSamePerson, businessInsuranceEnabled, psReinstatementEnabled, oldAgeCampaignAcknowledged, applyPolicyContinuation, designatedBeneficiaryDob,
+                appType, trustReasonCompany, trustDeclaration, trustSignatureCheckedFor, niceActimize, addressProofType, height, weight, phHeight, phWeight, isDateBack, isSamePerson, businessInsuranceEnabled, psReinstatementEnabled, oldAgeCampaignAcknowledged, applyPolicyContinuation, designatedBeneficiaryDob,
                 isEverestBroker, requiredSendToAFC,
                 proposalDate, signingDate, applicationSigningDate, fnaSigningDate,
                 phDob, phGender, phSmoker, phResidency, phOtherCountry, phArrivalDate, phExpiryDate, phIfsDate,
@@ -5721,6 +5779,8 @@ ${hnwFinancially || ''}`;
                         phResidency, phOtherCountry, reasonPurchaseHK,
                         unpaidPremium, trustBeneficiaries,
                         trustDeclaration,
+                        trustReasonCompany,
+                        trustSignatureChecked,
                         niceActimize,
                         noFna, // [UPDATE Req 8] Save noFna state
                         showFinancialQuestionnaire,
@@ -5752,13 +5812,15 @@ ${hnwFinancially || ''}`;
                 }
             }, [policyHydrated, phArrivalDate, fnaSigningDate, proposalDate, applicationSigningDate, signingDate, addressProofType, isSamePerson, phAge, phGender, phSmoker, phDob, insAge, insGender, insSmoker, insDob, planName, planRiders, sumAssured, curr, prodType, otherInsurances, height, weight, phHeight, phWeight, medicalReq, financialReq, returnCheck, monthlyIncome, occupationStatus, position, employer, location, lifeCiEmployerToggle, bizNature, sofWealthSupplementType, premAmount, payMode, yearTerm, paymentDate, paymentCurrency, paymentAmount, paymentPayor, paymentMethod,
                 // Commission Spreading (Professional Investor - PI)
-                commissionSpreading, piInvestorType, piScenarioKey,
+                commissionSpreading, piInvestorType, piScenarioKey, trustReasonCompany, trustSignatureChecked,
                 isDateBack, birthdayAlert, appType, businessInsuranceEnabled, oldAgeCampaignAcknowledged, applyPolicyContinuation, designatedBeneficiaryDob, designatedBeneficiaryAge, oldAgeCampaignEligible, oldAgeCampaignPass, oldAgeCampaignEligibility, trustDeclaration, niceActimize, pdfAmount, phResidency, phOtherCountry, reasonPurchaseHK, unpaidPremium, trustBeneficiaries, noFna, isSendToAFCChecked, fnaCurrentSavingRate,
                 showFinancialQuestionnaire, fqPurposeOfInsurance, fqSourceOfPremium, fqEarnedIncome, fqUnearnedIncome, fqAssets, fqLiabilities,
                 // Premium Financing dependencies
                 isPremiumFinancing, pfLoanAmount, pfLoanCurrency, pfLoanRate, pfLoanTenor, pfRepaymentAmount, pfIfsProvided, pfCustomerAuthorizationProvided, pfBank, cmbFnaQ16, cmbFnaQ28, cmbFnaQ29, cmbFnaCheck]);
 
             const handleResetPolicyInfo = () => {
+                setTrustSignatureCheckedFor('');
+                setShowTrustSignatureReference(false);
                 localStorage.removeItem('businessInsuranceState');
                 setAppType('Individual'); setIsEverestBroker(false); setRequiredSendToAFC(false); setTrustDeclaration('No'); setBusinessInsuranceEnabled(false); setNiceActimize(''); setAddressProofType(''); setHeight(''); setWeight(''); setPhHeight(''); setPhWeight(''); setIsSamePerson(true); setIsDateBack(false);
                 setProposalDate(""); setSigningDate(""); setApplicationSigningDate(""); setFnaSigningDate("");
@@ -5841,10 +5903,10 @@ ${hnwFinancially || ''}`;
                 <div id="policy-info" className="h-full">
                     <style>{`#policy-info input:not([type="checkbox"]):not([type="radio"]):not(:disabled), #policy-info textarea:not(:disabled) { background-color: #FEF9C3; }`}</style>
                     <div className="h-full flex flex-col bg-slate-50 overflow-y-auto custom-scrollbar p-6 tab-content">
-                        <div className="flex justify-between mb-4 items-center">
-                            <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap justify-between mb-4 items-center gap-3">
+                            <div className="flex flex-wrap items-center gap-2 min-w-0">
                                 <label className="text-sm font-bold text-slate-700">申請類別 (Application Type):</label>
-                                <select value={appType} onChange={(e) =>setAppType(e.target.value)} className="border-2 border-blue-200 rounded-lg p-1.5 text-sm font-bold text-blue-800 bg-white focus:border-blue-500 outline-none">
+                                <select aria-label="Application Type" value={appType} onChange={(e) => { setAppType(e.target.value); setTrustSignatureCheckedFor(''); setShowTrustSignatureReference(false); }} className="border-2 border-blue-200 rounded-lg p-1.5 text-sm font-bold text-blue-800 bg-white focus:border-blue-500 outline-none">
                                     <option value="Individual">Individual (個人)</option>
                                     <option value="Trust">Trust (信託)</option>
                                 </select>
@@ -5862,21 +5924,21 @@ ${hnwFinancially || ''}`;
                                     </select>
                                 </div>
                                 {appType === 'Trust' && (
-                                    <div className="flex items-center gap-2 ml-4">
+                                    <div className="flex flex-wrap items-center gap-2">
                                         <select
+                                            aria-label="Trustee name"
                                             value={trustReasonCompany}
-                                            onChange={(e) => setTrustReasonCompany(e.target.value)}
+                                            onChange={(e) => { setTrustReasonCompany(e.target.value); setTrustSignatureCheckedFor(''); }}
                                             className="text-sm px-2 py-1 rounded-md border border-slate-300 text-slate-800 bg-white focus:border-blue-500 outline-none"
                                         >
-                                            <option value="Pacific">Pacific</option>
-                                            <option value="Relyon">Relyon</option>
-                                            <option value="Probiz">Probiz</option>
-                                                                                    <option value="METIS">METIS</option>
-</select>
+                                            {TRUSTEE_REFERENCES.map(trustee => <option key={trustee.value} value={trustee.value}>{trustee.label}</option>)}
+                                        </select>
                                         <button
                                             type="button"
+                                            disabled={!TRUST_REASON_TEXTS[trustReasonCompany]}
+                                            title={TRUST_REASON_TEXTS[trustReasonCompany] ? 'Copy Trust Reason' : 'No trust reason template for this trustee'}
                                             onClick={() => copyToClipboard(TRUST_REASON_TEXTS[trustReasonCompany] || '', 'Copied (Trust Reason)')}
-                                            className="text-sm px-3 py-1 rounded-md bg-slate-800 text-white hover:bg-slate-900 active:scale-[0.99]"
+                                            className="text-sm px-3 py-1 rounded-md bg-slate-800 text-white hover:bg-slate-900 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed"
                                         >
                                             Copy Trust Reason
                                         </button>
@@ -5891,6 +5953,14 @@ ${hnwFinancially || ''}`;
                                                 <option value="No">No</option>
                                             </select>
                                         </div>
+                                        <button type="button" onClick={() => setShowTrustSignatureReference(true)} className="text-xs bg-amber-50 border border-amber-300 text-amber-800 px-3 py-1.5 rounded hover:bg-amber-100 flex items-center gap-1">
+                                            <Info size={12}/> Signature Reference
+                                        </button>
+                                        <label className="flex items-center gap-2 text-xs font-bold text-slate-700">
+                                            <input type="checkbox" checked={trustSignatureChecked} onChange={e => setTrustSignatureCheckedFor(e.target.checked ? trustReasonCompany : '')} />
+                                            Checked signature
+                                        </label>
+                                        {showTrustSignatureReference && <TrusteeSignatureReference company={trustReasonCompany} onClose={() => setShowTrustSignatureReference(false)} />}
                                     </div>
                                 )}
 
@@ -7093,6 +7163,9 @@ ${hnwFinancially || ''}`;
                 if (niceActimizeLines.length) {
                     lines.push(...niceActimizeLines);
                 }
+                if (policyData.appType === 'Trust' && policyData.trustSignatureChecked) {
+                    lines.push("Trustee's signature checked OK");
+                }
                 const pdfSuffixStr = (policyData.payMode === 'Prepay' && policyData.pdfAmount)
                     ? ` (Total premium includes PDF: ${formatMoney(Number(policyData.pdfAmount), policyData.curr || 'HKD')})`
                     : '';
@@ -7824,6 +7897,10 @@ const shouldShowMed = () => {
 
             const copyAll = () => {
                 if (!policyData) return;
+                if (policyData.appType === 'Trust' && !policyData.trustSignatureChecked) {
+                    window.alert('Please tick Checked signature in Policy Info after verifying the trustee signature before copying case summary.');
+                    return;
+                }
                 if (!policyData?.niceActimize) {
                     window.alert('Please select NiceActimize option before copying case summary.');
                     return;
@@ -7836,6 +7913,10 @@ const shouldShowMed = () => {
             // Copy function that includes detailed calculation formulas for Medical and Financial sections
             const copyAllLong = () => {
                 if (!policyData) return;
+                if (policyData.appType === 'Trust' && !policyData.trustSignatureChecked) {
+                    window.alert('Please tick Checked signature in Policy Info after verifying the trustee signature before copying case summary.');
+                    return;
+                }
                 if (!policyData?.niceActimize) {
                     window.alert('Please select NiceActimize option before copying case summary.');
                     return;
@@ -7924,6 +8005,12 @@ const shouldShowMed = () => {
                                     </div>
                                 ))}
                             </div>
+                        )}
+                        {policyData.appType === 'Trust' && policyData.trustSignatureChecked && (
+                            <div>Trustee's signature checked OK</div>
+                        )}
+                        {policyData.appType === 'Trust' && !policyData.trustSignatureChecked && (
+                            <div role="alert" className="text-amber-800 bg-amber-50 border border-amber-200 rounded p-2">Trustee signature not checked. Complete Checked signature in Policy Info before copying.</div>
                         )}
                         {/* [UPDATE] Show residency for all non-HK residents */}
                         {policyData && getResidencyDisplay() && (
