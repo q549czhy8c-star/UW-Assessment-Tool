@@ -9611,6 +9611,8 @@ const shouldShowMed = () => {
         const CURRENT_VERSION = "v2.9.0";
         const UPDATE_LOG_PASSWORD = "admin123";
         const SALARY_BENCHMARK_PAGE = "./salary-benchmark-dashboard-single.html";
+        // Change this filename when the final NOA letter HTML is ready.
+        const NOA_LETTER_PAGE = "./noa-letter.html";
         const versionHistory = [
 {
     version: "v2.9.0",
@@ -10064,6 +10066,14 @@ const shouldShowMed = () => {
             <iframe
                 title="Salary Benchmark"
                 src={SALARY_BENCHMARK_PAGE}
+                className="w-full h-full border-0 bg-white"
+            />
+        );
+
+        const NoaLetterTab = () => (
+            <iframe
+                title="NOA letter"
+                src={NOA_LETTER_PAGE}
                 className="w-full h-full border-0 bg-white"
             />
         );
@@ -11123,6 +11133,7 @@ const App = () => {
                             <button onClick={() => setActiveTab('occupation')} className={`pb-3 px-2 flex items-center gap-2 transition-all border-b-2 ${activeTab === 'occupation' ? 'border-blue-600 text-blue-600 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700'}`}><Briefcase size={18}/> Occupation Rating</button>
                             <button onClick={() => setActiveTab('fnaMapping')} className={`pb-3 px-2 flex items-center gap-2 transition-all border-b-2 ${activeTab === 'fnaMapping' ? 'border-blue-600 text-blue-600 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700'}`}><Check size={18}/> FNA Mapping</button>
                             <button onClick={() => setActiveTab('salaryBenchmark')} className={`pb-3 px-2 flex items-center gap-2 transition-all border-b-2 ${activeTab === 'salaryBenchmark' ? 'border-blue-600 text-blue-600 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700'}`}><Calculator size={18}/> Salary Benchmark</button>
+                            <button onClick={() => setActiveTab('noaLetter')} className={`pb-3 px-2 flex items-center gap-2 transition-all border-b-2 ${activeTab === 'noaLetter' ? 'border-blue-600 text-blue-600 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700'}`}><FileText size={18}/> NOA letter</button>
                             {/* New Master Broker List tab */}
                             <button onClick={() => setActiveTab('broker')} className={`pb-3 px-2 flex items-center gap-2 transition-all border-b-2 ${activeTab === 'broker' ? 'border-blue-600 text-blue-600 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>Master Broker List</button>
                         </div>
@@ -11140,6 +11151,7 @@ const App = () => {
                         <div style={{ display: activeTab === 'occupation' ? 'block' : 'none', height: '100%' }}><OccupationTab /></div>
                         <div style={{ display: activeTab === 'fnaMapping' ? 'block' : 'none', height: '100%' }}><FnaMappingValidationTab /></div>
                         <div style={{ display: activeTab === 'salaryBenchmark' ? 'block' : 'none', height: '100%' }}><SalaryBenchmarkTab /></div>
+                        <div style={{ display: activeTab === 'noaLetter' ? 'block' : 'none', height: '100%' }}><NoaLetterTab /></div>
                         <div style={{ display: activeTab === 'broker' ? 'block' : 'none', height: '100%' }}><BrokerListTab /></div>
                     </div>
                     {toast.show && (
