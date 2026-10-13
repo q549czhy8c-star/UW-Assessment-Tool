@@ -11128,7 +11128,7 @@ const App = () => {
                             </button>                          </div>
 
                         </div>
-                        <div className="flex gap-6 overflow-x-auto">
+                        <div className="flex gap-4 overflow-x-auto [&>button]:shrink-0 [&>button]:whitespace-nowrap">
                             {/* Navigation order adjusted per requirements */}
                             <button onClick={() => setActiveTab('policyInfo')} className={`pb-3 px-2 flex items-center gap-2 transition-all border-b-2 ${activeTab === 'policyInfo' ? 'border-blue-600 text-blue-600 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700'}`}><FileText size={18}/> 保單資料輸入</button>
                             {psReinstatementEnabled && <button onClick={() => setActiveTab('psReinstatement')} className={`pb-3 px-2 flex items-center gap-2 transition-all border-b-2 ${activeTab === 'psReinstatement' ? 'border-blue-600 text-blue-600 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700'}`}><ClipboardList size={18}/> PS reinstatement</button>}
