@@ -44,6 +44,20 @@
             background-color: #f8fafc; color: #94a3b8;
             cursor: not-allowed;
         }
+        .other-coverage-row {
+            display: grid;
+            grid-template-columns: minmax(72px, 1fr) 82px 64px 92px 54px minmax(82px, 1fr) 48px 34px;
+            gap: 4px;
+            align-items: end;
+            min-width: 560px;
+        }
+        .other-coverage-row > div { min-width: 0; }
+        .other-coverage-row input:not([type="checkbox"]), .other-coverage-row select {
+            height: 28px;
+            min-width: 0;
+            font-size: 11px;
+        }
+        .other-coverage-row label { display: block; line-height: 18px; }
 
         @page {
             size: A4 landscape;
@@ -6433,29 +6447,31 @@ ${hnwFinancially || ''}`;
                                             </>
                                         )}
                                         {(prodType === 'Life' || prodType === 'CI') && (
-                                            <div className="space-y-2 border border-slate-200 rounded p-2 bg-slate-50">
+                                            <div className="space-y-2 border border-slate-200 rounded p-2 bg-slate-50 overflow-x-auto">
                                                 <div className="text-xs font-bold text-slate-500">其他保險保額 (Other Insurance Coverage)</div>
                                                 {otherInsurances.map((item, idx) => (
-                                                    <div key={idx} className="grid grid-cols-2 xl:grid-cols-5 gap-2 items-end">
-                                                        <div className="col-span-2"><label className="text-[10px] text-slate-500 font-bold">名稱</label><input type="text" value={item.name} onChange={(e) => updateOtherInsurance(idx, 'name', e.target.value)} className="w-full border rounded p-1 text-sm" /></div>
+                                                    <div key={idx} className="other-coverage-row">
+                                                        <div><label className="text-[10px] text-slate-500 font-bold">名稱</label><input type="text" value={item.name} onChange={(e) => updateOtherInsurance(idx, 'name', e.target.value)} className="w-full border rounded p-1 text-sm" /></div>
                                                         <div><label className="text-[10px] text-slate-500 font-bold">狀態</label><select aria-label={'Other insurance status ' + (idx + 1)} value={item.status || 'Existing'} onChange={(e) => updateOtherInsurance(idx, 'status', e.target.value)} className="w-full border rounded p-1 text-sm"><option value="Applying">Applying</option><option value="Existing">Existing</option></select></div>
-                                                        <div><label className="text-[10px] text-slate-500 font-bold">保障類型 (Coverage Type)</label><select aria-label={'Other insurance coverage type ' + (idx + 1)} value={getOtherCoverageType(item)} onChange={(e) => updateOtherInsurance(idx, 'coverageType', e.target.value)} className="w-full border rounded p-1 text-sm"><option value="">請選擇</option><option value="Life">Life</option><option value="CI">CI</option></select></div>
+                                                        <div><label title="Coverage Type" className="text-[10px] text-slate-500 font-bold">保障類型</label><select aria-label={'Other insurance coverage type ' + (idx + 1)} value={getOtherCoverageType(item)} onChange={(e) => updateOtherInsurance(idx, 'coverageType', e.target.value)} className="w-full border rounded p-1 text-sm"><option value="">請選擇</option><option value="Life">Life</option><option value="CI">CI</option></select></div>
                                                         <div><label className="text-[10px] text-slate-500 font-bold">指定計劃</label><select value={item.planTag || ''} onChange={(e) => updateOtherInsurance(idx, 'planTag', e.target.value)} className="w-full border rounded p-1 text-sm"><option value="">--</option><option value="LGB">LGB</option><option value="LionPatron">LionPatron</option></select></div>
                                                         <div><label className="text-[10px] text-slate-500 font-bold">貨幣</label><select value={item.currency} onChange={(e) => updateOtherInsurance(idx, 'currency', e.target.value)} className="w-full border rounded p-1 text-sm"><option value="USD">USD</option><option value="HKD">HKD</option></select></div>
                                                         <div><label className="text-[10px] text-slate-500 font-bold">保額</label><input type="number" value={item.amount} onChange={(e) => updateOtherInsurance(idx, 'amount', e.target.value)} className="w-full border rounded p-1 text-sm" /></div>
-                                                        <div className="flex gap-1 justify-end pb-1 col-span-2 whitespace-nowrap">
-                                                            {otherInsurances.length > 1 && (<button type="button" onClick={() => removeOtherInsurance(idx)} className="text-red-500 text-xs border border-red-200 px-2 py-1 rounded hover:bg-red-50 flex items-center gap-1"><Trash2 size={12} /> 刪除</button>)}
-                                                            {idx === otherInsurances.length - 1 && (<button type="button" onClick={addOtherInsurance} className="text-blue-500 text-xs border border-blue-200 px-2 py-1 rounded hover:bg-blue-50 flex items-center gap-1"><Plus size={12} /> 新增</button>)}
+                                                        <div className="flex gap-1 justify-end h-7 items-center">
+                                                            {otherInsurances.length > 1 && (<button type="button" title="刪除" aria-label={'Delete other insurance ' + (idx + 1)} onClick={() => removeOtherInsurance(idx)} className="text-red-500 border border-red-200 w-5 h-6 rounded hover:bg-red-50 flex items-center justify-center shrink-0"><Trash2 size={12} /></button>)}
+                                                            {idx === otherInsurances.length - 1 && (<button type="button" title="新增" aria-label="Add other insurance" onClick={addOtherInsurance} className="text-blue-500 border border-blue-200 w-5 h-6 rounded hover:bg-blue-50 flex items-center justify-center shrink-0"><Plus size={12} /></button>)}
                                                         </div>
-                                                        <div className="col-span-1">
-                                                            <label className="inline-flex items-center gap-2 text-[10px] text-slate-600 font-bold">
+                                                        <div>
+                                                            <label title="PF in Generali" className="text-[10px] text-slate-600 font-bold text-center">PF</label>
+                                                            <div className="h-7 flex items-center justify-center">
                                                                 <input
                                                                     type="checkbox"
+                                                                    aria-label={'PF in Generali ' + (idx + 1)}
+                                                                    title="PF in Generali"
                                                                     checked={!!item.pfInGenerali}
                                                                     onChange={(e) => updateOtherInsurance(idx, 'pfInGenerali', e.target.checked)}
                                                                 />
-                                                                PF in Generali
-                                                            </label>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 ))}
