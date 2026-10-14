@@ -2502,10 +2502,10 @@ function formatResidentLoadingRule(rule) {
                         </div>
                         {status === 'loading' && <p role="status" className="p-3 text-sm">Loading signature reference...</p>}
                         {status === 'missing' && <div role="alert" className="p-4 text-sm text-amber-900 bg-amber-50">
-                            <p>Signature reference is not available. Place trustee-signatures.html in the same folder as index.html, then open the local UW tool.</p>
+                            <p>Signature reference is not available. Place trustee-signatures.html in the Tabfolder subfolder beside index.html, then open the local UW tool.</p>
                             <p className="mt-2">The public website cannot read a file stored on your computer. The signature reference is not published to GitHub.</p>
                         </div>}
-                        <iframe ref={frameRef} key={company} title={(trustee?.label || company) + ' signature specimens'} src={'./trustee-signatures.html#trustee=' + encodeURIComponent(company) + '&embedded=1'} className="w-full flex-1 min-h-0 border-0" style={{ visibility: status === 'ready' ? 'visible' : 'hidden' }} />
+                        <iframe ref={frameRef} key={company} title={(trustee?.label || company) + ' signature specimens'} src={'./Tabfolder/trustee-signatures.html#trustee=' + encodeURIComponent(company) + '&embedded=1'} className="w-full flex-1 min-h-0 border-0" style={{ visibility: status === 'ready' ? 'visible' : 'hidden' }} />
                     </div>
                 </dialog>
             );
