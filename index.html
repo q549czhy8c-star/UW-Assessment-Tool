@@ -3452,7 +3452,22 @@ const HK_HOLIDAYS_2025_2026 = [
              ]);
 
             // Premium Financing (PF) fields copied from Policy Info for affordability calculation
-            const [isPremiumFinancing, setIsPremiumFinancing] = useState(false);
+            const [premiumFinancingSelected, setIsPremiumFinancing] = useState(false);
+            const [premiumFinancingAllowed, setPremiumFinancingAllowed] = useState(true);
+            const isPremiumFinancing = premiumFinancingAllowed && premiumFinancingSelected;
+            useEffect(() => {
+                const syncEligibility = () => {
+                    try {
+                        const data = JSON.parse(localStorage.getItem('policyInfoForAffordability') || '{}');
+                        const allowed = !['Life', 'CI', 'Annuity'].includes(data.prodType);
+                        setPremiumFinancingAllowed(allowed);
+                        if (!allowed) setIsPremiumFinancing(false);
+                    } catch (err) { console.error('Failed to read PF eligibility', err); }
+                };
+                syncEligibility();
+                window.addEventListener('pf-eligibility-changed', syncEligibility);
+                return () => window.removeEventListener('pf-eligibility-changed', syncEligibility);
+            }, []);
             const [pfLoanAmount, setPfLoanAmount] = useState(0);
             const [pfLoanCurrency, setPfLoanCurrency] = useState("HKD");
             const [pfLoanRate, setPfLoanRate] = useState(0);
@@ -4075,7 +4090,7 @@ const HK_HOLIDAYS_2025_2026 = [
 		                        {/* Premium Financing toggle and input fields in Affordability tab */}
 	                        <div className="mt-2">
                             <div className="flex items-center gap-2">
-                                <input type="checkbox" checked={isPremiumFinancing} onChange={(e) => setIsPremiumFinancing(e.target.checked)} />
+                                <input type="checkbox" disabled={!premiumFinancingAllowed} checked={isPremiumFinancing} onChange={(e) => setIsPremiumFinancing(e.target.checked)} />
                                 <label className="text-xs font-bold text-slate-500">保費融資 Premium Financing</label>
                             </div>
                             {isPremiumFinancing && (
@@ -4399,7 +4414,12 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
     // --- Premium Financing (PF) fields ---
     // Flag to indicate whether the current case uses premium financing. When checked, the
     // additional loan details will be collected and persisted along with other policy data.
-    const [isPremiumFinancing, setIsPremiumFinancing] = useState(false);
+    const [premiumFinancingSelected, setIsPremiumFinancing] = useState(false);
+    const premiumFinancingAllowed = !['Life', 'CI', 'Annuity'].includes(prodType);
+    const isPremiumFinancing = premiumFinancingAllowed && premiumFinancingSelected;
+    useEffect(() => {
+        if (!premiumFinancingAllowed) setIsPremiumFinancing(false);
+    }, [premiumFinancingAllowed]);
     // Loan amount for premium financing. Should be entered in the same currency as the policy.
     const [pfLoanAmount, setPfLoanAmount] = useState("");
     const [pfLoanCurrency, setPfLoanCurrency] = useState("HKD");
@@ -5735,6 +5755,7 @@ ${hnwFinancially || ''}`;
                         payMode: payMode,
                         currency: curr,
                         // Premium Financing (PF) values used by the Affordability calculator
+                        prodType,
                         isPremiumFinancing,
                         pfLoanAmount,
                         pfLoanCurrency,
@@ -5746,10 +5767,11 @@ ${hnwFinancially || ''}`;
 		                        fnaSow,
 		                    };
                     localStorage.setItem('policyInfoForAffordability', JSON.stringify(data));
+                    window.dispatchEvent(new Event('pf-eligibility-changed'));
                 } catch (err) {
                     console.error('Failed to save policy info for affordability', err);
                 }
-	            }, [policyHydrated, isSamePerson, phAge, insAge, fnaRetireAge, fnaDisposableIncome, fnaLiquidAssets, fnaSavingRate, fnaAnnualInterestRate, fnaIncomePercent, fnaAssetPercent, fnaSof, fnaSow, premAmount, yearTerm, payMode, curr,
+	            }, [policyHydrated, prodType, isSamePerson, phAge, insAge, fnaRetireAge, fnaDisposableIncome, fnaLiquidAssets, fnaSavingRate, fnaAnnualInterestRate, fnaIncomePercent, fnaAssetPercent, fnaSof, fnaSow, premAmount, yearTerm, payMode, curr,
                 // watch PF states to update affordability data when they change
                 isPremiumFinancing, pfLoanAmount, pfLoanCurrency, pfLoanRate, pfLoanTenor, pfRepaymentAmount, pfBank]);
 
@@ -6320,7 +6342,7 @@ ${hnwFinancially || ''}`;
                                         )}
                                         {/* Premium Financing (PF) toggle and input fields */}
                                         <div className="flex items-center mt-2">
-                                            <input type="checkbox" checked={isPremiumFinancing} onChange={(e) => setIsPremiumFinancing(e.target.checked)} className="mr-2" />
+                                            <input type="checkbox" disabled={!premiumFinancingAllowed} checked={isPremiumFinancing} onChange={(e) => setIsPremiumFinancing(e.target.checked)} className="mr-2" />
                                             <label className="text-xs font-bold text-slate-500">保費融資 Premium Financing</label>
                                         </div>
                                         {isPremiumFinancing && (
@@ -7185,6 +7207,14 @@ ${hnwFinancially || ''}`;
                 return (productType === 'annuity' || productType === 'gio') ? 'Notional Amount' : 'Sum Assured';
             };
 
+            const showSummaryPersonRoles = !policyData?.isSamePerson ||
+                PLAN_RIDER_OPTIONS.some(option => !!policyData?.planRiders?.[option.key]);
+            const summaryHolder = policyData?.appType === 'Trust'
+                ? 'Settlor'
+                : (showSummaryPersonRoles ? 'Policyholder' : 'Client');
+            const summarySofHeading = `Source of Fund / Wealth${policyData?.appType === 'Trust' ? ' (Settlor)' : (showSummaryPersonRoles ? ' (Policyholder)' : '')}`;
+            const summarySofContext = (context) => `${showSummaryPersonRoles ? "Policyholder's " : ''}${context === 'FinancialSupporter' ? 'Financial Supporter' : 'previous occupation'}`;
+
             const buildSummaryLines = () => {
                 if (!policyData) return [];
                 const lines = [];
@@ -7239,7 +7269,7 @@ ${hnwFinancially || ''}`;
                     lines.push(`Reason of purchase insurance in HK: ${policyData.reasonPurchaseHK}`);
                 }
                 lines.push('--------');
-                lines.push(`Insured Info: ${getInsuredInfo()}`);
+                lines.push(`${showSummaryPersonRoles ? 'Insured Info' : 'Basic Info'}: ${getInsuredInfo()}`);
 // [UPDATE] Owner info for all plans when Policyholder != Insured
                 if (!policyData.isSamePerson) {
                     lines.push(`Policyholder Info: ${getPolicyholderInfo()}`);
@@ -7278,7 +7308,7 @@ if (isJobMonthlyPlan) {
                     if (loanCurrency !== 'HKD') {
                         lines.push(`PF FX reference: 1 ${loanCurrency} = HKD ${loanRateToHKD.toFixed(3)}; source: ${PF_EXCHANGE_RATE_SOURCE.label}; last update: ${PF_EXCHANGE_RATE_SOURCE.lastUpdated}`);
                     }
-                } else {
+                } else if (!['Life', 'CI', 'Annuity'].includes(policyData.prodType)) {
                     lines.push('Premium Financing: No');
                 }
                 // Trust beneficiary details
@@ -7334,10 +7364,10 @@ const showMed = (isPHNotSame && !isLifeOrCI)
                         const buildParts = [];
                         if (policyData.height) buildParts.push(`${policyData.height}cm`);
                         if (policyData.weight) buildParts.push(`${policyData.weight}kg`);
-                        lines.push(`   Insured build: ${buildParts.join(', ')}`);
+                        lines.push(`   ${showSummaryPersonRoles ? 'Insured build' : 'Build'}: ${buildParts.join(', ')}`);
                     }
                     const bmiVal = getBmiInfo();
-                    if (bmiVal) lines.push(`   Insured BMI: ${bmiVal.toFixed(1)}`);
+                    if (bmiVal) lines.push(`   ${showSummaryPersonRoles ? 'Insured BMI' : 'BMI'}: ${bmiVal.toFixed(1)}`);
                     if (policyData.planRiders?.pb && (policyData.phHeight || policyData.phWeight)) {
                         const phBuildParts = [];
                         if (policyData.phHeight) phBuildParts.push(`${policyData.phHeight}cm`);
@@ -7519,7 +7549,6 @@ const showMed = (isPHNotSame && !isLifeOrCI)
                             !!policyData.sofWealthSupplementType
                         )
                     ) {
-                        const holderLabel = policyData.appType === 'Trust' ? 'Settlor' : 'Policyholder';
                         const isSpecialNonEmployedCase = (
                             isSofSowRequiredSummaryPlan &&
                             ((policyData.occupationStatus || '') !== 'Employed' && (policyData.occupationStatus || '') !== 'SelfEmployed')
@@ -7527,9 +7556,7 @@ const showMed = (isPHNotSame && !isLifeOrCI)
                         const occEng = ((policyData.occupationStatus || '') === 'SelfEmployed') ? 'Self-Employed' : (policyData.occupationStatus || '');
                         const sofCtx = policyData.sofWealthSupplementType || '';
                         if (isSpecialNonEmployedCase && sofCtx) {
-                            const ctxLabel = (sofCtx === 'FinancialSupporter')
-                                ? "Policyholder's Financial Supporter"
-                                : "Policyholder's previous occupation";
+                            const ctxLabel = summarySofContext(sofCtx);
                             lines.push(`   ${occEng} - Source of Fund / Wealth (${ctxLabel})`);
                         } else if (
                             planNameLower &&
@@ -7540,7 +7567,7 @@ const showMed = (isPHNotSame && !isLifeOrCI)
                             if (sofCtx === 'FinancialSupporter') lines.push(`   ${occEng} - household income from Financial Supporter`);
                             else lines.push(`   ${occEng} - income from previous occupation`);
                         } else {
-                            lines.push(`   Source of Fund / Wealth (${holderLabel})`);
+                            lines.push(`   ${summarySofHeading}`);
                         }
                         if (policyData.employer) lines.push(`   Employer : ${policyData.employer}`);
                         if (policyData.location) lines.push(`   Incorporated in : ${policyData.location}`);
@@ -7590,7 +7617,7 @@ const showMed = (isPHNotSame && !isLifeOrCI)
                                 lines.push(`   Estimated assets accumulation: ${formatMoney(estimatedAssetAccumulation)}`);
                             }
                         }
-                        const holder = policyData.appType === 'Trust' ? 'Settlor' : 'Policyholder';
+                        const holder = summaryHolder;
                         const ageStr = policyData.phAge !== undefined ? policyData.phAge : '';
                         if (assetHKD || policyData.requiredSendToAFC) {
                             lines.push(`   => SoF and SoW appears to be commensurate with ${holder}’s background and no suspicions are found.`);
@@ -7740,7 +7767,12 @@ const showMed = (isPHNotSame && !isLifeOrCI)
                 const smokerCode = policyData.isSamePerson ? policyData.phSmoker : policyData.insSmoker;
 
                 // [BUGFIX] Age = 0 should still be displayed in Case Summary (0 is falsy in JS)
-                const ageStr = (age === '' || age === null || age === undefined || Number.isNaN(age)) ? '' : String(age);
+                let ageStr = (age === '' || age === null || age === undefined || Number.isNaN(age)) ? '' : String(age);
+                if (policyData.isDateBack && ['Life', 'CI'].includes(policyData.prodType) && ageStr !== '') {
+                    const dob = policyData.isSamePerson ? policyData.phDob : policyData.insDob;
+                    const actualAge = calculateAge(dob, policyData.proposalDate || new Date().toISOString().split('T')[0]);
+                    if (actualAge !== '') ageStr = `${actualAge} (date back to age ${age})`;
+                }
 
                 const gender = genderCode === 'M' ? 'M' : 'F';
                 const smoker = smokerCode === 'Y' ? 'Smoker' : 'Non-Smoker';
@@ -8083,7 +8115,7 @@ const shouldShowMed = () => {
                                 )}
                             </>
                         )}
-                        <div><span className="font-bold">4. Insured:</span> {getInsuredInfo()}</div>
+                        <div><span className="font-bold">4. {showSummaryPersonRoles ? 'Insured' : 'Basic Info'}:</span> {getInsuredInfo()}</div>
 	{!policyData.isSamePerson && (
 	    <div className="pl-4"><span className="font-bold">Policyholder:</span> {getPolicyholderInfo()}</div>
 	)}
@@ -8127,9 +8159,9 @@ const shouldShowMed = () => {
                                     </div>
                                 )}
                             </div>
-                        ) : (
+                        ) : !['Life', 'CI', 'Annuity'].includes(policyData.prodType) ? (
                             <div className="pl-4 text-sm"><span className="font-bold">Premium Financing:</span> No</div>
-                        )}
+                        ) : null}
                         {/* [UPDATE] Show Trust Beneficiary directly under Applying */}
                         {policyData && policyData.appType === 'Trust' && policyData.trustBeneficiaries && policyData.trustBeneficiaries.length > 0 && (
                             <div className="pl-4">
@@ -8156,10 +8188,10 @@ const shouldShowMed = () => {
                                 {/* Build first, then BMI per requirements */}
                                 {(policyData.height || policyData.weight) && (
                                     <div className="pl-4">
-                                        Insured Build: {policyData.height ? `${policyData.height}cm` : ''}{policyData.height && policyData.weight ? ', ' : ''}{policyData.weight ? `${policyData.weight}kg` : ''}
+                                        {showSummaryPersonRoles ? 'Insured Build' : 'Build'}: {policyData.height ? `${policyData.height}cm` : ''}{policyData.height && policyData.weight ? ', ' : ''}{policyData.weight ? `${policyData.weight}kg` : ''}
                                     </div>
                                 )}
-                                {getBmiInfo() && <div className="pl-4">Insured BMI: {getBmiInfo().toFixed(1)}</div>}
+                                {getBmiInfo() && <div className="pl-4">{showSummaryPersonRoles ? 'Insured BMI' : 'BMI'}: {getBmiInfo().toFixed(1)}</div>}
                                 {policyData.planRiders?.pb && (policyData.phHeight || policyData.phWeight) && (
                                     <div className="pl-4">
                                         Policyholder Build: {policyData.phHeight ? `${policyData.phHeight}cm` : ''}{policyData.phHeight && policyData.phWeight ? ', ' : ''}{policyData.phWeight ? `${policyData.phWeight}kg` : ''}
@@ -8361,13 +8393,12 @@ const shouldShowMed = () => {
                                             ? monthlySavings * ((Math.pow(1 + monthlyRate, investmentMonths) - 1) / monthlyRate)
                                             : monthlySavings * investmentMonths)
                                         : 0;
-                                    const holder = policyData.appType === 'Trust' ? 'Settlor' : 'Policyholder';
+                                    const holder = summaryHolder;
                                     const ageStr = policyData.phAge !== undefined ? policyData.phAge : '';
                                     const savingRateRef = getSavingRateReference();
                                     return (
                                         <div className="pl-4 mt-2 space-y-1">
                                             <div>{(() => {
-                                                const holder = (policyData.isSamePerson ? "Policyholder" : "Insured");
                                                 const planLower = (policyData.planName || '').toLowerCase();
                                                 const isSofSowRequiredPlan = ['lionachiever elite', 'lionprima', 'pearl', 'emerald'].includes(planLower);
                                                 const nonEmp = ((policyData.occupationStatus || '') !== 'Employed' && (policyData.occupationStatus || '') !== 'SelfEmployed');
@@ -8375,9 +8406,7 @@ const shouldShowMed = () => {
                                                 const ctx = policyData.sofWealthSupplementType || '';
 
                                                 if (isSofSowRequiredPlan && nonEmp && ctx) {
-                                                    const ctxLabel = (ctx === 'FinancialSupporter')
-                                                        ? "Policyholder's Financial Supporter"
-                                                        : "Policyholder's previous occupation";
+                                                    const ctxLabel = summarySofContext(ctx);
                                                     return `${occEng} - Source of Fund / Wealth (${ctxLabel})`;
                                                 }
 
@@ -8386,7 +8415,7 @@ const shouldShowMed = () => {
                                                     return `${occEng} - income from previous occupation`;
                                                 }
 
-                                                return `Source of Fund / Wealth (${holder})`;
+                                                return summarySofHeading;
                                             })()}</div>
                                             {policyData.employer && <div>Employer : {policyData.employer}</div>}
                                             {policyData.location && <div>Incorporated in : {policyData.location}</div>}
