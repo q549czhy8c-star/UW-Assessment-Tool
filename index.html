@@ -3099,8 +3099,9 @@ const HK_HOLIDAYS_2025_2026 = [
             useEffect(() => {
                 const text = bulkTextA.trim();
                 if (!text) return;
-                const segments = text.split(/\n(?=[ \t]*\d+[.)\/、-][ \t]+)/);
-                const parsed = segments.map(seg => seg.replace(/^[ \t]*\d+[.)\/、-][ \t]+/, '').trim());
+                // A marker may touch the text, but must not consume a decimal or numeric date.
+                const segments = text.split(/\n(?=[ \t]*\d+[.)\/、-](?:[ \t]+|(?=[^\d\s])))/);
+                const parsed = segments.map(seg => seg.replace(/^[ \t]*\d+[.)\/、-](?:[ \t]+|(?=[^\d\s]))/, '').trim());
                 const newRows = parsed.map(seg => {
                     let prefixType = 'none';
                     let textA = seg;
@@ -3156,7 +3157,7 @@ const HK_HOLIDAYS_2025_2026 = [
                     if (!content.trim() && !refText.trim()) return;
 
                     if (removeNumbering && !row.numberingHandled) {
-                        content = content.replace(/^[ \t]*\d+[.)\/、-][ \t]+/, '');
+                        content = content.replace(/^[ \t]*\d+[.)\/、-](?:[ \t]+|(?=[^\d\s]))/, '');
                     }
 
                     let prefixStr = "";
