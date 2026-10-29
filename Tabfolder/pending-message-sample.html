@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pending Message Sample</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.26.10/babel.min.js"></script>
+<style>html,body,#root{height:100%;margin:0}body{font-family:"Microsoft JhengHei","Heiti TC",sans-serif}.custom-scrollbar::-webkit-scrollbar{width:8px;height:8px}.custom-scrollbar::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px}</style></head><body><div id="root"></div><script type="text/babel">
+const {useState,useEffect,useMemo,useRef}=React;
+const IconBase = ({ children, color = "currentColor", size = 18, ...props }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+                {children}
+            </svg>
+        );
+const Search = (props) => <IconBase {...props}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></IconBase>;
+const Info = (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></IconBase>;
+const copyToClipboard = (text, toastMessage = 'Copied') => {
+            if (!text) return;
+            const textarea = document.createElement("textarea");
+            textarea.value = text;
+            textarea.style.position = "fixed";
+            document.body.appendChild(textarea);
+            textarea.focus();
+            textarea.select();
+            try {
+                document.execCommand('copy');
+            } catch (err) {
+                console.error('Fallback: Oops, unable to copy', err);
+            }
+            document.body.removeChild(textarea);
+            // Dispatch a custom event to show a toast. Other components listen for this.
+            try {
+                window.dispatchEvent(new CustomEvent('showToast', { detail: toastMessage }));
+            } catch (e) {}
+        };
+const CBI_RBI_PENDING_TEXT = `For AML requirement, please submit supplementary form confirm below information:
+(A)  Did you obtain residence rights under a CBI/RBI scheme?
+(B)  Do you hold residence rights in any other jurisdiction(s)?
+(C)  Have you spent more than 90 days in any other jurisdiction(s) during the previous year?
+(D)  In which jurisdiction(s) have you filed personal income tax returns during the previous year?`;
+const PENDING_MESSAGES = [
+            { prefix: '(Pending)', text: 'insurance intermediary\'s memo/letter to confirm how the payment is split between initial and prepayment premiums' },
+            { prefix: '(Pending)', text: 'Supplementary Form to confirm the policy delivery arrangement, i.e. whether the policy pack should be sent directly to the client by post or whether the broker is nominated to receive the policy on the client\'s behalf, as only one option may be selected.' },
+            { prefix: '(Pending)', text: 'Revised illustration with the new age (xx). Settlor\'s verification is needed trust policies' },
+            { prefix: '(Reminder)', text: 'No back-dating for savings or prepayments' },
+            { prefix: '(Pending)', text: 'Bank statement or letter showing both account number and holder\'s name to confirm payment is from an approved payor' },
+            { prefix: '(Pending)', text: 'Supplementary Form with Good Health Declaration as application date or last exam date is over 90 days' },
+            { prefix: '(Pending)', text: 'Outstanding premium, if any. (Refer to counter offer letter for details)' },
+            { prefix: '(Pending)', text: 'insurance intermediary\'s memo/letter clarifying the country/region of the transaction bank for the initial premium' },
+            { prefix: '(Pending)', text: 'Settlor\'s employer details (business card or web screenshot showing business address) for AML checking.' },
+            { prefix: '(Pending)', text: 'Supplementary Form to confirm information on Premium Deposit Fund illustration (pages 1-2) is verified by the settlor' },
+            { prefix: '(Pending)', text: 'Financial Questionnaire, agent / broker report, and supporting financial evidence (liquid asset proof and source of funds/wealth) for total premium over USD 1M. See underwriting manual 10.3 for details' },
+            { prefix: '(Pending)', text: 'Financial supporting document with certified true copy to prove that the policyholder has a portfolio of not less than HKD 8 million (Re: Submitted Request for Departure from Commission Spreading Requirement form)' },
+            { prefix: '(Pending)', text: 'Employment details (business card or web screenshot showing business address) for AML checking' },
+            { prefix: '(Pending)', text: 'Special Health Questionnaire (for urinary tract infection in July 2025)' },
+            { prefix: '(Pending)', text: 'Source(s) of Funds/Wealth Supplementary Information Questionnaire for Financial Supporter as part of income is a family gift' },
+            { prefix: '(Pending)', text: 'Acceptance of Counter Offer' },
+            { prefix: '(Reminder)', text: 'There is history of hepatitis B with abnormal liver function' },
+            { prefix: '(Pending)', text: 'Supplementary form to supplement the incomplete information on Application Form Part I(A) Q12' },
+            { prefix: '(Pending)', text: 'Supplementary form to supplement the incomplete information on FNA Part 3 Q2a' },
+            { prefix: '(Pending)', text: 'Supplementary form to confirm FNA Part 2 Q1 as life protection needed mismatched with the applying sum assured of LionPatron while LionPatron\'s death benefit is 2.3 times of sum assured' },
+            { prefix: '(Pending)', text: 'insurance intermediary\'s memo/letter to explain reason for policy split as 2 applications are for the same product' },
+            { prefix: '(Pending)', text: 'insurance intermediary\'s memo/letter to explain reason for applying insurance in Hong Kong as it was not mentioned in intermediary\'s report' },
+            { prefix: '(Pending)', text: 'insurance intermediary\'s memo/letter to explain policyholder\'s monthly salary as the declared amount differs from typical range for this position' },
+            { prefix: '(Pending)', text: 'insurance intermediary\'s memo/letter to explain the breakdown of average monthly income as the declared occupational income (HKD XXXXX) is not main source among the total income HKD XXXXX.' },
+            { prefix: '(Pending)', text: 'Supplementary form to confirm FNA part 1 Q8 (all policies including Generali and other companies)' },
+            { prefix: '(Pending)', text: 'Important Facts Statement - Policy Replacement' },
+            { prefix: '(Pending)', text: 'Supplementary form to reconfirm application form Part XI' },
+            { prefix: '(Pending)', text: 'Supplementary form to accept backdating to 1 day before proposed insured\'s birthday as backdated illustration submitted but application form Part IX is not ticked.' },
+            { prefix: '(Pending)', text: 'Initial premium (with levy) and payment slip due to bounced cheque' },
+            { prefix: '(Pending)', text: 'Supplementary form to confirm FNA Part 3 Q7 as current income cannot afford all premium payments including existing policies' },
+            { prefix: '(Pending)', text: 'Supplementary form to confirm means to pay total premium (including policies with other companies) after retirement age xx as net liquid assets is insufficient' },
+            { prefix: '(Pending)', text: 'insurance intermediary\'s memo/letter to indicate personal background including education details & employment history' },
+            { prefix: '(Pending)', text: 'insurance intermediary\'s memo/letter to indicate current occupation details including title, name of current employer, business nature, average monthly income' },
+            { prefix: '(Pending)', text: 'insurance intermediary\'s memo/letter to indicate major event(s) that contribute significant accumulation of the customer\'s wealth (if the wealth is not from employment)' },
+            { prefix: '(Pending)', text: 'Full set of child health booklet with current height and weight record as insured\'s body build is beyond normal range' },
+            { prefix: '(Pending)', text: 'Insurance Intermediary Declaration for Mainland China Visitor Application Authentication as Important Facts Statement for Mainland Policyholders was not provided within 7 working days from the application sign date' },
+            { prefix: '(Pending)', text: 'Insurance Intermediary Declaration for Trust-Related Insurance Policy' },
+            { prefix: '(Pending)', text: 'Supplementary form to confirm beneficiary information. Beneficiary cannot be own estate or more than one beneficiary as "Policy Continuation" is selected' },
+            { prefix: '(Pending)', text: 'Direct Debit Authorization Form as Application Form Q34 (Bank Autopay for renewal premium payment) is selected' },
+            { prefix: '(Pending)', text: 'insurance intermediary\'s memo/letter to advise if refund cheque should be sent to broker or by mail to policyholder\'s address' },
+            { prefix: '(Pending)', text: 'Supplementary form to confirm Application Form Part II Q32 "Premium Payment Mode (annual or pre-payment)"' },
+            { prefix: '(Reminder)', text: 'For annual mode, please resubmit illustration' },
+            { prefix: '(Pending)', text: 'Supplementary form to confirm date back or not. If not, please resubmit illustration for age xx' },
+            { prefix: '(Pending)', text: 'Supplementary form to indicate China Taxpayer Identification Number (TIN) for Chinese ID Card holder' },
+            { prefix: '(Pending)', text: 'Supplementary form to confirm Application Form Part 1(C) Q26 with email address and selection of policy correspondence' },
+            { prefix: '(Pending)', text: 'Debit account proof showing account number and account holder name for initial premium payments (HKD XXX, HKDXXXXX & HKD XXXXX)' },
+            { prefix: '(Pending)', text: 'Supplementary form to confirm Financial Questionnaire Part 1 Q4d Net Worth as it should not be $0' },
+            { prefix: '(Pending)', text: 'Medical report / document from doctor to confirm current height and weight as insured\'s body build is beyond normal range' },
+            { prefix: '(Pending)', text: 'Supplementary form to confirm source of wealth as the provided FNA does not indicate this information' },
+            { prefix: '(Pending)', text: 'Supplementary form to confirm source of fund and wealth as the provided FNA does not indicate these information' },
+            { prefix: '(Pending)', text: 'settlor confirmation of FNA completion as not provided' },
+            { prefix: '(Pending)', text: 'Supplementary form to cancel "Designation of Contingent Recipient" as it is not applicable for this product' },
+            { prefix: '(Pending)', text: 'Supplementary form to confirm policyholder\'s education level as inconsistence found between FNA and intermediary\'s report' },
+            { prefix: '(Pending)', text: 'Parent\'s consent for grandparent to apply for insurance on behalf of proposed insured' },
+            { prefix: '(Pending)', text: 'CTC of proposed insured and policyholder\'s travel documents for non-permanent HKID holder(s)' },
+            { prefix: '(Pending)', text: 'Balance of premium with levy USD XXXXXX and payment slip' },
+            { prefix: '(Pending)', text: CBI_RBI_PENDING_TEXT },
+            { prefix: '(Reminder)', text: 'Case is pending for premium processing by our Finance Dept' },
+            { prefix: '(Reminder)', text: 'Case is pending for premium collection from credit card' },
+            { prefix: '(Reminder)', text: 'Trust Application is subject to compliance clearance; further requirements may be required' },
+            { prefix: '(Reminder)', text: 'Medical Consultant/Reinsurer is reviewing the case' },
+            { prefix: '(Reminder)', text: 'Case is pending for company search result' },
+            { prefix: '(Reminder)', text: 'Submit revised illustration with new age is required if payment date or document signed date is on or after insured\'s birthday. No back-dating will be allowed for saving plans or prepayments.' },
+            { prefix: '(Reminder)', text: 'Extra loading will be imposed due to xxxxxxx' },
+            { prefix: '(Reminder)', text: 'Application will be accepted with borderline standard due to xxxxx disease' },
+            { prefix: '(Reminder)', text: 'Payor will be required to submit Source(s) of Funds/Wealth Supplementary Information Questionnaire if premium payment is not fully made by proposed policyholder. Compliance review is also required' },
+            { prefix: '(Reminder)', text: 'Anonymous/cash payment is not allowed for high return products' },
+            { prefix: '(Reminder)', text: "This Insured's basic plan LionGuardian Beyond is rated due to the following reason(s) after medical assessment. Due to application is submitted within the promotion period of waiving extra premium, the extra premium applicable to basic plan of this application has been fully waived. Please note that this offer applies to this policy only and we reserve the right to determine whether the program is applicable or not to any reinstatement of, or any subsequent increase in benefits in this policy: [loading reason(s): xxxxxxxxxx]" },
+            { prefix: '(Reminder)', text: 'Notice of Approval sent out to DBS Bank. Awaiting arrange premium payment by Bank.' },
+            { prefix: '(Reminder)', text: 'The case was financially approved.' },
+            { prefix: '(Reminder)', text: 'After having reviewed your supplement, we will extend the deadline.' },
+            { prefix: '(Reminder)', text: 'Await Notice of Assignment (NOA) from bank.' }
+        ];
+const PendingMessageTab = () => {
+            const [searchTerm, setSearchTerm] = useState('');
+            const [editedMessages, setEditedMessages] = useState(() => PENDING_MESSAGES.map(m => m.text));
+            // Use global copy helper; no local toast state needed
+            const normalizePrefix = (p) => {
+                if (!p) return '';
+                return (p === '(Pending)') ? '(pending)' : p;
+            };
+            const handleCopy = (prefix, text) => {
+                const p = normalizePrefix(prefix);
+                const t = (text ?? '').toString();
+                copyToClipboard(`${p} ${t}`.trim());
+            };
+
+            const filtered = useMemo(() => {
+                return PENDING_MESSAGES.map((msg, index) => ({
+                    ...msg,
+                    index,
+                    text: editedMessages[index]
+                })).filter(item => {
+                    if (!searchTerm) return true;
+                    return item.text.toLowerCase().includes(searchTerm.toLowerCase());
+                });
+            }, [searchTerm, editedMessages]);
+
+            const updateMessage = (idx, value) => {
+                setEditedMessages(prev => {
+                    const copy = [...prev];
+                    copy[idx] = value;
+                    return copy;
+                });
+            };
+
+            return (
+                <div className="h-full flex flex-col bg-slate-50 overflow-y-auto custom-scrollbar tab-content relative">
+                    <div className="sticky top-0 z-50 bg-slate-50 px-6 pt-6 pb-4 border-b border-slate-200 shadow-sm">
+                        <h2 className="text-lg font-bold text-slate-700 mb-3 flex items-center gap-2"><Info size={18}/> Pending Message Sample</h2>
+                        <div className="flex items-center gap-2">
+                            <Search size={18} className="text-slate-500" />
+                            <input
+                                type="text"
+                                placeholder="Enter keyword to search..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="flex-1 border rounded p-2 text-sm"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="p-6 pt-4">
+                        <div className="space-y-4">
+                            {filtered.map(item => (
+                                <div key={item.index} className="bg-white p-3 rounded border border-slate-200 shadow-sm">
+                                    <div className="flex items-start gap-2">
+                                        <span className="text-xs font-semibold text-slate-500 whitespace-nowrap" style={{ minWidth: '70px' }}>{item.prefix}</span>
+                                        <textarea
+                                            value={editedMessages[item.index]}
+                                            onChange={(e) => updateMessage(item.index, e.target.value)}
+                                            className="flex-1 border rounded p-2 text-sm"
+                                            rows={2}
+                                        ></textarea>
+                                        <button
+                                            onClick={() => handleCopy(item.prefix, editedMessages[item.index])}
+                                            className="ml-2 text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700"
+                                        >Copy</button>
+                                    </div>
+                                </div>
+                            ))}
+                            {filtered.length === 0 && <div className="text-sm text-slate-500">No messages found.</div>}
+                        </div>
+                        {/* No local toast; global toast will handle notifications */}
+                    </div>
+                </div>
+            );
+        };
+const Page=()=>{const [toast,setToast]=useState('');useEffect(()=>{let timer;const handler=e=>{setToast(e.detail);clearTimeout(timer);timer=setTimeout(()=>setToast(''),2000);};window.addEventListener('showToast',handler);return()=>{clearTimeout(timer);window.removeEventListener('showToast',handler);};},[]);return <><PendingMessageTab/>{toast && <div role="status" className="fixed bottom-4 right-4 bg-green-700 text-white px-4 py-2 rounded shadow-lg">{toast}</div>}</>;};ReactDOM.createRoot(document.getElementById('root')).render(<Page/>);
+</script></body></html>
