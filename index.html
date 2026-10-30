@@ -281,6 +281,7 @@
 
         const FNA_MAPPING_PRODUCTS = [
             { name: "LionAchiever Elite", category: "saving80", target: "0-80%" },
+            { name: "LionGlobal", category: "saving80", target: "0-80%" },
             { name: "LionTycoon Beyond 2", category: "saving80", target: "0-80%" },
             { name: "LionPrima", category: "saving60", target: "0-60%" },
             { name: "Pearl Savings Insurance Plan", category: "saving60", target: "0-60%", aliases: ["Pearl"] },
@@ -1987,6 +1988,7 @@ const HK_HOLIDAYS_2025_2026 = [
             { name: "LionTycoon Beyond Savings Insurance Plan 3 (Launch date TBC)", type: "GIO", q1: "A (Optional), C (Optional), D (Optional), E, E(iii)", q2: "A", q3: "F - G", q6: "A - F (3 Pay); B - F (8 Pay); Single payment", ruleType: "GIO" },
 
             { name: "LionAchiever Elite", type: "GIO", q1: "A (Optional), C (Optional), D (Optional), E, E(iii)", q2: "A", q3: "E - G", q6: "A - F", ruleType: "GIO" },
+            { name: "LionGlobal", type: "GIO", q1: "A (Optional), C (Optional), D (Optional), E, E(iii)", q2: "A", q3: "E - G", q6: "A - F", ruleType: "GIO" },
             // Life
             { name: "Generali Supreme Gold", type: "Life", q1: "A", q2: "A, B, D", q3: "B - F", q6: "≥ protection period", ruleType: "LIFE" },
             { name: "LionPainter Flexi", type: "Life", q1: "A, D", q2: "A, B, D", q3: "B - C (10 Years PPT); B - D (11 - 15 Years PPT); B - E (16 - 20 Years PPT); B - F (21 - 25 Years PPT)", q6: "≥ protection period", ruleType: "LIFE" },
@@ -4045,7 +4047,7 @@ const [fnaP3Q6, setFnaP3Q6] = useState("");   // single-select (A - G)
                     if ([5, 8, 10].includes(term)) return { eligible: age >= 61, reason: 'LionTycoon Beyond 2 - 5/8/10 pay: insured age 61 or above' };
                     return { eligible: false, reason: "" };
                 }
-                if (normalizedPlan === 'lionachiever elite') return { eligible: age >= 61, reason: 'LionAchiever Elite: insured age 61 or above' };
+                if (['lionachiever elite', 'lionglobal'].includes(normalizedPlan)) return { eligible: age >= 61, reason: `${planName}: insured age 61 or above` };
                 if (normalizedPlan === 'emerald' || normalizedPlan === 'emerald savings insurance plan') return { eligible: age >= 66, reason: 'Emerald Savings Insurance Plan: insured age 66 or above' };
                 if (normalizedPlan === 'pearl' || normalizedPlan === 'pearl savings insurance plan') return { eligible: age >= 66, reason: 'Pearl Savings Insurance Plan: insured age 66 or above' };
                 if (normalizedPlan === 'primeachiever' || normalizedPlan === 'prime achiever insurance plan') return { eligible: age >= 60, reason: 'Prime Achiever Insurance Plan: insured age 60 or above' };
@@ -4409,7 +4411,7 @@ ${hnwFinancially || ''}`;
             }, [prodType, appType, isHighRisk, isEverestBroker, lifeCiEmployerToggle]);
 
             // v1.9 / v1.12 Non-employed supplementary triggers
-            const SOF_SOW_REQUIRED_PLANS = useMemo(() => new Set(['LionAchiever Elite', 'LionPrima', 'Pearl', 'Emerald', 'PrimeAchiever']), []);
+            const SOF_SOW_REQUIRED_PLANS = useMemo(() => new Set(['LionAchiever Elite', 'LionGlobal', 'LionPrima', 'Pearl', 'Emerald', 'PrimeAchiever']), []);
             const isSofSowRequiredPlan = useMemo(() => SOF_SOW_REQUIRED_PLANS.has(planName), [SOF_SOW_REQUIRED_PLANS, planName]);
 
             const isNonEmployedElitePrimaCase = useMemo(() => {
@@ -6617,7 +6619,7 @@ const showMed = (isPHNotSame && !isLifeOrCI)
                     }
                     // AML/SoF details for certain plans or Trust
                     const planNameLower = (policyData.planName || '').toLowerCase();
-                    const isSofSowRequiredSummaryPlan = ['lionachiever elite', 'lionprima', 'pearl', 'emerald'].includes(planNameLower);
+                    const isSofSowRequiredSummaryPlan = ['lionachiever elite', 'lionglobal', 'lionprima', 'pearl', 'emerald'].includes(planNameLower);
                     if (
                         policyData.appType === 'Trust' ||
                         policyData.requiredSendToAFC ||
@@ -6782,7 +6784,7 @@ const showMed = (isPHNotSame && !isLifeOrCI)
                 if (!policyData) return;
                 let msgs = [];
                 const plan = policyData.planName || '';
-                if (!policyData.isPremiumFinancing && ['LionAchiever Elite', 'LionPrima', 'Pearl', 'Emerald', 'PrimeAchiever'].includes(plan)) {
+                if (!policyData.isPremiumFinancing && ['LionAchiever Elite', 'LionGlobal', 'LionPrima', 'Pearl', 'Emerald', 'PrimeAchiever'].includes(plan)) {
                     msgs.push('a. Anonymous/cash payment is not allowed for high return products; b. Payor will be required to submit of Source(s) of Funds/Wealth Supplementary Information Questionnaire if premium payment is not fully made by proposed policyholder.');
                 }
                 if ((policyData.prodType === 'GIO' || policyData.prodType === 'Annuity') && policyData.birthdayAlert?.withinThreeMonths) {
@@ -7452,10 +7454,10 @@ const shouldShowMed = () => {
                                     (policyData.appType === 'Trust') ||
                                     policyData.requiredSendToAFC ||
                                     policyData.lifeCiEmployerToggle ||
-                                    (policyData.planName && ['lionachiever elite', 'lionprima', 'pearl', 'emerald'].includes(policyData.planName.toLowerCase())) ||
+                                    (policyData.planName && ['lionachiever elite', 'lionglobal', 'lionprima', 'pearl', 'emerald'].includes(policyData.planName.toLowerCase())) ||
                                     (
                                         policyData.planName &&
-                                        !['lionachiever elite', 'lionprima', 'pearl', 'emerald'].includes(policyData.planName.toLowerCase()) &&
+                                        !['lionachiever elite', 'lionglobal', 'lionprima', 'pearl', 'emerald'].includes(policyData.planName.toLowerCase()) &&
                                         (policyData.occupationStatus !== 'Employed' && policyData.occupationStatus !== 'SelfEmployed') &&
                                         !!policyData.sofWealthSupplementType
                                     )
@@ -7481,7 +7483,7 @@ const shouldShowMed = () => {
                                         <div className="pl-4 mt-2 space-y-1">
                                             <div>{(() => {
                                                 const planLower = (policyData.planName || '').toLowerCase();
-                                                const isSofSowRequiredPlan = ['lionachiever elite', 'lionprima', 'pearl', 'emerald'].includes(planLower);
+                                                const isSofSowRequiredPlan = ['lionachiever elite', 'lionglobal', 'lionprima', 'pearl', 'emerald'].includes(planLower);
                                                 const nonEmp = ((policyData.occupationStatus || '') !== 'Employed' && (policyData.occupationStatus || '') !== 'SelfEmployed');
                                                 const occEng = ((policyData.occupationStatus || '') === 'SelfEmployed') ? 'Self-Employed' : (policyData.occupationStatus || '');
                                                 const ctx = policyData.sofWealthSupplementType || '';
