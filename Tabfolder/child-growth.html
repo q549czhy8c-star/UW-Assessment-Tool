@@ -21,6 +21,7 @@
 <article><h2>體重按年齡</h2><output id="weightResult" class="metric">—</output><div id="weightDetail" class="meta"></div><canvas id="weightChart" class="chart" aria-label="體重按年齡百分位曲線"></canvas><div id="weightTable"></div></article>
 </section>
 <div id="status" role="status"></div>
+<textarea id="manualCopy" aria-label="可手動複製的結果" readonly hidden rows="7" style="width:100%;padding:12px;font:inherit;border:1px solid #aebdc5;border-radius:4px"></textarea>
 <footer>
 <div>參考範圍：出生至約 18 歲（官方逐日數值表：0–6,574 天）。未滿 2 歲使用臥位身長；2 歲起使用站立身高。請核對量度日期及量度方式。</div>
 <div>百分位屬 HK2020 LMS 模型估算，非診斷或核保通過／不通過標準。低於 P0.4 或高於 P99.6 只顯示界外結果。不作早產矯正年齡計算；早產或特殊臨床情況請由醫護評估。</div>
@@ -59,7 +60,7 @@ function draw(canvas,series,day,value,unit) {
  if(Number.isFinite(value)&&value>0){c.fillStyle='#bd3e56';c.beginPath();c.arc(x(day),Math.min(bottom,Math.max(top,y(value))),5,0,2*Math.PI);c.fill();if(y(value)<top||y(value)>bottom){c.fillText('量度值超出圖軸',left+5,top+13);}}
 }
 function update(){
- summary='';$('copy').disabled=true;$('error').textContent='';$('age').textContent='—';
+ summary='';$('copy').disabled=true;$('error').textContent='';$('age').textContent='—';$('manualCopy').hidden=true;
  const dob=parseDate($('dob').value),measured=parseDate($('measured').value),sex=$('sex').value;
  const days=Math.round((measured-dob)/86400000);
  let error='';
@@ -84,7 +85,21 @@ function update(){
 }
 $('measured').value=localToday();
 for(const id of ['sex','dob','measured','height','weight'])$(id).addEventListener('input',update);
-$('copy').addEventListener('click',async()=>{try{if(navigator.clipboard&&window.isSecureContext)await navigator.clipboard.writeText(summary);else{const t=document.createElement('textarea');t.value=summary;document.body.append(t);t.select();const ok=document.execCommand('copy');t.remove();if(!ok)throw Error('copy');}$('status').textContent='已複製結果';}catch(e){$('status').textContent='無法複製，請檢查瀏覽器權限。';}});
+function legacyCopy(text){
+ const previous=document.activeElement,t=document.createElement('textarea');
+ t.value=text;t.readOnly=true;t.style.cssText='position:fixed;left:0;top:0;opacity:0;font-size:16px';document.body.append(t);
+ try{t.focus();t.select();t.setSelectionRange(0,text.length);return document.execCommand('copy');}
+ catch(e){return false;}
+ finally{t.remove();previous?.focus({preventScroll:true});}
+}
+$('copy').addEventListener('click',async()=>{
+ const text=summary;if(!text)return;
+ // Copy synchronously while the click still grants browser user activation.
+ let copied=legacyCopy(text);
+ if(!copied&&navigator.clipboard&&window.isSecureContext){try{await navigator.clipboard.writeText(text);copied=true;}catch(e){copied=legacyCopy(text);}}
+ if(copied){$('manualCopy').hidden=true;$('status').textContent='已複製結果';}
+ else{$('manualCopy').value=text;$('manualCopy').hidden=false;$('manualCopy').focus();$('manualCopy').select();$('status').textContent='瀏覽器未允許自動複製。結果已選取，可按 Ctrl+C / Cmd+C 或長按複製。';}
+});
 function importPolicy(p){if(!p){$('status').textContent='未找到保單資料。';return;}$('sex').value=(p.isSamePerson?p.phGender:p.insGender)||'';$('dob').value=(p.isSamePerson?p.phDob:p.insDob)||'';$('height').value=p.height||'';$('weight').value=p.weight||'';$('status').textContent='已引用受保人資料，請核對量度日期。';update();}
 $('import').addEventListener('click',()=>{if(window.parent!==window)window.parent.postMessage({type:'uw-growth-request'},'*');else{try{importPolicy(JSON.parse(localStorage.getItem('caseSummaryPolicyInfo')||'null'));}catch(e){$('status').textContent='請在 UW Assessment Tool 內引用受保人資料。';}}});
 window.addEventListener('message',e=>{if(e.source===window.parent&&e.data?.type==='uw-growth-response')importPolicy(e.data.policy);});
