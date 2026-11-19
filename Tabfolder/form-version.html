@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Form Version</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font:14px system-ui,"Microsoft JhengHei",sans-serif;color:#24313b;background:white}header{position:sticky;top:0;background:white;padding:16px;border-bottom:1px solid #d7dfe4;z-index:2}h1{font-size:18px;margin:0 0 10px}.notice{background:#fff4dc;border-left:3px solid #b97b14;padding:10px;line-height:1.6;margin-bottom:12px}.search{display:flex;gap:8px;align-items:center}input{min-width:0;flex:1;font:inherit;border:1px solid #aab9c4;padding:9px;border-radius:4px}button{font:inherit;padding:8px;border:1px solid #aab9c4;background:white;border-radius:4px;cursor:pointer}#count{font-size:12px;color:#5f6c75;margin-top:8px}table{width:100%;border-collapse:collapse;table-layout:fixed}th,td{text-align:left;padding:10px 16px;border-bottom:1px solid #dce3e7;vertical-align:top;overflow-wrap:anywhere}th{background:#edf2f4;font-size:12px}th:first-child{width:64%}td div+div{color:#5f6c75;font-size:12px;margin-top:4px}code{font:12px ui-monospace,monospace}tbody tr:nth-child(even){background:#f8fafb}#empty{padding:24px;text-align:center;color:#5f6c75}footer{padding:14px 16px;font-size:12px;color:#5f6c75}@media(max-width:520px){th,td{padding:9px}th:first-child{width:56%}header{padding:12px}code{font-size:11px}}
+</style></head>
+<body><header><h1>Form Version</h1><div class="notice">簽署日期在 <strong>31 Oct 2026 之後（即 1 Nov 2026 起）</strong>，必須提交以下版本的表格。<br>For sign dates after 31 Oct 2026, the form versions listed below are required.</div><div class="search"><input id="search" type="search" aria-label="搜尋表格編號或名稱" placeholder="Form code / English / 中文名稱" autocomplete="off"><button id="clear" type="button" aria-label="清除搜尋" title="清除搜尋">×</button></div><div id="count" role="status"></div></header>
+<table><thead><tr><th>Form Name / 表格名稱</th><th>Form Code / 表格編號</th></tr></thead><tbody id="rows"></tbody></table><div id="empty" hidden>沒有符合的表格 / No matching forms.</div><footer>依據提供的兩張表格版本清單整理。共用編號的不同表格名稱分開列出。</footer>
+<script>
+const FORMS = [
+ ['Business Insurance Questionnaire','商業保險問卷','UW/GLHK/BIQ/AUG2026'],
+ ['Controlling Person Tax Residency Self-Certification Form','控權人稅務居民身份自我證明表格','LO/SCF_CP/AUG2026'],
+ ['Declaration of Insurability Form (LionMaster)','可受保資格聲明書 (智勝保)','LO/DOIF/AUG2026'],
+ ['Entity Tax Residency Self-Certification Form','實體稅務居民身份自我證明表格','LO/SCF_ETY/AUG2026'],
+ ['FATCA Self-Certification for Entities','海外帳戶稅收合規法案公司客戶聲明書','LO/FATCA_ETY/AUG2026'],
+ ['Financial Needs Analysis Form','財務需要分析表格','UW/GLHK/FNA/AUG2026'],
+ ['Financial Questionnaire (Lion Master)','財務問卷 (智勝保)','LO/FQ_HNW/AUG2026'],
+ ['Financial Questionnaire','財務問卷','UW/GLHK/FQ/AUG2026'],
+ ['Professional Investor Declaration','專業投資者聲明書','UW/GLHK/RFPI/AUG2026'],
+ ['Marine Questionnaire','海事問卷','UW/GLHK/MAQ/AUG2026'],
+ ['Residency & Travel Questionnaire','居住及旅遊問卷','UW/GLHK/RTQ/AUG2026'],
+ ['Supplementary Form - Total Line Endorsement (Lion Master)','補充表格 (智勝保)','UW/GLHK/SF/AUG2026'],
+ ['Supplementary Form (Lion Master)','補充表格 (智勝保)','UW/GLHK/SF_HNW/AUG2026'],
+ ['Supplementary Form - Confirmation of Signature on Medical Examination Report','確認體檢報告上之簽署式樣','UW/GLHK/SFCS/AUG2026'],
+ ['Supplementary Form - Declaration of Continued Good Health','持續健康聲明書','UW/GLHK/SFCGH/AUG2026'],
+ ['Supplementary Form - New Business','補充表格','UW/GLHK/SF/AUG2026'],
+ ['Trust Verification Form','信託核實表格','LO/TVF/AUG2026'],
+ ['Unborn Baby Benefit Supplementary Form (for miscarriage history use)','未來之寶保障補充表格 (流產病歷適用)','UW/GLHK/UBBSF_MH/AUG2026'],
+ ['Supplementary for Common Reporting Standard','共同匯報標準補充表格','LO/CRS_OECD/AUG2026'],
+ ['Asthma / Respiratory Disorder Questionnaire','哮喘 / 呼吸系統疾病問卷','UW/GLHK/ARQ/AUG2026'],
+ ['Back Disorder Questionnaire','背部毛病問卷','UW/GLHK/BDQ/AUG2026'],
+ ['COVID-19 Questionnaire','2019 冠狀病毒疾病問卷','UW/GLHK/COVID-19/AUG2026'],
+ ['Completed Medical Test Questionnaire','曾接受醫療檢查問卷','UW/GLHK/CMQ/AUG2026'],
+ ['Diabetes Questionnaire','糖尿病問卷','UW/GLHK/DMQ/AUG2026'],
+ ['Epilepsy Questionnaire','癲癇問卷','UW/GLHK/EQ/AUG2026'],
+ ['Gastrointestinal Questionnaire','腸胃問卷','UW/GLHK/GIQ/AUG2026'],
+ ['Gout Questionnaire','痛風症問卷','UW/GLHK/GQ/AUG2026'],
+ ['Hyperlipidemia (Hypercholesterolemia/Hypertriglyceridemia) Questionnaire','高脂血症 (高膽固醇症 / 高三酸甘油酯症) 問卷','UW/GLHK/HLQ/AUG2026'],
+ ['Hypertension Questionnaire','高血壓問卷','UW/GLHK/HTQ/AUG2026'],
+ ['Injuries Questionnaire','受傷問卷','UW/GLHK/INJQ/AUG2026'],
+ ['Mood Questionnaire','情緒問卷','UW/GLHK/MQ/AUG2026'],
+ ['Special Health Questionnaire','特別健康問卷','UW/GLHK/SHQ/AUG2026'],
+ ['Tumour / Cyst Questionnaire','腫瘤 / 囊腫問卷','UW/GLHK/TQ/AUG2026'],
+ ['Aviation Questionnaire','航空記錄問卷','UW/GLHK/AQ/AUG2026'],
+ ['Aviation and Hazardous Sports Questionnaire (LionMaster)','航空及危險運動問卷 (智勝保)','UW/GLHK/AHSQ_HNW/AUG2026'],
+ ['Cliff / Rock Climbing Mountaineering Questionnaire','攀崖 / 攀山問卷','UW/GLHK/CRMQ/AUG2026'],
+ ['Diving Questionnaire','潛水問卷','UW/GLHK/DQ/AUG2026'],
+ ['Hazardous Sports And/Or Pursuits Questionnaire','危險運動及 / 或嗜好問卷','UW/GLHK/HSQ/AUG2026'],
+ ['Motor Racing Questionnaire','賽車問卷','UW/GLHK/MRQ/AUG2026'],
+ ['Parachuting Questionnaire','跳降傘問卷','UW/GLHK/PQ/AUG2026'],
+ ['Sailing Questionnaire','航行問卷','UW/GLHK/SQ/AUG2026']
+];
+const input=document.getElementById('search');
+const normalize=value=>value.toLowerCase().replace(/[\s/_-]+/g,'');
+function render(){const terms=input.value.trim().split(/\s+/).map(normalize).filter(Boolean);const found=FORMS.filter(row=>terms.every(t=>normalize(row.join(' ')).includes(t)));const body=document.getElementById('rows');body.replaceChildren();for(const [en,zh,code] of found){const tr=document.createElement('tr'),name=document.createElement('td'),cell=document.createElement('td');for(const text of [en,zh]){const div=document.createElement('div');div.textContent=text;name.append(div);}const c=document.createElement('code');c.textContent=code;cell.append(c);tr.append(name,cell);body.append(tr);}document.getElementById('count').textContent=`${found.length} / ${FORMS.length} forms`;document.getElementById('empty').hidden=found.length>0;}
+input.addEventListener('input',render);document.getElementById('clear').addEventListener('click',()=>{input.value='';render();input.focus();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&window.parent!==window)window.parent.postMessage({type:'uw-form-version-close'},'*');});render();
+</script></body></html>
