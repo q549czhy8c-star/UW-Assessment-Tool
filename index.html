@@ -2337,7 +2337,7 @@ const HK_HOLIDAYS_2025_2026 = [
                 sortRowsByPrefix(rows).forEach((row) => {
                     let content = row.textA || "";
                     let refText = row.textB || "";
-                    if (!content.trim() && !refText.trim()) return;
+                    if (!row.premium && !content.trim() && !refText.trim()) return;
 
                     if (removeNumbering && !row.numberingHandled) {
                         content = content.replace(/^[ \t]*\d+[.)\/、-](?:[ \t]+|(?=[^\d\s]))/, '');
@@ -2353,7 +2353,7 @@ const HK_HOLIDAYS_2025_2026 = [
                     content = content.replace(/(\s+|^)(\([A-Za-z0-9]+\))/g, "\n$2").trim();
 
                     const paragraphs = content.split('\n');
-                    paragraphs.forEach(paragraph => {
+                    const wrappedLines = paragraphs.flatMap(paragraph => {
                         const words = paragraph.split(' ');
                         let lines = [];
                         let tempLine = "";
@@ -2369,7 +2369,13 @@ const HK_HOLIDAYS_2025_2026 = [
                         }
                         if (tempLine.trim()) lines.push(tempLine.trim());
 
-                        lines.forEach((line) => {
+                        return lines;
+                    });
+
+                    const previewLines = row.premium
+                        ? [wrappedLines[0] || "", wrappedLines.slice(1).join(" ")]
+                        : wrappedLines;
+                    previewLines.forEach((line) => {
                             let currentLimit = rowLimit;
                             if (currentColumnBlock === 1 && firstColRowLimit && Number(firstColRowLimit) > 0) {
                                 currentLimit = Number(firstColRowLimit);
@@ -2379,9 +2385,8 @@ const HK_HOLIDAYS_2025_2026 = [
                                 currentColumnBlock++;
                                 currentRow = 1;
                             }
-                            gridData.push({ textA: line, textB: refText, row: currentRow, block: currentColumnBlock });
+                            gridData.push({ textA: line, textB: refText, row: currentRow, block: currentColumnBlock, premium: row.premium });
                             currentRow++;
-                        });
                     });
 
                     if (paragraphs.length === 0 && refText.trim()) {
@@ -2424,7 +2429,8 @@ const HK_HOLIDAYS_2025_2026 = [
 
             const handleCopy = (type, blockData = null) => {
                 let text = "";
-                const source = blockData || processedData;
+                const source = (blockData || processedData).filter(row => !row.premium);
+                if (!source.length) return;
                 if (type === 'A') {
                     text = source.map(d => d.textA).join('\n');
                 } else if (type === 'B') {
@@ -2476,6 +2482,10 @@ const HK_HOLIDAYS_2025_2026 = [
                                 <div key={row._idx} className="bg-white p-3 rounded shadow-sm border border-slate-200 mb-3 hover:shadow-md transition-shadow">
                                     <div className="flex justify-between items-center mb-2 pb-2 border-b border-slate-50">
                                         <span className="text-xs font-bold text-slate-400">項目 #{i+1}</span>
+                                        <label className="flex items-center gap-1 text-xs text-slate-700">
+                                            <input type="checkbox" checked={!!row.premium} onChange={e => updateRow(row._idx, 'premium', e.target.checked)} />
+                                            Premium
+                                        </label>
                                         <select value={row.prefixType} onChange={(e)=>updateRow(row._idx, 'prefixType', e.target.value)} className={`text-xs border rounded p-1 font-medium ${row.prefixType === 'pending' ? 'text-orange-600 bg-orange-50' : (row.prefixType === 'reminder' || row.prefixType === 'fyi') ? 'text-blue-600 bg-blue-50' : 'text-slate-600'}`}>
                                             <option value="none">無前綴</option>
                                             <option value="pending">(Pending)</option>
