@@ -2428,20 +2428,15 @@ const HK_HOLIDAYS_2025_2026 = [
             }, [processedData]);
 
             const handleCopy = (type, blockData = null) => {
-                let text = "";
-                const source = (blockData || processedData).filter(row => !row.premium);
+                const source = blockData || processedData;
                 if (!source.length) return;
-                if (type === 'A') {
-                    text = source.map(d => d.textA).join('\n');
-                } else if (type === 'B') {
-                    text = source.map(d => d.textB).join('\n');
-                } else if (type === 'followup') {
-                    // Follow-up format: Text B 1 00 L Text A
-                    text = source.map(d => `${(d.textB || '')} 1 00 L ${(d.textA || '')}`).join('\n');
-                } else {
-                    // Excel format (aligned): TextB 1 00 L .......... TextA
-                    text = source.map(d => `${d.textB} 1 00 L .......... ${d.textA}`).join('\n');
-                }
+                const text = source.map(row => {
+                    if (row.premium) return '';
+                    if (type === 'A') return row.textA;
+                    if (type === 'B') return row.textB;
+                    if (type === 'followup') return `${row.textB} 1 00 L ${row.textA}`;
+                    return `${row.textB} 1 00 L .......... ${row.textA}`;
+                }).join('\n');
                 copyToClipboard(text, 'Copied (UN Screen)');
             };
 
